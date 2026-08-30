@@ -1,0 +1,62 @@
+\chapter{Methods}
+\label{chap:methods}
+
+This chapter defines the numerical methods before discussing their software
+realization or empirical behavior.  The presentation begins with the common
+RKDG baseline, then introduces adapted OFDG, KXRCF, and the independent 2024
+OEDG comparator in that order.  Positivity treatment and reference solutions
+are common experimental controls rather than parts of any one stabilization
+method.
+
+\section{Governing equations and conventional RKDG}
+\label{sec:rkdg}
+
+Consider a system of hyperbolic conservation laws
+\begin{equation}
+  \partial_t\boldsymbol u+\nabla\cdot\boldsymbol f(\boldsymbol u)=0
+  \quad\text{in }\Omega\times(0,T],
+  \qquad
+  \boldsymbol u(\boldsymbol x,0)=\boldsymbol u_0(\boldsymbol x).
+  \label{eq:conservation-law}
+\end{equation}
+Scalar advection and Burgers' equation use one component.  For compressible
+Euler in $d$ dimensions,
+\begin{equation}
+ \boldsymbol u=(\rho,\rho\boldsymbol v,E)^\mathsf T,
+ \qquad
+ p=(\gamma-1)\left(E-\tfrac12\rho|\boldsymbol v|^2\right),
+ \label{eq:euler-state}
+\end{equation}
+and the flux in direction $j$ is
+\begin{equation}
+ \boldsymbol f_j(\boldsymbol u)
+ =\bigl(\rho v_j,
+        \rho v_j\boldsymbol v+p\boldsymbol e_j,
+        (E+p)v_j\bigr)^\mathsf T.
+ \label{eq:euler-flux}
+\end{equation}
+
+Let $V_h^k$ be the discontinuous polynomial space on
+$\mathcal T_h$.  The conventional semidiscrete DG method seeks
+$\boldsymbol u_h(t)\in[V_h^k]^m$ such that, on every element $K$,
+\begin{equation}
+ \int_K\partial_t\boldsymbol u_h\cdot\boldsymbol w_h\,\mathrm dx
+ -\int_K\boldsymbol f(\boldsymbol u_h):\nabla\boldsymbol w_h\,\mathrm dx
+ +\int_{\partial K}\widehat{\boldsymbol f}
+       (\boldsymbol u_h^-,\boldsymbol u_h^+,\boldsymbol n_K)
+       \cdot\boldsymbol w_h^-\,\mathrm ds=0
+ \label{eq:rkdg-weak-form}
+\end{equation}
+for all $\boldsymbol w_h\in[V_h^k]^m$.  The numerical experiments use the
+same Rusanov-type interface flux for all compared methods.  Explicit
+Runge--Kutta integration produces the RKDG baseline; OFDG and OEDG alter only
+the post-stage or post-step state, not \cref{eq:rkdg-weak-form}.  This separation
+follows the standard RKDG framework for nonlinear hyperbolic systems
+\cite{CockburnShu1998,GottliebShu1998}.
+
+\input{ofdg}
+\input{kxrcf}
+\input{oedg}
+\input{numerical_controls}
+\input{implementation}
+\input{experimental_methodology}

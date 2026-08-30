@@ -1,0 +1,16 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+\ifdraftresults
+The software and verification framework are complete, but the comparative
+experiment design is still under review.  Consequently, this draft makes no
+final ranking of RKDG, adapted OFDG--KXRCF, and OEDG.  The final conclusion will
+state only findings supported by the approved dataset and will identify
+remaining theoretical and computational work, including characteristic KXRCF
+variants, curved meshes, larger-rank scaling, and paper-scale two-dimensional
+robustness cases.
+\else
+\InputIfFileExists{generated/final/conclusion.tex}{}{%
+  \PackageError{thesis}{Approved final conclusion is missing}{Generate the
+  conclusion only after the final discussion has been reviewed.}}
+\fi

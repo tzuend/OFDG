@@ -1,4 +1,22 @@
 \begin{abstract}
-  This example thesis briefly shows the main features of our thesis
-  style, and how to use it for your purposes.
+  This thesis studies maintainable oscillation-control mechanisms for
+  discontinuous Galerkin discretizations of hyperbolic conservation laws in
+  MFEM.  It develops an adapted oscillation-free discontinuous Galerkin method
+  with face-local characteristic speeds, restricts that method using the KXRCF
+  troubled-cell detector, and implements the scale- and evolution-invariant
+  2024 OEDG method as a fixed comparator.  Polynomial-shell damping is realized
+  through finite-element projection operators, so the stored solution basis
+  need not be modal, orthogonal, or Legendre-based.  The implementation supports
+  scalar equations and compressible Euler flow on distributed affine meshes and
+  is accompanied by conservative admissibility treatment, an independent WENO5
+  reference solver, and deterministic serial and MPI tests.
+
+  The comparative numerical study is intentionally not finalized in this
+  draft.  Its proposed design separates smooth accuracy, discontinuity
+  resolution, detector selectivity, invariance, robustness, computational cost,
+  and parallel scaling.  Final quantitative claims will be inserted only after
+  the experiment matrix has been reviewed and an approved, fully traceable
+  dataset has been generated.  Reduced development calculations are retained
+  solely to verify the reporting workflow and are not treated as thesis
+  evidence.
 \end{abstract}

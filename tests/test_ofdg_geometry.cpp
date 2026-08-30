@@ -1,6 +1,6 @@
 #include "mfem.hpp"
 
-#include "ofdg_serial_optimized.hpp"
+#include "../src/ofdg_serial_optimized.hpp"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -113,6 +113,68 @@ double ScalarPolynomial(const Vector &x)
 double YCoordinate(const Vector &x)
 {
     return x(1);
+}
+
+double ElementPolynomial(const Vector &x, int element)
+{
+    return element < 2
+        ? 1.0 + 0.4 * x(0) + 0.3 * x(0) * x(0)
+        : 1.8 - 0.2 * x(0) + 0.1 * x(0) * x(0);
+}
+
+void SetElementPolynomial(FiniteElementSpace &space, GridFunction &state)
+{
+    Array<int> dofs;
+    Vector physical_point;
+    for (int element = 0; element < space.GetNE(); ++element) {
+        const FiniteElement *finite_element = space.GetFE(element);
+        const IntegrationRule &nodes = finite_element->GetNodes();
+        ElementTransformation *transformation =
+            space.GetMesh()->GetElementTransformation(element);
+        Vector values(finite_element->GetDof());
+        for (int i = 0; i < nodes.GetNPoints(); ++i) {
+            transformation->Transform(nodes.IntPoint(i), physical_point);
+            values(i) = ElementPolynomial(physical_point, element);
+        }
+        space.GetElementDofs(element, dofs);
+        state.SetSubVector(dofs, values);
+    }
+}
+
+void ValidateBasisIndependence()
+{
+    Mesh mesh = Mesh::MakeCartesian1D(4, 1.0);
+    DG_FECollection lobatto_collection(2, 1, BasisType::GaussLobatto);
+    DG_FECollection legendre_collection(2, 1, BasisType::GaussLegendre);
+    FiniteElementSpace lobatto_space(&mesh, &lobatto_collection);
+    FiniteElementSpace legendre_space(&mesh, &legendre_collection);
+    GridFunction lobatto_state(&lobatto_space);
+    GridFunction legendre_state(&legendre_space);
+    SetElementPolynomial(lobatto_space, lobatto_state);
+    SetElementPolynomial(legendre_space, legendre_state);
+
+    OFDG lobatto_filter(&lobatto_space, BasisType::GaussLobatto);
+    OFDG legendre_filter(&legendre_space, BasisType::GaussLegendre);
+    Vector lobatto_decay;
+    Vector legendre_decay;
+    lobatto_filter.CompDecay(lobatto_state, lobatto_decay, 0.17);
+    legendre_filter.CompDecay(legendre_state, legendre_decay, 0.17);
+
+    GridFunction lobatto_result(&lobatto_space);
+    GridFunction legendre_result(&legendre_space);
+    lobatto_result = lobatto_decay;
+    legendre_result = legendre_decay;
+    const IntegrationRule &rule = IntRules.Get(Geometry::SEGMENT, 8);
+    for (int element = 0; element < mesh.GetNE(); ++element) {
+        for (int q = 0; q < rule.GetNPoints(); ++q) {
+            const IntegrationPoint &point = rule.IntPoint(q);
+            const double difference = std::abs(
+                lobatto_result.GetValue(element, point) -
+                legendre_result.GetValue(element, point));
+            Require(difference < 2e-11,
+                    "OFDG decay depends on the finite-element coefficient basis");
+        }
+    }
 }
 
 void ValidateMeanAbsoluteJump()
@@ -254,6 +316,7 @@ void ValidateAffineMesh(Mesh &mesh, const std::string &name)
 int main()
 {
     try {
+        ValidateBasisIndependence();
         ValidateUniformCase(1);
         ValidateUniformCase(2);
         ValidateMeanAbsoluteJump();

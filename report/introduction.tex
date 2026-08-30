@@ -1,134 +1,87 @@
-% Some commands used in this file
-\newcommand{\package}{\emph}
-
 \chapter{Introduction}
 
-This is a slightly adapted\footnote{E.g., we are using \package{cleveref}
-instead of \package{varioref}.} version \verb-v1.4- of the template from
-\url{https://www.cadmo.ethz.ch/education/thesis/template.html}.
+High-order discontinuous Galerkin (DG) methods combine element-local polynomial
+approximations with numerical fluxes at element interfaces.  Their locality is
+attractive for parallel computing, but high-order polynomials can develop
+nonphysical oscillations near discontinuities.  Oscillation-free DG methods
+address this by damping selected nonconstant modes while preserving cell
+averages~\cite{LuEtAl2021,LiuEtAl2022,PengEtAl2024}.
 
-We assume that you found this template on our institute's website, so
-we do not repeat everything stated there.  Consult the website again
-for pointers to further reading about \LaTeX{}.  This chapter only
-gives a brief overview of the files you are looking at.
-
-\section{Features}
-\label{sec:features}
-
-The rest of this document shows off a few features of the template
-files.  Look at the source code to see which macros we used!
-
-The template is divided into \TeX{} files as follows:
+The goal of this work is not only to reproduce a mathematical construction, but
+to integrate it into MFEM in a form that remains understandable, testable, and
+useful for several conservation laws.  Four practical questions drive the
+implementation:
 \begin{enumerate}
-\item \texttt{thesis.tex} is the main file.
-\item \texttt{extrapackages.tex} holds extra package includes.
-\item \texttt{layoutsetup.tex} defines the style used in this document.
-\item \texttt{theoremsetup.tex} declares the theorem-like environments.
-\item \texttt{macrosetup.tex} defines extra macros that you may find
-      useful.
-\item \texttt{introduction.tex} contains this text.
-\item \texttt{sections.tex} is a quick demo of each sectioning level
-      available.
-\item \texttt{declaration-originality.pdf} is included at the end of the thesis.
-      However, simply filling out the form and including it will not work.
-      To include it, print the filled out form using a PDF printer and name it
-      \texttt{declaration-originality.pdf}\footnote{You can find the original
-      in \texttt{declaration-originality\_original.pdf}.}.
-\item \texttt{refs.bib} is an example bibliography file containing all
-      the references we've discussed so far. You can use Bib\TeX{} to quote
-      references.
-      For example, we have discussed~\cite{QiuShu2005,LiuEtAl2022,LuEtAl2021,PengEtAl2024}.
-\item Here is an example of citing a lecture~\cite{Hiptmair2024}.
-\item Here is an example of citing a code repository~\cite{hd2d_advection_public}.
+  \item Which face propagation speed should scale the OFDG sensor for nonlinear
+        systems such as Euler?
+  \item Can a troubled-cell indicator avoid unnecessary damping in smooth
+        elements?
+  \item How should OFDG and the indicator exchange face data on a distributed
+        mesh?
+  \item How does the adapted method compare with conventional RKDG and the
+        scale-invariant 2024 OEDG method under reproducible accuracy,
+        robustness, and cost measurements?
 \end{enumerate}
 
+\section{Related work and research gap}
 
-\subsection{Extra package includes}
+The RKDG framework combines element-local DG spatial discretizations with
+strong-stability-preserving explicit Runge--Kutta methods
+\cite{CockburnShu1998,GottliebShu1998}.  Near discontinuities, nonlinear
+limiters commonly use a troubled-cell indicator to avoid modifying smooth
+regions.  KXRCF uses DG interface superconvergence for this purpose
+\cite{KrivodonovaEtAl2004}; systematic comparisons and later alternatives show
+that detector selectivity remains sensitive to normalization, polynomial
+degree, and the chosen indicator variable
+\cite{QiuShu2005,FuShu2017,VuikRyan2014,VuikRyan2016}.
 
-The file \texttt{extrapackages.tex} lists some packages that usually
-come in handy.  Simply have a look at the source code.  We have
-added the following comments based on our experiences:
-\begin{description}
-\item[REC] This package is recommended.
-\item[OPT] This package is optional.  It usually solves a specific
-  problem in a clever way.
-\item[ADV] This package is for the advanced user, but solves a problem
-  frequent enough that we mention it. Consult the package's
-  documentation.
-\end{description}
+OFDG instead adds projection-based damping whose strength is inferred from
+interelement jumps~\cite{LuEtAl2021,LiuEtAl2022}.  The 2024 OEDG method recasts
+that damping as exact modal attenuation and introduces scale- and
+evolution-invariant coefficients~\cite{PengEtAl2024}.  The unresolved practical
+question addressed here is how these ingredients behave when implemented in a
+general finite element library, combined with selective KXRCF activation, and
+extended across distributed meshes.  The combined implementation is not one of
+the published methods verbatim; its deviations and empirical validation must
+therefore be stated explicitly.
 
-As a small example, here is a reference to the Section \emph{Features}
-typeset with the recommended \package{cleveref} package:
-\begin{quote}
-  See \cref{sec:features}.\\
-  See \cref{tab:things-you-dont-say}.\\
-  See \cref{eq:euler_id}.
-\end{quote}
-Here is Euler's identity so that we can reference it above
-\begin{equation}
-\label{eq:euler_id}
-  e^{i \pi} + 1 = 0
-  .
-\end{equation}
-The same works for figures, listings, etc.
+\section{Contributions}
 
+The first contribution is a publicly accessible, reusable MFEM realization of
+adapted OFDG and a fixed 2024 OEDG comparator.  Its polynomial-shell damping is
+assembled through $L^2$ projection matrices in the finite-element basis supplied
+by MFEM.  The represented solution therefore does not need to use modal,
+orthogonal, or Legendre coefficients.  The same construction can be transferred
+to another polynomial DG framework using its standard basis evaluation,
+first-derivative, quadrature, transformation, and degree-of-freedom operations.
+Higher derivatives required by the sensors are generated internally by repeated
+application of first-derivative coefficient operators.
 
-\subsection{Layout setup}
+The second contribution is the coupling of adapted OFDG to a multidimensional,
+multicomponent KXRCF activation mask.  An inactive element is copied unchanged
+by the damping step, recovering the unfiltered DG update there and avoiding
+unnecessary smooth-region attenuation.  Whether this selectivity improves
+global error or end-to-end runtime is a question for the final measurements,
+not an assumption of the method.
 
-This defines the overall look of the document -- for example, it
-changes the chapter and section heading appearance.  We consider this
-a `do not touch' area.  Take a look at the excellent \emph{Memoir}
-documentation before changing it.
+The software contribution further includes a shared face-physics interface,
+Euler normal spectral radii $|\boldsymbol{v}\cdot\boldsymbol{n}|+c$, cached
+element and face operators, MPI shared-face processing, conservative Euler
+positivity limiting, and reusable MFEM example drivers.  Tests cover frozen
+numerical fingerprints, conservation, vector orderings, multiple polynomial
+bases, affine triangle and quadrilateral geometries, analytical wave speeds,
+scale invariance, admissibility, and a discontinuity located exactly on a
+two-rank partition boundary.  A manifest-driven pipeline stores raw outputs and
+profiles, computes derived metrics, and generates the report figures and tables
+without manual transcription.
 
-In fact, take a look at the excellent \emph{Memoir} documentation,
-full stop.
+\section{Organization}
 
-
-\subsection{Theorem setup}
-
-This file defines a bunch of theorem-like environments.
-
-\begin{theorem}
-  An example theorem.
-\end{theorem}
-
-\begin{proof}
-  Proof text goes here.
-\end{proof}
-
-Note that the q.e.d.\ symbol moves to the correct place automatically
-if you end the proof with an \texttt{enumerate} or
-\texttt{displaymath}.  You do not need to use \verb-\qedhere- as with
-\package{amsthm}.
-
-\begin{theorem}[Some Famous Guy]
-  Another example theorem.
-\end{theorem}
-
-\begin{proof}
-  This proof
-  \begin{enumerate}
-  \item ends in an enumerate.
-  \end{enumerate}
-\end{proof}
-
-\begin{proposition}
-  Note that all theorem-like environments are by default numbered on
-  the same counter.
-\end{proposition}
-
-\begin{proof}
-  This proof ends in a display like so:
-  \begin{displaymath}
-    f(x) = x^2.
-  \end{displaymath}
-\end{proof}
-
-
-\subsection{Macro setup}
-
-For now the macro setup only shows how to define some basic macros,
-and how to use a neat feature of the \package{mathtools} package:
-\begin{displaymath}
-  \abs{a}, \quad \abs*{\frac{a}{b}}, \quad \abs[\big]{\frac{a}{b}}.
-\end{displaymath}
+\Cref{chap:methods} defines RKDG, adapted OFDG, KXRCF, and the 2024 OEDG
+comparator, followed by the common numerical controls, software realization,
+parallelization, and experimental methodology.  \Cref{chap:experiments}
+presents numerical observations, \cref{chap:discussion} interprets their
+scientific meaning and limitations, and \cref{chap:conclusion} summarizes the
+answers and future work.  In the present draft, numerical observations are
+explicitly preliminary because the final experiment matrix has not yet been
+approved.

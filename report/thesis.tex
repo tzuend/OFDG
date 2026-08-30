@@ -83,13 +83,23 @@
 %% Document information
 %% ====================
 
-\title{Title of Thesis}
-\author{S. Tudent}
+\title{Oscillation-Free Discontinuous Galerkin Stabilization in MFEM}
+\author{Timo Zund}
 \thesistype{Master Thesis}
 \advisors{Advisors: Dr.\ R. K\"{a}ppeli}
 \department{Seminar for Applied Mathematics, \\
             Department of Mathematics}
-\date{January 19, 2038}
+\date{August 2026}
+\setlength{\emergencystretch}{2em}
+
+%% Draft builds may display the reduced development checkpoint. A final build
+%% is enabled only by the guarded report-final target.
+\newif\ifdraftresults
+\ifdefined\FinalResults
+  \draftresultsfalse
+\else
+  \draftresultstrue
+\fi
 
 \begin{document}
 
@@ -114,9 +124,10 @@
 
 %% Your real content!
 \input{introduction}
-\input{rules}
-\input{typography}
-\input{ofdg}
+\input{methods}
+\input{experiments}
+\input{discussion}
+\input{conclusion}
 
 \appendix
 

@@ -2,9 +2,15 @@
 
 THESIS = thesis
 
-.PHONY: FORCE_MAKE
+.PHONY: FORCE_MAKE draft final
 ${THESIS}.pdf: ${THESIS}.tex FORCE_MAKE
 	latexmk --pdf $<
+
+draft: ${THESIS}.pdf
+
+final:
+	latexmk --pdf --jobname=${THESIS}-final \
+		'\\def\\FinalResults{1}\\input{${THESIS}.tex}'
 
 .PHONY: clean
 clean:

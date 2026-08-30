@@ -1,9 +1,31 @@
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <vector>
 
 #include "mfem.hpp"
+#include "face_physics.hpp"
 
 using namespace mfem;
+
+struct KXRCFInternalTiming
+{
+   double element_scales = 0.0;
+   double face_integration = 0.0;
+   double normalization = 0.0;
+   double total = 0.0;
+};
+
+#ifdef KXRCF_INTERNAL_TIMING
+using KXRCFTimingClock = std::chrono::steady_clock;
+inline double KXRCFSecondsSince(const KXRCFTimingClock::time_point &begin)
+{
+   return std::chrono::duration<double>(KXRCFTimingClock::now() - begin).count();
+}
+#endif
 
 
 /**
@@ -68,13 +90,47 @@ class KXRCFIndicator
 {
 private:
    FiniteElementSpace *fes;
-   VectorCoefficient *velocity;
+   std::shared_ptr<const FacePhysics> face_physics;
 
    int dim;
    int ncomp;
 
    real_t threshold;
    real_t relative_scale_floor;
+   struct ElementCache
+   {
+      Array<int> vdofs;
+      DenseMatrix evaluation;
+      Vector physical_weights;
+      real_t volume = 0.0;
+      real_t radius = 0.0;
+   };
+   std::vector<ElementCache> element_cache;
+   struct LocalFaceCache
+   {
+      int face = -1;
+      int element1 = -1;
+      int element2 = -1;
+      Array<int> vdofs1;
+      Array<int> vdofs2;
+      DenseMatrix evaluation1;
+      DenseMatrix evaluation2;
+      DenseMatrix unit_normals;
+      Vector physical_weights;
+      const IntegrationRule *rule = nullptr;
+   };
+   std::vector<LocalFaceCache> local_face_cache;
+   mutable KXRCFInternalTiming internal_timing;
+
+   struct FaceScratch
+   {
+      Vector shape1;
+      Vector shape2;
+      Vector state1;
+      Vector state2;
+      Vector normal;
+   };
+   mutable FaceScratch face_scratch;
 
 
    /**
@@ -129,6 +185,26 @@ private:
     * hexahedra, prisms, pyramids, etc.
     */
    real_t ComputeElementRadius(int e) const;
+   void BuildElementCache();
+   void BuildLocalFaceCache();
+
+   void AccumulateCachedFace(const LocalFaceCache &cache,
+                             FaceElementTransformations &transformations,
+                             const Vector &local_state1,
+                             const Vector &local_state2,
+                             DenseMatrix &jump_integral,
+                             Vector &inflow_measure) const;
+
+   void AccumulateFace(FaceElementTransformations &transformations,
+                       const FiniteElement &element1,
+                       const FiniteElement &element2,
+                       const Vector &local_state1,
+                       const Vector &local_state2,
+                       int element1_number,
+                       int element2_number,
+                       bool accumulate_element2,
+                       DenseMatrix &jump_integral,
+                       Vector &inflow_measure) const;
 
 
 public:
@@ -136,8 +212,22 @@ public:
                   VectorCoefficient *velocity_,
                   real_t threshold_ = 1.0,
                   real_t relative_scale_floor_ = 1e-14)
+      : KXRCFIndicator(
+           fes_,
+           std::make_shared<AdvectionFacePhysics>(velocity_),
+           threshold_,
+           relative_scale_floor_)
+   {
+      MFEM_VERIFY(velocity_->GetVDim() == dim,
+                  "KXRCF velocity dimension must match mesh dimension.");
+   }
+
+   KXRCFIndicator(FiniteElementSpace *fes_,
+                  std::shared_ptr<const FacePhysics> face_physics_,
+                  real_t threshold_ = 1.0,
+                  real_t relative_scale_floor_ = 1e-14)
       : fes(fes_),
-        velocity(velocity_),
+        face_physics(std::move(face_physics_)),
         dim(0),
         ncomp(0),
         threshold(threshold_),
@@ -146,8 +236,8 @@ public:
       MFEM_VERIFY(fes != NULL,
                   "KXRCF requires a valid finite element space.");
 
-      MFEM_VERIFY(velocity != NULL,
-                  "KXRCF requires a valid velocity coefficient.");
+      MFEM_VERIFY(face_physics != nullptr,
+                  "KXRCF requires valid face physics.");
 
       Mesh *mesh = fes->GetMesh();
 
@@ -170,9 +260,6 @@ public:
 
       MFEM_VERIFY(ncomp >= 1,
                   "KXRCF requires at least one solution component.");
-
-      MFEM_VERIFY(velocity->GetVDim() == dim,
-                  "KXRCF velocity dimension must match mesh dimension.");
 
       MFEM_VERIFY(threshold >= 0.0,
                   "KXRCF threshold must be non-negative.");
@@ -202,6 +289,28 @@ public:
                      "KXRCF currently expects VALUE-mapped scalar "
                      "finite elements.");
       }
+
+      BuildElementCache();
+      BuildLocalFaceCache();
+   }
+
+   void ResetInternalTimings() const
+   {
+      internal_timing = KXRCFInternalTiming{};
+   }
+
+   void PrintInternalTimings(std::ostream &out = std::cout) const
+   {
+#ifdef KXRCF_INTERNAL_TIMING
+      out << "KXRCF internal timings\n"
+          << "  element scales:   " << internal_timing.element_scales << " s\n"
+          << "  face integration: " << internal_timing.face_integration << " s\n"
+          << "  normalization:    " << internal_timing.normalization << " s\n"
+          << "  total:            " << internal_timing.total << " s\n";
+#else
+      out << "KXRCF internal timing is disabled. "
+          << "Compile with -DKXRCF_INTERNAL_TIMING to enable it.\n";
+#endif
    }
 
 
@@ -285,40 +394,24 @@ void KXRCFIndicator::ComputeElementScales(
    const Vector &x,
    DenseMatrix &scales) const
 {
-   Mesh *mesh = fes->GetMesh();
    const int ne = fes->GetNE();
 
    scales.SetSize(ncomp, ne);
    scales = 0.0;
 
-   Array<int> vdofs;
+   Vector local_state;
+   DenseMatrix local_matrix;
+   DenseMatrix values;
 
    for (int e = 0; e < ne; ++e)
    {
-      const FiniteElement *fe = fes->GetFE(e);
-      ElementTransformation *Tr =
-         mesh->GetElementTransformation(e);
-
-      const int ndof = fe->GetDof();
-
-      fes->GetElementVDofs(e, vdofs);
-
-      MFEM_VERIFY(vdofs.Size() == ndof * ncomp,
-                  "Unexpected number of element VDofs in KXRCF.");
-
-      Vector local_state(vdofs.Size());
-      x.GetSubVector(vdofs, local_state);
-
-      Vector shape(ndof);
-      Vector state(ncomp);
-
-      /*
-       * More than sufficient for evaluating / integrating a
-       * degree-k DG polynomial.
-       */
-      const IntegrationRule &ir =
-         IntRules.Get(fe->GetGeomType(),
-                      2 * fe->GetOrder() + 2);
+      const ElementCache &cache = element_cache[e];
+      const int ndof = cache.evaluation.Width();
+      local_state.SetSize(cache.vdofs.Size());
+      x.GetSubVector(cache.vdofs, local_state);
+      local_matrix.UseExternalData(local_state.GetData(), ndof, ncomp);
+      values.SetSize(cache.evaluation.Height(), ncomp);
+      Mult(cache.evaluation, local_matrix, values);
 
       if (dim == 1)
       {
@@ -327,42 +420,14 @@ void KXRCFIndicator::ComputeElementScales(
           *
           *     | element average |
           */
-         Vector integral(ncomp);
-         integral = 0.0;
-
-         real_t volume = 0.0;
-
-         for (int q = 0; q < ir.GetNPoints(); ++q)
-         {
-            const IntegrationPoint &ip = ir.IntPoint(q);
-
-            Tr->SetIntPoint(&ip);
-            fe->CalcShape(ip, shape);
-
-            EvaluateElementState(local_state,
-                                 shape,
-                                 state);
-
-            const real_t weight =
-               ip.weight * Tr->Weight();
-
-            for (int c = 0; c < ncomp; ++c)
-            {
-               integral(c) +=
-                  weight * state(c);
-            }
-
-            volume += weight;
-         }
-
-         MFEM_VERIFY(volume > 0.0,
-                     "KXRCF encountered an element with "
-                     "non-positive volume.");
-
          for (int c = 0; c < ncomp; ++c)
          {
-            scales(c, e) =
-               std::abs(integral(c) / volume);
+            real_t integral = 0.0;
+            for (int q = 0; q < values.Height(); ++q)
+            {
+               integral += cache.physical_weights(q) * values(q, c);
+            }
+            scales(c, e) = std::abs(integral / cache.volume);
          }
       }
       else
@@ -372,22 +437,200 @@ void KXRCFIndicator::ComputeElementScales(
           *
           *     max_q |u(x_q)|
           */
-         for (int q = 0; q < ir.GetNPoints(); ++q)
+         for (int q = 0; q < values.Height(); ++q)
          {
-            const IntegrationPoint &ip = ir.IntPoint(q);
-
-            fe->CalcShape(ip, shape);
-
-            EvaluateElementState(local_state,
-                                 shape,
-                                 state);
-
             for (int c = 0; c < ncomp; ++c)
             {
                scales(c, e) =
                   std::max(scales(c, e),
-                           std::abs(state(c)));
+                           std::abs(values(q, c)));
             }
+         }
+      }
+   }
+}
+
+
+void KXRCFIndicator::BuildElementCache()
+{
+   Mesh *mesh = fes->GetMesh();
+   element_cache.resize(fes->GetNE());
+
+   for (int e = 0; e < fes->GetNE(); ++e)
+   {
+      ElementCache &cache = element_cache[e];
+      const FiniteElement *fe = fes->GetFE(e);
+      ElementTransformation *transformation =
+         mesh->GetElementTransformation(e);
+      fes->GetElementVDofs(e, cache.vdofs);
+
+      const IntegrationRule &rule =
+         IntRules.Get(fe->GetGeomType(), 2 * fe->GetOrder() + 2);
+      cache.evaluation.SetSize(rule.GetNPoints(), fe->GetDof());
+      cache.physical_weights.SetSize(rule.GetNPoints());
+      cache.volume = 0.0;
+      Vector shape(fe->GetDof());
+
+      for (int q = 0; q < rule.GetNPoints(); ++q)
+      {
+         const IntegrationPoint &ip = rule.IntPoint(q);
+         fe->CalcShape(ip, shape);
+         for (int i = 0; i < shape.Size(); ++i)
+         {
+            cache.evaluation(q, i) = shape(i);
+         }
+         transformation->SetIntPoint(&ip);
+         cache.physical_weights(q) = ip.weight * transformation->Weight();
+         cache.volume += cache.physical_weights(q);
+      }
+      MFEM_VERIFY(cache.volume > 0.0,
+                  "KXRCF encountered an element with non-positive volume.");
+      cache.radius = ComputeElementRadius(e);
+   }
+}
+
+
+void KXRCFIndicator::BuildLocalFaceCache()
+{
+   Mesh *mesh = fes->GetMesh();
+   local_face_cache.clear();
+   local_face_cache.reserve(mesh->GetNumFaces());
+
+   for (int f = 0; f < mesh->GetNumFaces(); ++f)
+   {
+      FaceElementTransformations *transformations =
+         mesh->GetFaceElementTransformations(f);
+      if (!transformations || transformations->Elem1No < 0 ||
+          transformations->Elem2No < 0)
+      {
+         continue;
+      }
+
+      local_face_cache.emplace_back();
+      LocalFaceCache &cache = local_face_cache.back();
+      cache.face = f;
+      cache.element1 = transformations->Elem1No;
+      cache.element2 = transformations->Elem2No;
+      fes->GetElementVDofs(cache.element1, cache.vdofs1);
+      fes->GetElementVDofs(cache.element2, cache.vdofs2);
+
+      const FiniteElement *element1 = fes->GetFE(cache.element1);
+      const FiniteElement *element2 = fes->GetFE(cache.element2);
+      const int integration_order = dim == 1 ? 0 :
+         2 * std::max(element1->GetOrder(), element2->GetOrder()) + 2;
+      cache.rule = &IntRules.Get(transformations->FaceGeom,
+                                 integration_order);
+      const int point_count = cache.rule->GetNPoints();
+      cache.evaluation1.SetSize(point_count, element1->GetDof());
+      cache.evaluation2.SetSize(point_count, element2->GetDof());
+      cache.unit_normals.SetSize(point_count, dim);
+      cache.physical_weights.SetSize(point_count);
+      Vector shape1(element1->GetDof());
+      Vector shape2(element2->GetDof());
+      Vector normal(dim);
+
+      for (int q = 0; q < point_count; ++q)
+      {
+         const IntegrationPoint &ip = cache.rule->IntPoint(q);
+         transformations->SetAllIntPoints(&ip);
+         const IntegrationPoint &ip1 =
+            transformations->GetElement1IntPoint();
+         element1->CalcShape(ip1, shape1);
+         element2->CalcShape(transformations->GetElement2IntPoint(), shape2);
+         for (int i = 0; i < shape1.Size(); ++i)
+         {
+            cache.evaluation1(q, i) = shape1(i);
+         }
+         for (int i = 0; i < shape2.Size(); ++i)
+         {
+            cache.evaluation2(q, i) = shape2(i);
+         }
+
+         if (dim == 1)
+         {
+            transformations->Elem1->SetIntPoint(&ip1);
+            const real_t orientation =
+               transformations->Elem1->Jacobian()(0, 0) >= 0.0 ? 1.0 : -1.0;
+            normal(0) = (ip1.x < 0.5 ? -1.0 : 1.0) * orientation;
+            cache.physical_weights(q) = 1.0;
+         }
+         else
+         {
+            CalcOrtho(transformations->Jacobian(), normal);
+            const real_t normal_norm = normal.Norml2();
+            MFEM_VERIFY(normal_norm > 0.0,
+                        "KXRCF encountered a degenerate face.");
+            cache.physical_weights(q) = ip.weight * normal_norm;
+            normal /= normal_norm;
+         }
+         for (int d = 0; d < dim; ++d)
+         {
+            cache.unit_normals(q, d) = normal(d);
+         }
+      }
+   }
+}
+
+
+void KXRCFIndicator::AccumulateCachedFace(
+   const LocalFaceCache &cache,
+   FaceElementTransformations &transformations,
+   const Vector &local_state1,
+   const Vector &local_state2,
+   DenseMatrix &jump_integral,
+   Vector &inflow_measure) const
+{
+   Vector &state1 = face_scratch.state1;
+   Vector &state2 = face_scratch.state2;
+   Vector &normal = face_scratch.normal;
+   state1.SetSize(ncomp);
+   state2.SetSize(ncomp);
+   normal.SetSize(dim);
+
+   for (int q = 0; q < cache.rule->GetNPoints(); ++q)
+   {
+      state1 = 0.0;
+      state2 = 0.0;
+      for (int c = 0; c < ncomp; ++c)
+      {
+         for (int j = 0; j < cache.evaluation1.Width(); ++j)
+         {
+            state1(c) += cache.evaluation1(q, j) *
+                         local_state1(c * cache.evaluation1.Width() + j);
+         }
+         for (int j = 0; j < cache.evaluation2.Width(); ++j)
+         {
+            state2(c) += cache.evaluation2(q, j) *
+                         local_state2(c * cache.evaluation2.Width() + j);
+         }
+      }
+      for (int d = 0; d < dim; ++d)
+      {
+         normal(d) = cache.unit_normals(q, d);
+      }
+
+      transformations.SetAllIntPoints(&cache.rule->IntPoint(q));
+      const real_t transport =
+         face_physics->Evaluate(state1, state2, normal,
+                                transformations).normal_transport;
+      const real_t weight = cache.physical_weights(q);
+
+      if (transport < 0.0)
+      {
+         inflow_measure(cache.element1) += weight;
+         for (int c = 0; c < ncomp; ++c)
+         {
+            jump_integral(c, cache.element1) +=
+               weight * (state1(c) - state2(c));
+         }
+      }
+      else if (transport > 0.0)
+      {
+         inflow_measure(cache.element2) += weight;
+         for (int c = 0; c < ncomp; ++c)
+         {
+            jump_integral(c, cache.element2) +=
+               weight * (state2(c) - state1(c));
          }
       }
    }
@@ -478,6 +721,91 @@ real_t KXRCFIndicator::ComputeElementRadius(
 }
 
 
+void KXRCFIndicator::AccumulateFace(
+   FaceElementTransformations &transformations,
+   const FiniteElement &element1,
+   const FiniteElement &element2,
+   const Vector &local_state1,
+   const Vector &local_state2,
+   int element1_number,
+   int element2_number,
+   bool accumulate_element2,
+   DenseMatrix &jump_integral,
+   Vector &inflow_measure) const
+{
+   Vector &shape1 = face_scratch.shape1;
+   Vector &shape2 = face_scratch.shape2;
+   Vector &state1 = face_scratch.state1;
+   Vector &state2 = face_scratch.state2;
+   Vector &normal = face_scratch.normal;
+   shape1.SetSize(element1.GetDof());
+   shape2.SetSize(element2.GetDof());
+   state1.SetSize(ncomp);
+   state2.SetSize(ncomp);
+   normal.SetSize(dim);
+
+   const int integration_order = dim == 1 ? 0 :
+      2 * std::max(element1.GetOrder(), element2.GetOrder()) + 2;
+   const IntegrationRule &rule =
+      IntRules.Get(transformations.FaceGeom, integration_order);
+
+   for (int q = 0; q < rule.GetNPoints(); ++q)
+   {
+      const IntegrationPoint &ip = rule.IntPoint(q);
+      transformations.SetAllIntPoints(&ip);
+      const IntegrationPoint &ip1 = transformations.GetElement1IntPoint();
+      const IntegrationPoint &ip2 = transformations.GetElement2IntPoint();
+
+      element1.CalcShape(ip1, shape1);
+      element2.CalcShape(ip2, shape2);
+      EvaluateElementState(local_state1, shape1, state1);
+      EvaluateElementState(local_state2, shape2, state2);
+
+      real_t physical_weight;
+      if (dim == 1)
+      {
+         transformations.Elem1->SetIntPoint(&ip1);
+         const DenseMatrix &jacobian = transformations.Elem1->Jacobian();
+         const real_t orientation = jacobian(0, 0) >= 0.0 ? 1.0 : -1.0;
+         normal(0) = (ip1.x < 0.5 ? -1.0 : 1.0) * orientation;
+         physical_weight = 1.0;
+      }
+      else
+      {
+         CalcOrtho(transformations.Jacobian(), normal);
+         const real_t normal_norm = normal.Norml2();
+         MFEM_VERIFY(normal_norm > 0.0,
+                     "KXRCF encountered a degenerate face.");
+         physical_weight = ip.weight * normal_norm;
+         normal /= normal_norm;
+      }
+
+      const real_t normal_transport =
+         face_physics->Evaluate(state1, state2, normal,
+                                transformations).normal_transport;
+
+      if (normal_transport < 0.0)
+      {
+         inflow_measure(element1_number) += physical_weight;
+         for (int c = 0; c < ncomp; ++c)
+         {
+            jump_integral(c, element1_number) +=
+               physical_weight * (state1(c) - state2(c));
+         }
+      }
+      else if (normal_transport > 0.0 && accumulate_element2)
+      {
+         inflow_measure(element2_number) += physical_weight;
+         for (int c = 0; c < ncomp; ++c)
+         {
+            jump_integral(c, element2_number) +=
+               physical_weight * (state2(c) - state1(c));
+         }
+      }
+   }
+}
+
+
 // --------------------------------------------------------------------------
 // Main KXRCF computation
 // --------------------------------------------------------------------------
@@ -488,6 +816,9 @@ void KXRCFIndicator::Compute(
    Vector *indicator_values,
    DenseMatrix *component_indicator_values) const
 {
+#ifdef KXRCF_INTERNAL_TIMING
+   const auto total_timer_begin = KXRCFTimingClock::now();
+#endif
    MFEM_VERIFY(x.Size() == fes->GetVSize(),
                "KXRCF input size does not match "
                "the finite element space.");
@@ -520,7 +851,13 @@ void KXRCFIndicator::Compute(
    // -----------------------------------------------------------------------
 
    DenseMatrix solution_scales;
+#ifdef KXRCF_INTERNAL_TIMING
+   const auto scales_timer_begin = KXRCFTimingClock::now();
+#endif
    ComputeElementScales(x, solution_scales);
+#ifdef KXRCF_INTERNAL_TIMING
+   internal_timing.element_scales += KXRCFSecondsSince(scales_timer_begin);
+#endif
 
 
    /*
@@ -541,6 +878,16 @@ void KXRCFIndicator::Compute(
                      solution_scales(c, e));
       }
    }
+
+#ifdef MFEM_USE_MPI
+   if (const auto *parallel_space =
+          dynamic_cast<const ParFiniteElementSpace *>(fes))
+   {
+      MPI_Allreduce(MPI_IN_PLACE, global_scales.GetData(), ncomp,
+                    MPITypeMap<real_t>::mpi_type, MPI_MAX,
+                    parallel_space->GetComm());
+   }
+#endif
 
    bool any_nonzero_component = false;
 
@@ -599,281 +946,62 @@ void KXRCFIndicator::Compute(
    Array<int> vdofs1;
    Array<int> vdofs2;
 
-   Vector velocity_value(dim);
-   Vector normal(dim);
+#ifdef KXRCF_INTERNAL_TIMING
+   const auto faces_timer_begin = KXRCFTimingClock::now();
+#endif
 
-   for (int f = 0;
-        f < mesh->GetNumFaces();
-        ++f)
+   Vector local_state1;
+   Vector local_state2;
+   for (const LocalFaceCache &cache : local_face_cache)
    {
       FaceElementTransformations *FTr =
-         mesh->GetFaceElementTransformations(f);
+         mesh->GetFaceElementTransformations(cache.face);
+      local_state1.SetSize(cache.vdofs1.Size());
+      local_state2.SetSize(cache.vdofs2.Size());
+      x.GetSubVector(cache.vdofs1, local_state1);
+      x.GetSubVector(cache.vdofs2, local_state2);
+      AccumulateCachedFace(cache, *FTr, local_state1, local_state2,
+                           jump_integral, inflow_measure);
+   }
 
-      if (!FTr)
+#ifdef MFEM_USE_MPI
+   if (auto *parallel_space = dynamic_cast<ParFiniteElementSpace *>(fes))
+   {
+      ParMesh *parallel_mesh = parallel_space->GetParMesh();
+      ParGridFunction parallel_state(parallel_space);
+      parallel_state = x;
+      parallel_state.ExchangeFaceNbrData();
+
+      for (int shared_face = 0;
+           shared_face < parallel_mesh->GetNSharedFaces(); ++shared_face)
       {
-         continue;
-      }
+         FaceElementTransformations *transformations =
+            parallel_mesh->GetSharedFaceTransformations(shared_face, true);
+         const int local_element = transformations->Elem1No;
+         const int neighbor_element =
+            transformations->Elem2No - parallel_mesh->GetNE();
 
-      const int e1 = FTr->Elem1No;
-      const int e2 = FTr->Elem2No;
+         parallel_space->GetElementVDofs(local_element, vdofs1);
+         parallel_space->GetFaceNbrElementVDofs(neighbor_element, vdofs2);
+         Vector local_state(vdofs1.Size());
+         Vector neighbor_state(vdofs2.Size());
+         x.GetSubVector(vdofs1, local_state);
+         parallel_state.FaceNbrData().GetSubVector(vdofs2, neighbor_state);
 
-      /*
-       * First multidimensional version:
-       *
-       * only interfaces with a valid state on both sides.
-       *
-       * Periodically connected faces are included provided MFEM
-       * exposes both neighboring elements.
-       */
-      if (e1 < 0 || e2 < 0)
-      {
-         continue;
-      }
-
-      const FiniteElement *fe1 =
-         fes->GetFE(e1);
-
-      const FiniteElement *fe2 =
-         fes->GetFE(e2);
-
-      const int ndof1 = fe1->GetDof();
-      const int ndof2 = fe2->GetDof();
-
-      fes->GetElementVDofs(e1, vdofs1);
-      fes->GetElementVDofs(e2, vdofs2);
-
-      MFEM_VERIFY(vdofs1.Size() == ndof1 * ncomp,
-                  "Unexpected element-1 VDof count.");
-
-      MFEM_VERIFY(vdofs2.Size() == ndof2 * ncomp,
-                  "Unexpected element-2 VDof count.");
-
-      Vector u_e1(vdofs1.Size());
-      Vector u_e2(vdofs2.Size());
-
-      x.GetSubVector(vdofs1, u_e1);
-      x.GetSubVector(vdofs2, u_e2);
-
-      Vector shape1(ndof1);
-      Vector shape2(ndof2);
-
-      Vector state1(ncomp);
-      Vector state2(ncomp);
-
-
-      // --------------------------------------------------------------------
-      // Face quadrature
-      // --------------------------------------------------------------------
-
-      int face_integration_order = 0;
-
-      if (dim > 1)
-      {
-         const int k_face =
-            std::max(fe1->GetOrder(),
-                     fe2->GetOrder());
-
-         face_integration_order =
-            2 * k_face + 2;
-      }
-
-      /*
-       * In 1D the face is a point, so order zero gives the
-       * single required integration point and reproduces the
-       * original implementation.
-       */
-      const IntegrationRule &ir =
-         IntRules.Get(FTr->FaceGeom,
-                      face_integration_order);
-
-
-      for (int q = 0;
-           q < ir.GetNPoints();
-           ++q)
-      {
-         const IntegrationPoint &ip =
-            ir.IntPoint(q);
-
-         /*
-          * Updates the face point and its corresponding points
-          * in both neighboring reference elements.
-          */
-         FTr->SetAllIntPoints(&ip);
-
-         const IntegrationPoint &eip1 =
-            FTr->GetElement1IntPoint();
-
-         const IntegrationPoint &eip2 =
-            FTr->GetElement2IntPoint();
-
-
-         // -----------------------------------------------------------------
-         // Evaluate traces from both elements
-         // -----------------------------------------------------------------
-
-         fe1->CalcShape(eip1, shape1);
-         fe2->CalcShape(eip2, shape2);
-
-         EvaluateElementState(u_e1,
-                              shape1,
-                              state1);
-
-         EvaluateElementState(u_e2,
-                              shape2,
-                              state2);
-
-
-         // -----------------------------------------------------------------
-         // Determine outward normal of element 1 and physical ds
-         // -----------------------------------------------------------------
-
-         real_t vn1 = 0.0;
-         real_t physical_face_weight = 0.0;
-
-         if (dim == 1)
-         {
-            /*
-             * Preserve exactly the old 1D normal convention.
-             *
-             * Reference segment:
-             *
-             *       x=0               x=1
-             *        |-----------------|
-             *       n=-1              n=+1
-             */
-            FTr->Elem1->SetIntPoint(&eip1);
-
-            const DenseMatrix &J =
-               FTr->Elem1->Jacobian();
-
-            MFEM_VERIFY(
-               J.Height() == 1 &&
-               J.Width() == 1,
-               "Unexpected 1D Jacobian dimensions.");
-
-            const real_t orientation =
-               (J(0, 0) >= 0.0)
-               ? 1.0
-               : -1.0;
-
-            const real_t reference_normal =
-               (eip1.x < 0.5)
-               ? -1.0
-               : 1.0;
-
-            const real_t normal1 =
-               reference_normal *
-               orientation;
-
-            velocity->Eval(velocity_value,
-                           *FTr->Elem1,
-                           eip1);
-
-            vn1 =
-               velocity_value(0) *
-               normal1;
-
-            /*
-             * A zero-dimensional face has no ordinary length
-             * measure. The 1D KXRCF formula counts inflow
-             * endpoints, exactly as the previous implementation.
-             */
-            physical_face_weight = 1.0;
-         }
-         else
-         {
-            /*
-             * MFEM's CalcOrtho gives the scaled face normal:
-             *
-             *     n_scaled = n_unit * J_face.
-             *
-             * Hence
-             *
-             *     |n_scaled| = physical face Jacobian.
-             */
-            CalcOrtho(FTr->Jacobian(),
-                      normal);
-
-            const real_t normal_norm =
-               normal.Norml2();
-
-            MFEM_VERIFY(normal_norm > 0.0,
-                        "KXRCF encountered a degenerate face.");
-
-            physical_face_weight =
-               ip.weight *
-               normal_norm;
-
-            /*
-             * Velocity magnitude does NOT enter the KXRCF
-             * numerator.
-             *
-             * It is used only to determine which element is
-             * receiving flow at this point.
-             *
-             * Since normal is merely scaled by a positive
-             * surface Jacobian, its scaling does not affect
-             * the sign.
-             */
-            velocity->Eval(velocity_value,
-                           *FTr->Elem1,
-                           eip1);
-
-            vn1 =
-               velocity_value *
-               normal;
-         }
-
-
-         // -----------------------------------------------------------------
-         // Accumulate into the element for which this quadrature
-         // point lies on the inflow boundary.
-         // -----------------------------------------------------------------
-
-         if (vn1 < 0.0)
-         {
-            /*
-             * Flow enters element 1:
-             *
-             *     jump = u_1 - u_2
-             */
-            inflow_measure(e1) +=
-               physical_face_weight;
-
-            for (int c = 0; c < ncomp; ++c)
-            {
-               jump_integral(c, e1) +=
-                  physical_face_weight *
-                  (state1(c) - state2(c));
-            }
-         }
-         else if (vn1 > 0.0)
-         {
-            /*
-             * Since n_2 = -n_1, positive v.n_1 means the flow
-             * enters element 2:
-             *
-             *     jump = u_2 - u_1
-             */
-            inflow_measure(e2) +=
-               physical_face_weight;
-
-            for (int c = 0; c < ncomp; ++c)
-            {
-               jump_integral(c, e2) +=
-                  physical_face_weight *
-                  (state2(c) - state1(c));
-            }
-         }
-
-         /*
-          * vn1 == 0:
-          *
-          * characteristic/tangential point.
-          * It belongs to neither inflow boundary.
-          */
+         AccumulateFace(*transformations,
+                        *parallel_space->GetFE(local_element),
+                        *parallel_space->GetFaceNbrFE(neighbor_element),
+                        local_state, neighbor_state,
+                        local_element, -1, false,
+                        jump_integral, inflow_measure);
       }
    }
+#endif
+
+#ifdef KXRCF_INTERNAL_TIMING
+   internal_timing.face_integration += KXRCFSecondsSince(faces_timer_begin);
+   const auto normalization_timer_begin = KXRCFTimingClock::now();
+#endif
 
 
    // -----------------------------------------------------------------------
@@ -896,8 +1024,7 @@ void KXRCFIndicator::Compute(
       const int k =
          fe->GetOrder();
 
-      const real_t h =
-         ComputeElementRadius(e);
+      const real_t h = element_cache[e].radius;
 
       const real_t h_factor =
          std::pow(
@@ -977,4 +1104,10 @@ void KXRCFIndicator::Compute(
       active[e] =
          pooled_indicator > threshold;
    }
+
+#ifdef KXRCF_INTERNAL_TIMING
+   internal_timing.normalization +=
+      KXRCFSecondsSince(normalization_timer_begin);
+   internal_timing.total += KXRCFSecondsSince(total_timer_begin);
+#endif
 }

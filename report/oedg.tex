@@ -1,0 +1,112 @@
+\section{The 2024 OEDG Comparator}
+\label{chap:oedg}
+
+The numerical comparison requires an implementation of the method published by
+Peng, Sun, and Wu in 2024~\cite{PengEtAl2024} which is independent of the
+project-specific decision to gate OFDG with KXRCF.  This chapter states the
+implemented choices explicitly.  In particular, the 2024 method is not a
+``vertex-only'' method: its multidimensional sensor is an interface integral of
+absolute jumps.  Vertex evaluation belongs to the earlier multidimensional
+OFDG construction~\cite{LuEtAl2021,LiuEtAl2022}.
+
+\subsection{Scale-invariant interface sensor}
+
+Let $K$ be an element, $e\subset\partial K$ a face, $k$ the DG degree, and
+$m\in\{0,\ldots,k\}$.  For component $i$, define the global amplitude
+\begin{equation}
+  A_i = \left\|u_h^{(i)}-\operatorname{avg}_{\Omega}
+                       (u_h^{(i)})\right\|_{L^\infty(\Omega)} .
+  \label{eq:oedg-amplitude}
+\end{equation}
+The maximum is evaluated at the same volume quadrature nodes used by the
+filter.  When $A_i$ is below a relative machine-scale tolerance, all associated
+sensors are zero.  Otherwise the face contribution corresponding to equation
+(3.10) of~\cite{PengEtAl2024} is
+\begin{equation}
+ \sigma^{m,(i)}_{e,K} =
+ \frac{(2m+1)h_{e,K}^{m}}{2(2k-1)m!\,A_i}
+ \sum_{|\alpha|=m}\frac{1}{|e|}
+ \int_e \left|[\![\partial^\alpha u_h^{(i)}]\!]\right|\,\mathrm dS,
+ \label{eq:oedg-face-sensor}
+\end{equation}
+where $h_{e,K}=\sup_{x\in K}\operatorname{dist}(x,e)$.  The implementation
+computes this face height geometrically and caches it; on a simplex it is the
+altitude associated with $e$, not a generic element diameter.  In 2D the face
+average uses the endpoint trapezoidal rule employed in the paper.  Point faces
+in 1D require no quadrature choice.  The present 3D path retains a proper
+high-order face rule because the paper specifies the trapezoidal treatment only
+for 2D computations.
+
+For a system, the paper avoids characteristic decomposition and pools physical
+components,
+\begin{equation}
+  \sigma^m_{e,K}=\max_i \sigma^{m,(i)}_{e,K}.
+  \label{eq:oedg-pooling}
+\end{equation}
+The damping rate combines all adjacent faces,
+\begin{equation}
+  \delta_K^m = \sum_{e\subset\partial K}
+       \frac{\beta_e}{h_{e,K}}\sigma^m_{e,K},
+  \label{eq:oedg-rate}
+\end{equation}
+where $\beta_e$ is the local normal spectral radius.  Thus advection uses
+$|\boldsymbol a\cdot\boldsymbol n|$, Burgers uses the corresponding normal
+flux derivative, and Euler uses
+$|\boldsymbol v\cdot\boldsymbol n|+c$.  This is the material correction to the
+historical unit-speed assumption.
+
+Multiplying a full conservative state by a positive constant multiplies both
+the jump numerator and $A_i$ by that constant, leaving
+\cref{eq:oedg-face-sensor} unchanged.  Adding a spatially constant state also
+leaves derivative jumps and deviations from the global mean unchanged.  These
+are the scale- and evolution-invariance properties tested directly by the
+unit suite and by the scaled Lax experiment.
+
+\subsection{Exact attenuation without a prescribed coefficient basis}
+
+Let $P^m$ denote the element-local $L^2$ projection into degree at most $m$,
+with $P^{-1}=P^0$.  During the OE pseudo-time problem, the coefficients
+\cref{eq:oedg-rate} are frozen at the candidate RK stage.  The published
+derivation may be written using coefficients of a local orthogonal basis, with
+scaled Legendre polynomials as one convenient one-dimensional choice.  Such a
+basis is not mathematically required.  In basis-independent operator form, the
+exact attenuation is
+\begin{equation}
+  \mathcal F_{\tau,K}u_h
+  =P^0u_h
+   +\sum_{j=1}^{k}
+    \exp\!\left(-\tau\sum_{m=0}^{j}\delta_K^m\right)
+    \left(P^j-P^{j-1}\right)u_h,
+  \label{eq:oedg-exact-decay}
+\end{equation}
+so the constant subspace is unchanged and every degree-$j$ polynomial shell is
+scaled by its corresponding exponential.  The implementation assembles the
+projectors in MFEM's supplied coefficient basis and applies
+\cref{eq:oedg-exact-decay} without ever forming Legendre coefficients.  No
+pseudo-time discretization error is introduced, and every element mean is
+preserved to roundoff.
+
+The public \texttt{OEDG2024} type fixes the face quadrature, face-height,
+component-pooling, normalization, wave-speed, and exact-decay choices.  It
+reuses the already tested projection, derivative, immutable face cache, and MPI
+halo machinery of the adapted OFDG kernel.  This sharing removes duplicate
+geometry code without allowing the comparator to inherit KXRCF or an
+experiment-only option accidentally.  It also gives OFDG and OEDG the same
+basis-agnostic projection realization, preventing a change of coefficient basis
+from becoming an uncontrolled difference in the numerical comparison.
+
+\subsection{Runge--Kutta cadence and comparison contract}
+
+The published OEDG algorithm applies the OE map after every Runge--Kutta stage.
+Consequently, \texttt{-method oedg -cadence auto} selects the small stage driver.
+For the project OFDG method, \texttt{auto} uses an MFEM solver and one filter
+application after a complete step.  The explicit \texttt{stage} and
+\texttt{step} choices are retained for cadence ablations.  The headline
+comparison therefore consists of:
+\begin{enumerate}
+  \item conventional RKDG;
+  \item adapted OFDG, applied post-step only in KXRCF cells;
+  \item 2024 OEDG, applied after every RK stage.
+\end{enumerate}
+Adapted OFDG without KXRCF is reported as an ablation.  The thesis uses these
+names only for these fixed configurations.

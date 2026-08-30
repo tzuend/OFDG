@@ -52,16 +52,137 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <limits>
 #include "euler.hpp"
 
-#include "../../src/ofdg_serial_optimized.hpp"
-#include "../../src/kxrcf.hpp"
+#include "../../src/euler_positivity.hpp"
+#include "../../src/conservation.hpp"
+#include "../../src/experiment_rk.hpp"
+#include "../../src/glvis_output.hpp"
+#include "../../src/study_filter.hpp"
 
 using namespace std;
 using namespace mfem;
 
+namespace
+{
+
+void WriteEulerSamples(const ParGridFunction &solution,
+                       const ParFiniteElementSpace &scalar_space,
+                       const ParMesh &mesh, real_t gamma,
+                       const string &prefix, int rank)
+{
+   if (prefix.empty()) { return; }
+   ostringstream name;
+   name << prefix << ".rank" << setfill('0') << setw(6) << rank << ".csv";
+   ofstream output(name.str());
+   MFEM_VERIFY(output, "Unable to open Euler profile output " << name.str());
+   output << "rank,element,sample,x,y,density,velocity_x,velocity_y,pressure\n";
+   output << setprecision(17);
+   const int dim = mesh.Dimension();
+   const int scalar_dofs = scalar_space.GetNDofs();
+   for (int element = 0; element < mesh.GetNE(); ++element)
+   {
+      const FiniteElement *fe = scalar_space.GetFE(element);
+      ElementTransformation *transformation =
+         scalar_space.GetMesh()->GetElementTransformation(element);
+      const IntegrationRule &nodes = fe->GetNodes();
+      auto write_point = [&](const IntegrationPoint &ip, const char *sample)
+      {
+         Vector point;
+         transformation->Transform(ip, point);
+         Vector conservative(dim + 2);
+         for (int component = 0; component < dim + 2; ++component)
+         {
+            GridFunction field(const_cast<ParFiniteElementSpace *>(&scalar_space),
+                               const_cast<real_t *>(solution.GetData()) +
+                                  component * scalar_dofs);
+            conservative(component) = field.GetValue(element, ip);
+         }
+         const real_t density = conservative(0);
+         real_t momentum_squared = 0.0;
+         for (int d = 0; d < dim; ++d)
+         {
+            momentum_squared += conservative(1 + d) * conservative(1 + d);
+         }
+         const real_t pressure = (gamma - 1.0) *
+            (conservative(dim + 1) - 0.5 * momentum_squared / density);
+         output << rank << ',' << element << ',' << sample << ','
+                << point(0) << ',' << (dim > 1 ? point(1) : 0.0) << ','
+                << density << ',' << conservative(1) / density << ','
+                << (dim > 1 ? conservative(2) / density : 0.0) << ','
+                << pressure << '\n';
+      };
+      for (int q = 0; q < nodes.GetNPoints(); ++q)
+      {
+         write_point(nodes.IntPoint(q), "polynomial");
+      }
+      write_point(Geometries.GetCenter(fe->GetGeomType()), "center");
+   }
+}
+
+bool CheckPhysicalState(const GridFunction &solution, int dim, real_t gamma,
+                        real_t time, const char *stage,
+                        real_t *reported_density = nullptr,
+                        real_t *reported_pressure = nullptr)
+{
+   const int scalar_dofs = solution.FESpace()->GetNDofs();
+   real_t minimum_density = std::numeric_limits<real_t>::infinity();
+   real_t minimum_pressure = std::numeric_limits<real_t>::infinity();
+
+   for (int i = 0; i < scalar_dofs; ++i)
+   {
+      const real_t density = solution(i);
+      real_t momentum_squared = 0.0;
+      for (int d = 0; d < dim; ++d)
+      {
+         const real_t momentum = solution((1 + d) * scalar_dofs + i);
+         momentum_squared += momentum * momentum;
+      }
+      const real_t energy = solution((dim + 1) * scalar_dofs + i);
+      const real_t pressure = (gamma - 1.0) *
+                              (energy - 0.5 * momentum_squared / density);
+      minimum_density = std::min(minimum_density, density);
+      minimum_pressure = std::min(minimum_pressure, pressure);
+   }
+
+#ifdef MFEM_USE_MPI
+   if (const auto *parallel_space = dynamic_cast<const ParFiniteElementSpace *>(
+          solution.FESpace()))
+   {
+      MPI_Allreduce(MPI_IN_PLACE, &minimum_density, 1,
+                    MPITypeMap<real_t>::mpi_type, MPI_MIN,
+                    parallel_space->GetComm());
+      MPI_Allreduce(MPI_IN_PLACE, &minimum_pressure, 1,
+                    MPITypeMap<real_t>::mpi_type, MPI_MIN,
+                    parallel_space->GetComm());
+   }
+#endif
+
+   if (reported_density) { *reported_density = minimum_density; }
+   if (reported_pressure) { *reported_pressure = minimum_pressure; }
+
+   if (minimum_density > 0.0 && minimum_pressure > 0.0 &&
+       std::isfinite(minimum_density) && std::isfinite(minimum_pressure))
+   {
+      return true;
+   }
+
+   cerr << "Nonphysical Euler state " << stage << " at t=" << time
+        << ": min(rho)=" << minimum_density
+        << ", min(p)=" << minimum_pressure << '\n';
+   return false;
+}
+
+} // namespace
+
 int main(int argc, char *argv[])
 {
+   Mpi::Init(argc, argv);
+   Hypre::Init();
+   const int rank = Mpi::WorldRank();
+   const int process_count = Mpi::WorldSize();
+
    // 1. Parse command-line options.
    int problem = 1;
    const real_t specific_heat_ratio = 1.4;
@@ -70,17 +191,27 @@ int main(int argc, char *argv[])
    string mesh_file = "";
    int IntOrderOffset = 1;
    int ref_levels = 1;
+   int elements_override = 0;
    int order = 3;
    int ode_solver_type = 4;
-   real_t t_final = 2.0;
+   real_t t_final = -1.0;
    real_t dt = -0.01;
    real_t cfl = 0.3;
-   bool visualization = true;
+   bool visualization = false;
    bool preassembleWeakDiv = true;
+   bool save_output = false;
    int vis_steps = 50;
 
    bool DOFDG_INTERNAL_TIMING = false;
    bool stabilization = true;
+   bool use_kxrcf = true;
+   real_t kxrcf_threshold = 1.0;
+   string method_name;
+   string cadence_name = "auto";
+   bool use_positivity = false;
+   real_t state_scale = 1.0;
+   int maximum_step_retries = 8;
+   string profile_prefix;
 
    int precision = 8;
    cout.precision(precision);
@@ -93,6 +224,8 @@ int main(int argc, char *argv[])
                   "Problem setup to use. See EulerInitialCondition().");
    args.AddOption(&ref_levels, "-r", "--refine",
                   "Number of times to refine the mesh uniformly.");
+   args.AddOption(&elements_override, "-n", "--elements",
+                  "Override the default elements per coordinate direction.");
    args.AddOption(&order, "-o", "--order",
                   "Order (degree) of the finite elements.");
    args.AddOption(&ode_solver_type, "-s", "--ode-solver",
@@ -112,17 +245,52 @@ int main(int argc, char *argv[])
                   "    mf - Nonlinear assembly in matrix-free manner");
    args.AddOption(&vis_steps, "-vs", "--visualization-steps",
                   "Visualize every n-th timestep.");
+   args.AddOption(&save_output, "-save", "--save-output", "-no-save",
+                  "--no-save-output", "Write rank-local MFEM mesh/solution files.");
    args.AddOption(&stabilization, "-stab", "--stabilization", "-no-stab",
                   "--no-stabilization",
                   "Enable or disable stabilization.");
+   args.AddOption(&use_kxrcf, "-kxrcf", "--use-kxrcf", "-no-kxrcf",
+                  "--no-use-kxrcf",
+                  "Restrict OFDG to cells selected by KXRCF.");
+   args.AddOption(&kxrcf_threshold, "-kt", "--kxrcf-threshold",
+                  "KXRCF troubled-cell threshold.");
+   args.AddOption(&method_name, "-method", "--method",
+                  "Study method: dg, ofdg, ofdg-kxrcf, or oedg.");
+   args.AddOption(&cadence_name, "-cadence", "--filter-cadence",
+                  "Filter cadence: auto, step, or stage.");
+   args.AddOption(&use_positivity, "-positivity", "--positivity-limiter",
+                  "-no-positivity", "--no-positivity-limiter",
+                  "Apply the common conservative Euler positivity limiter.");
+   args.AddOption(&state_scale, "-scale", "--state-scale",
+                  "Multiply the complete initial conservative state.");
+   args.AddOption(&maximum_step_retries, "-retries", "--step-retries",
+                  "Maximum rejected-step halvings for inadmissible means.");
+   args.AddOption(&profile_prefix, "-profile", "--profile-prefix",
+                  "Write rank-local CSV samples using this file prefix.");
    args.AddOption(&DOFDG_INTERNAL_TIMING, "-timing", "--internal-timing", "-no-timing", "--no-internal-timing",
                   "Enable or disable internal timing of DOFDG.");
 
    args.ParseCheck();
 
+   if (t_final < 0.0)
+   {
+      t_final = problem == 5 ? 0.038
+                : (problem == 6 ? 0.25
+                   : (problem == 7 ? 1.3
+                      : (problem == 8 ? 1.8 :
+                         (problem == 3 ? 2.0 : 1.1))));
+   }
+   const bool use_cfl_time_step = dt <= 0.0;
+
    // 2. Read the mesh from the given mesh file. When the user does not provide
    //    mesh file, use the default mesh file for the problem.
-   Mesh mesh = mesh_file.empty() ? EulerMesh(problem) : Mesh(mesh_file);
+   MFEM_VERIFY(elements_override >= 0,
+               "The element override must be nonnegative.");
+   MFEM_VERIFY(mesh_file.empty() || elements_override == 0,
+               "Do not combine a mesh file with an element override.");
+   Mesh mesh = mesh_file.empty() ? EulerMesh(problem, elements_override)
+                                 : Mesh(mesh_file);
    const int dim = mesh.Dimension();
    const int num_equations = dim + 2;
 
@@ -133,6 +301,7 @@ int main(int argc, char *argv[])
    {
       mesh.UniformRefinement();
    }
+   ParMesh parallel_mesh(MPI_COMM_WORLD, mesh);
 
    // 3. Define the ODE solver used for time integration. Several explicit
    //    Runge-Kutta methods are available.
@@ -142,11 +311,12 @@ int main(int argc, char *argv[])
    //    polynomial order on the refined mesh.
    DG_FECollection fec(order, dim);
    // Finite element space for a scalar (thermodynamic quantity)
-   FiniteElementSpace fes(&mesh, &fec);
+   ParFiniteElementSpace fes(&parallel_mesh, &fec);
    // Finite element space for a mesh-dim vector quantity (momentum)
-   FiniteElementSpace dfes(&mesh, &fec, dim, Ordering::byNODES);
+   ParFiniteElementSpace dfes(&parallel_mesh, &fec, dim, Ordering::byNODES);
    // Finite element space for all variables together (total thermodynamic state)
-   FiniteElementSpace vfes(&mesh, &fec, num_equations, Ordering::byNODES);
+   ParFiniteElementSpace vfes(&parallel_mesh, &fec, num_equations,
+                              Ordering::byNODES);
 
    // if (ode_solver_type != 4)
    // {
@@ -160,32 +330,45 @@ int main(int argc, char *argv[])
    // This example depends on this ordering of the space.
    MFEM_ASSERT(fes.GetOrdering() == Ordering::byNODES, "");
 
-   cout << "Number of unknowns: " << vfes.GetVSize() << endl;
+   const HYPRE_BigInt global_unknowns = vfes.GlobalTrueVSize();
+   if (Mpi::Root())
+   {
+      cout << "Number of unknowns: " << global_unknowns << endl;
+   }
 
    // 5. Define the initial conditions, save the corresponding mesh and grid
    //    functions to files. These can be opened with GLVis using:
    //    "glvis -m euler-mesh.mesh -g euler-1-init.gf" (for x-momentum).
 
    // Initialize the state.
-   VectorFunctionCoefficient u0 = EulerInitialCondition(problem,
-                                                        specific_heat_ratio,
-                                                        gas_constant);
-   GridFunction sol(&vfes);
+   VectorFunctionCoefficient unscaled_u0 = EulerInitialCondition(
+      problem, specific_heat_ratio, gas_constant);
+   ScalarVectorProductCoefficient u0(state_scale, unscaled_u0);
+   ParGridFunction sol(&vfes);
    sol.ProjectCoefficient(u0);
-   GridFunction mom(&dfes, sol.GetData() + fes.GetNDofs());
+   Vector initial_integrals(num_equations);
+   for (int component = 0; component < num_equations; ++component)
+   {
+      ParGridFunction component_view(
+         &fes, sol.GetData() + component * fes.GetNDofs());
+      initial_integrals(component) = GlobalScalarIntegral(component_view);
+   }
+   ParGridFunction mom(&dfes, sol.GetData() + fes.GetNDofs());
    // Output the initial solution.
+   if (save_output)
    {
       ostringstream mesh_name;
-      mesh_name << "euler-mesh.mesh";
+      mesh_name << "euler-mesh." << setfill('0') << setw(6) << rank;
       ofstream mesh_ofs(mesh_name.str().c_str());
       mesh_ofs.precision(precision);
-      mesh_ofs << mesh;
+      mesh_ofs << parallel_mesh;
 
       for (int k = 0; k < num_equations; k++)
       {
-         GridFunction uk(&fes, sol.GetData() + k * fes.GetNDofs());
+         ParGridFunction uk(&fes, sol.GetData() + k * fes.GetNDofs());
          ostringstream sol_name;
-         sol_name << "euler-" << k << "-init.gf";
+         sol_name << "euler-" << k << "-init." << setfill('0')
+                  << setw(6) << rank;
          ofstream sol_ofs(sol_name.str().c_str());
          sol_ofs.precision(precision);
          sol_ofs << uk;
@@ -195,36 +378,26 @@ int main(int argc, char *argv[])
    // 6. Set up the nonlinear form with euler flux and numerical flux
    EulerFlux flux(dim, specific_heat_ratio);
    RusanovFlux numericalFlux(flux);
+   std::unique_ptr<EulerBoundaryIntegrator> boundary_integrator;
+   if (problem >= 5)
+   {
+      boundary_integrator =
+         std::make_unique<EulerBoundaryIntegrator>(
+            numericalFlux, &u0, problem == 5, IntOrderOffset);
+   }
    DGHyperbolicConservationLaws euler(
       vfes, std::unique_ptr<HyperbolicFormIntegrator>(
          new HyperbolicFormIntegrator(numericalFlux, IntOrderOffset)),
-      preassembleWeakDiv);
+      preassembleWeakDiv, std::move(boundary_integrator));
 
-   // 7. Visualize momentum with its magnitude
-   socketstream sout;
-   if (visualization)
+   // 7. Visualize momentum with its magnitude.
+   GLVisOutput glvis(parallel_mesh, visualization, precision);
+   if (glvis.Enabled())
    {
-      char vishost[] = "localhost";
-      int visport = 19916;
-
-      sout.open(vishost, visport);
-      if (!sout)
+      glvis.Send(parallel_mesh, mom, "momentum, t = 0",
+                 "view 0 0\nkeys jlm\npause\n");
+      if (Mpi::Root())
       {
-         visualization = false;
-         cout << "Unable to connect to GLVis server at " << vishost << ':'
-              << visport << endl;
-         cout << "GLVis visualization disabled.\n";
-      }
-      else
-      {
-         sout.precision(precision);
-         // Plot magnitude of vector-valued momentum
-         sout << "solution\n" << mesh << mom;
-         sout << "window_title 'momentum, t = 0'\n";
-         sout << "view 0 0\n";  // view from top
-         sout << "keys jlm\n";  // turn off perspective and light, show mesh
-         sout << "pause\n";
-         sout << flush;
          cout << "GLVis visualization paused."
               << " Press space (in the GLVis window) to resume it.\n";
       }
@@ -235,12 +408,15 @@ int main(int argc, char *argv[])
    // When dt is not specified, use CFL condition.
    // Compute h_min and initial maximum characteristic speed
    real_t hmin = infinity();
-   if (cfl > 0)
+   if (use_cfl_time_step)
    {
-      for (int i = 0; i < mesh.GetNE(); i++)
+      for (int i = 0; i < parallel_mesh.GetNE(); i++)
       {
-         hmin = min(mesh.GetElementSize(i, 1), hmin);
+         hmin = min(parallel_mesh.GetElementSize(i, 1), hmin);
       }
+      MPI_Allreduce(MPI_IN_PLACE, &hmin, 1,
+                    MPITypeMap<real_t>::mpi_type, MPI_MIN,
+                    parallel_mesh.GetComm());
       // Find a safe dt, using a temporary vector. Calling Mult() computes the
       // maximum char speed at all quadrature points on all faces (and all
       // elements with -mf).
@@ -248,6 +424,9 @@ int main(int argc, char *argv[])
       euler.Mult(sol, z);
 
       real_t max_char_speed = euler.GetMaxCharSpeed();
+      MPI_Allreduce(MPI_IN_PLACE, &max_char_speed, 1,
+                    MPITypeMap<real_t>::mpi_type, MPI_MAX,
+                    parallel_mesh.GetComm());
       dt = cfl * hmin / max_char_speed / (2 * order + 1);
    }
 
@@ -260,83 +439,230 @@ int main(int argc, char *argv[])
    euler.SetTime(t);
    ode_solver->Init(euler);
 
-   OFDG euler_stab(&vfes, BasisType::GaussLegendre);
-   Vector stabilized_sol(sol.Size());
-
-   // KXRCFIndicator kxrcf(&vfes, &euler.GetVelocity(), 1.0);
-   // Array<bool> active_elements;
-
-   if (DOFDG_INTERNAL_TIMING)
+   StudyMethod method = method_name.empty()
+                           ? (!stabilization ? StudyMethod::DG
+                              : (use_kxrcf ? StudyMethod::OFDGKXRCF
+                                           : StudyMethod::OFDG))
+                           : ParseStudyMethod(method_name);
+   const FilterCadence requested_cadence = ParseFilterCadence(cadence_name);
+   auto euler_face_physics =
+      std::make_shared<EulerFacePhysics>(dim, specific_heat_ratio);
+   StudyFilter filter(&vfes, BasisType::GaussLegendre, euler_face_physics,
+                      method, requested_cadence, kxrcf_threshold);
+   unique_ptr<EulerPositivityLimiter> positivity_limiter;
+   if (use_positivity)
    {
-      euler_stab.ResetInternalTimings();
+      positivity_limiter =
+         make_unique<EulerPositivityLimiter>(&vfes, specific_heat_ratio);
    }
+   long limited_elements = 0;
+   long rejected_steps = 0;
+   long positivity_applications = 0;
+
+   auto postprocess = [&](Vector &candidate, real_t step_size,
+                          bool final_stage)
+   {
+      if (use_positivity)
+      {
+         const EulerPositivityDiagnostics before =
+            positivity_limiter->Apply(candidate);
+         limited_elements += before.limited_elements;
+         ++positivity_applications;
+         if (before.inadmissible_means > 0) { return false; }
+      }
+      else
+      {
+         GridFunction candidate_view(&vfes, candidate.GetData());
+         if (!CheckPhysicalState(candidate_view, dim, specific_heat_ratio,
+                                 t + step_size, "before filtering"))
+         {
+            return false;
+         }
+      }
+
+      filter.Apply(candidate, step_size, final_stage);
+
+      if (use_positivity && filter.Enabled() &&
+          (filter.Cadence() == FilterCadence::Stage || final_stage))
+      {
+         const EulerPositivityDiagnostics after =
+            positivity_limiter->Apply(candidate);
+         limited_elements += after.limited_elements;
+         ++positivity_applications;
+         if (after.inadmissible_means > 0) { return false; }
+      }
+      return true;
+   };
+
+   const bool discontinuous_problem = problem >= 5;
+   ExperimentRungeKutta experiment_solver(
+      discontinuous_problem ? ExperimentRungeKutta::Scheme::SSPRK3
+                            : ExperimentRungeKutta::Scheme::ClassicalRK4,
+      postprocess);
+   experiment_solver.Init(euler);
+   const bool use_experiment_solver =
+      filter.Cadence() == FilterCadence::Stage || use_positivity;
 
    // Integrate in time.
    bool done = false;
-   for (int ti = 0; !done;)
+   int ti = 0;
+   for (; !done;)
    {
       real_t dt_real = min(dt, t_final - t);
-
-      ode_solver->Step(sol, t, dt_real);
-
-      if (stabilization)
+      if (use_experiment_solver)
       {
-         // std::cout << "Using stabilisation" << std::endl;
-         // kxrcf.Compute(sol, active_elements);
-         euler_stab.CompDecay(sol, stabilized_sol, dt_real);
-         sol = stabilized_sol;
+         bool accepted = false;
+         const int retry_limit = use_positivity ? maximum_step_retries : 0;
+         for (int retry = 0; retry <= retry_limit; ++retry)
+         {
+            if (experiment_solver.TryStep(sol, t, dt_real))
+            {
+               accepted = true;
+               break;
+            }
+            ++rejected_steps;
+            dt_real *= 0.5;
+         }
+         if (!accepted)
+         {
+            cerr << "Euler step remained inadmissible after "
+                 << retry_limit << " retries at t=" << t << '\n';
+            return 2;
+         }
+      }
+      else
+      {
+         ode_solver->Step(sol, t, dt_real);
+         if (filter.Enabled() &&
+             !CheckPhysicalState(sol, dim, specific_heat_ratio, t,
+                                 "before filtering"))
+         {
+            return 2;
+         }
+         filter.Apply(sol, dt_real, true);
       }
 
-      if (cfl > 0) // update time step size with CFL
+      if (!CheckPhysicalState(sol, dim, specific_heat_ratio, t,
+                              "after accepted step"))
+      {
+         return 2;
+      }
+
+      if (use_cfl_time_step) // update time step size with CFL
       {
          real_t max_char_speed = euler.GetMaxCharSpeed();
+         MPI_Allreduce(MPI_IN_PLACE, &max_char_speed, 1,
+                       MPITypeMap<real_t>::mpi_type, MPI_MAX,
+                       parallel_mesh.GetComm());
          dt = cfl * hmin / max_char_speed / (2 * order + 1);
       }
-      ti++;
+      ++ti;
 
       done = (t >= t_final - 1e-8 * dt);
       if (done || ti % vis_steps == 0)
       {
-         cout << "time step: " << ti << ", time: " << t << endl;
-         if (visualization)
+         if (Mpi::Root())
          {
-            sout << "window_title 'momentum, t = " << t << "'\n";
-            sout << "solution\n" << mesh << mom << flush;
+            cout << "time step: " << ti << ", time: " << t << endl;
+         }
+         if (glvis.Enabled())
+         {
+            ostringstream title;
+            title << "momentum, t = " << t;
+            glvis.Send(parallel_mesh, mom, title.str());
          }
       }
    }
 
    tic_toc.Stop();
-   cout << " done, " << tic_toc.RealTime() << "s." << endl;
-
-   if (DOFDG_INTERNAL_TIMING)
-   {
-      euler_stab.PrintInternalTimings();
-   }
+   real_t runtime = tic_toc.RealTime();
+   MPI_Allreduce(MPI_IN_PLACE, &runtime, 1, MPITypeMap<real_t>::mpi_type,
+                 MPI_MAX, parallel_mesh.GetComm());
+   if (Mpi::Root()) { cout << " done, " << runtime << "s." << endl; }
 
    // 9. Save the final solution. This output can be viewed later using GLVis:
    //    "glvis -m euler-mesh-final.mesh -g euler-1-final.gf" (for x-momentum).
+   if (save_output)
    {
       ostringstream mesh_name;
-      mesh_name << "euler-mesh-final.mesh";
+      mesh_name << "euler-mesh-final." << setfill('0') << setw(6) << rank;
       ofstream mesh_ofs(mesh_name.str().c_str());
       mesh_ofs.precision(precision);
-      mesh_ofs << mesh;
+      mesh_ofs << parallel_mesh;
 
       for (int k = 0; k < num_equations; k++)
       {
-         GridFunction uk(&fes, sol.GetData() + k * fes.GetNDofs());
+         ParGridFunction uk(&fes, sol.GetData() + k * fes.GetNDofs());
          ostringstream sol_name;
-         sol_name << "euler-" << k << "-final.gf";
+         sol_name << "euler-" << k << "-final." << setfill('0')
+                  << setw(6) << rank;
          ofstream sol_ofs(sol_name.str().c_str());
          sol_ofs.precision(precision);
          sol_ofs << uk;
       }
    }
 
-   // 10. Compute the L2 solution error summed for all components.
-   const real_t error = sol.ComputeLpError(2, u0);
-   cout << "Solution error: " << error << endl;
+   WriteEulerSamples(sol, fes, parallel_mesh, specific_heat_ratio,
+                     profile_prefix, rank);
+
+   // 10. Compute exact smooth-solution errors where available.
+   real_t l1_error = std::numeric_limits<real_t>::quiet_NaN();
+   real_t l2_error = std::numeric_limits<real_t>::quiet_NaN();
+   real_t linf_error = std::numeric_limits<real_t>::quiet_NaN();
+   real_t state_l2_error = std::numeric_limits<real_t>::quiet_NaN();
+   if (problem >= 1 && problem <= 4)
+   {
+      VectorFunctionCoefficient exact = EulerVortexExactCondition(
+         problem, t_final, specific_heat_ratio, gas_constant);
+      FunctionCoefficient density_exact = EulerExactDensityCondition(
+         problem, t_final, specific_heat_ratio, gas_constant);
+      ParGridFunction density(&fes, sol.GetData());
+      l1_error = density.ComputeL1Error(density_exact);
+      l2_error = density.ComputeL2Error(density_exact);
+      linf_error = density.ComputeMaxError(density_exact);
+      state_l2_error = sol.ComputeLpError(2, exact);
+   }
+   real_t minimum_density = 0.0;
+   real_t minimum_pressure = 0.0;
+   CheckPhysicalState(sol, dim, specific_heat_ratio, t, "final state",
+                      &minimum_density, &minimum_pressure);
+   real_t conservation_drift = 0.0;
+   for (int component = 0; component < num_equations; ++component)
+   {
+      ParGridFunction component_view(
+         &fes, sol.GetData() + component * fes.GetNDofs());
+      conservation_drift = std::max(
+         conservation_drift,
+         RelativeConservationDrift(initial_integrals(component),
+                                   GlobalScalarIntegral(component_view)));
+   }
+   const StudyFilterStatistics filter_stats = filter.Statistics();
+   if (Mpi::Root())
+   {
+      cout.precision(16);
+      cout << "method=" << StudyMethodName(method)
+           << " cadence=" << FilterCadenceName(filter.Cadence())
+           << " problem=" << problem
+           << " order=" << order
+           << " dofs=" << global_unknowns
+           << " ranks=" << process_count
+           << " steps=" << ti
+           << " time=" << t
+           << " l1_error=" << l1_error
+           << " l2_error=" << l2_error
+           << " linf_error=" << linf_error
+           << " state_l2_error=" << state_l2_error
+           << " conservation_drift=" << conservation_drift
+           << " min_density=" << minimum_density
+           << " min_pressure=" << minimum_pressure
+           << " filter_applications=" << filter_stats.applications
+           << " active_elements=" << filter_stats.active_elements
+           << " positivity_applications=" << positivity_applications
+           << " limited_elements=" << limited_elements
+           << " rejected_steps=" << rejected_steps
+           << " runtime_seconds=" << runtime << '\n';
+      cout << "Solution error: " << l2_error << endl;
+   }
 
    return 0;
 }

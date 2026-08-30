@@ -1,3 +1,5 @@
+#pragma once
+
 //                  MFEM Example 18 - Serial/Parallel Shared Code
 //                      (Implementation of Time-dependent DG Operator)
 //
@@ -23,9 +25,100 @@
 
 #include <functional>
 #include "mfem.hpp"
+#include "../../src/face_physics.hpp"
 
 namespace mfem
 {
+
+/** Boundary flux for fixed Euler states or slip/reflecting walls. */
+class EulerBoundaryIntegrator : public NonlinearFormIntegrator
+{
+private:
+   const NumericalFlux &numerical_flux;
+   VectorCoefficient *fixed_state;
+   bool reflecting;
+   int integration_order_offset;
+   int dimension;
+   int equations;
+   real_t max_char_speed = 0.0;
+
+public:
+   EulerBoundaryIntegrator(const NumericalFlux &flux,
+                           VectorCoefficient *state,
+                           bool reflecting_wall,
+                           int order_offset)
+      : numerical_flux(flux), fixed_state(state), reflecting(reflecting_wall),
+        integration_order_offset(order_offset),
+        dimension(flux.GetFluxFunction().dim),
+        equations(flux.GetFluxFunction().num_equations)
+   {
+      MFEM_VERIFY(reflecting || fixed_state != nullptr,
+                  "A fixed Euler boundary needs a state coefficient.");
+   }
+
+   void ResetMaxCharSpeed() { max_char_speed = 0.0; }
+   real_t GetMaxCharSpeed() const { return max_char_speed; }
+
+   void AssembleFaceVector(const FiniteElement &element,
+                           const FiniteElement &,
+                           FaceElementTransformations &transformations,
+                           const Vector &element_state,
+                           Vector &element_vector) override
+   {
+      MFEM_ASSERT(transformations.Elem2No < 0, "Expected a boundary face.");
+      const int dofs = element.GetDof();
+      Vector shape(dofs);
+      Vector state_in(equations);
+      Vector state_out(equations);
+      Vector normal(transformations.GetSpaceDim());
+      Vector numerical_flux_normal(equations);
+      const DenseMatrix state_matrix(element_state.GetData(), dofs, equations);
+      element_vector.SetSize(dofs * equations);
+      element_vector = 0.0;
+      DenseMatrix vector_matrix(element_vector.GetData(), dofs, equations);
+
+      const IntegrationRule *rule = IntRule;
+      if (!rule)
+      {
+         rule = &IntRules.Get(transformations.GetGeometryType(),
+                             2 * element.GetOrder() +
+                             integration_order_offset);
+      }
+      for (int q = 0; q < rule->GetNPoints(); ++q)
+      {
+         const IntegrationPoint &point = rule->IntPoint(q);
+         transformations.SetAllIntPoints(&point);
+         element.CalcShape(transformations.GetElement1IntPoint(), shape);
+         state_matrix.MultTranspose(shape, state_in);
+         if (normal.Size() == 1)
+         {
+            normal(0) = 2.0 * transformations.GetElement1IntPoint().x - 1.0;
+         }
+         else
+         {
+            CalcOrtho(transformations.Jacobian(), normal);
+         }
+
+         if (reflecting)
+         {
+            Vector unit_normal(normal);
+            unit_normal /= unit_normal.Norml2();
+            ReflectEulerState(state_in, unit_normal, dimension, state_out);
+         }
+         else
+         {
+            fixed_state->Eval(state_out, transformations, point);
+         }
+
+         max_char_speed = std::max(
+            max_char_speed,
+            numerical_flux.Eval(state_in, state_out, normal,
+                                transformations, numerical_flux_normal));
+         AddMult_a_VWt(-point.weight, shape, numerical_flux_normal,
+                       vector_matrix);
+      }
+   }
+};
 
 /// @brief Time dependent DG operator for hyperbolic conservation laws
 class DGHyperbolicConservationLaws : public TimeDependentOperator
@@ -36,6 +129,7 @@ private:
    FiniteElementSpace &vfes; // vector finite element space
    // Element integration form. Should contain ComputeFlux
    std::unique_ptr<HyperbolicFormIntegrator> formIntegrator;
+   std::unique_ptr<EulerBoundaryIntegrator> boundaryIntegrator;
    // Base Nonlinear Form
    std::unique_ptr<NonlinearForm> nonlinearForm;
    // element-wise inverse mass matrix
@@ -63,7 +157,9 @@ public:
    DGHyperbolicConservationLaws(
       FiniteElementSpace &vfes_,
       std::unique_ptr<HyperbolicFormIntegrator> formIntegrator_,
-      bool preassembleWeakDivergence=true);
+      bool preassembleWeakDivergence=true,
+      std::unique_ptr<EulerBoundaryIntegrator>
+         boundaryIntegrator_=nullptr);
    /**
     * @brief Apply nonlinear form to obtain M⁻¹(DIVF + JUMP HAT(F))
     *
@@ -86,12 +182,14 @@ public:
 DGHyperbolicConservationLaws::DGHyperbolicConservationLaws(
    FiniteElementSpace &vfes_,
    std::unique_ptr<HyperbolicFormIntegrator> formIntegrator_,
-   bool preassembleWeakDivergence)
+   bool preassembleWeakDivergence,
+   std::unique_ptr<EulerBoundaryIntegrator> boundaryIntegrator_)
    : TimeDependentOperator(vfes_.GetTrueVSize()),
      num_equations(formIntegrator_->num_equations),
      dim(vfes_.GetMesh()->SpaceDimension()),
      vfes(vfes_),
      formIntegrator(std::move(formIntegrator_)),
+     boundaryIntegrator(std::move(boundaryIntegrator_)),
      z(vfes_.GetTrueVSize())
 {
    // Standard local assembly and inversion for energy mass matrices.
@@ -118,6 +216,10 @@ DGHyperbolicConservationLaws::DGHyperbolicConservationLaws(
       nonlinearForm->AddDomainIntegrator(formIntegrator.get());
    }
    nonlinearForm->AddInteriorFaceIntegrator(formIntegrator.get());
+   if (boundaryIntegrator)
+   {
+      nonlinearForm->AddBdrFaceIntegrator(boundaryIntegrator.get());
+   }
    nonlinearForm->UseExternalIntegrators();
 
 }
@@ -169,6 +271,7 @@ void DGHyperbolicConservationLaws::Mult(const Vector &x, Vector &y) const
 {
    // 0. Reset wavespeed computation before operator application.
    formIntegrator->ResetMaxCharSpeed();
+   if (boundaryIntegrator) { boundaryIntegrator->ResetMaxCharSpeed(); }
    // 1. Apply Nonlinear form to obtain an auxiliary result
    //         z = - <F̂(u_h,n), [[v]]>_e
    //    If weak-divergence is not preassembled, we also have weak-divergence
@@ -178,7 +281,7 @@ void DGHyperbolicConservationLaws::Mult(const Vector &x, Vector &y) const
    {
       // Apply weak divergence to F(u_h), and inverse mass to z_loc + weakdiv_loc
       Vector current_state; // view of current state at a node
-      DenseMatrix current_flux; // flux of current state
+      DenseMatrix current_flux(num_equations, dim); // flux of current state
       DenseMatrix flux; // element flux value. Whose column is ordered by dim.
       DenseMatrix current_xmat; // view of current states in an element, dof x num_eq
       DenseMatrix current_zmat; // view of element auxiliary result, dof x num_eq
@@ -197,9 +300,14 @@ void DGHyperbolicConservationLaws::Mult(const Vector &x, Vector &y) const
          for (int j=0; j<dof; j++) // compute flux for all nodes in the element
          {
             current_xmat.GetRow(j, current_state);
-            current_flux.UseExternalData(flux.GetData() + num_equations*dim*j,
-                                         num_equations, dof);
             fluxFunction.ComputeFlux(current_state, *Tr, current_flux);
+            for (int d = 0; d < dim; ++d)
+            {
+               for (int equation = 0; equation < num_equations; ++equation)
+               {
+                  flux(equation, j * dim + d) = current_flux(equation, d);
+               }
+            }
          }
          // Compute weak-divergence and add it to auxiliary result, z
          // Recalling that weakdiv is reordered by dim, we can apply
@@ -233,6 +341,11 @@ void DGHyperbolicConservationLaws::Mult(const Vector &x, Vector &y) const
       }
    }
    max_char_speed = formIntegrator->GetMaxCharSpeed();
+   if (boundaryIntegrator)
+   {
+      max_char_speed = std::max(max_char_speed,
+                                boundaryIntegrator->GetMaxCharSpeed());
+   }
 }
 
 void DGHyperbolicConservationLaws::Update()
@@ -255,7 +368,7 @@ std::function<void(const Vector&, Vector&)> GetMovingVortexInit(
    {
       MFEM_ASSERT(x.Size() == 2, "");
 
-      const real_t xc = 0.0, yc = 0.0;
+      const real_t xc = 0.5, yc = 0.5;
 
       // Nice units
       const real_t vel_inf = 1.;
@@ -296,18 +409,59 @@ std::function<void(const Vector&, Vector&)> GetMovingVortexInit(
    };
 }
 
-Mesh EulerMesh(const int problem)
+Mesh EulerMesh(const int problem, const int requested_elements = 0)
 {
+   const auto count = [requested_elements](int fallback)
+   {
+      return requested_elements > 0 ? requested_elements : fallback;
+   };
    switch (problem)
    {
       case 1:
       case 2:
+      {
+         Mesh mesh = Mesh::MakeCartesian2D(count(8), count(8), Element::QUADRILATERAL,
+                                           true, 1.0, 1.0);
+         Vector x_translation({1.0, 0.0});
+         Vector y_translation({0.0, 1.0});
+         std::vector<Vector> translations = {x_translation, y_translation};
+         return Mesh::MakePeriodic(
+                   mesh, mesh.CreatePeriodicVertexMapping(translations));
+      }
       case 3:
-         return Mesh("../../../mfem/data/periodic-square.mesh");
-         break;
+      {
+         Mesh mesh = Mesh::MakeCartesian2D(count(8), count(8), Element::QUADRILATERAL,
+                                           true, 2.0, 2.0);
+         Vector x_translation({2.0, 0.0});
+         Vector y_translation({0.0, 2.0});
+         std::vector<Vector> translations = {x_translation, y_translation};
+         return Mesh::MakePeriodic(
+                   mesh, mesh.CreatePeriodicVertexMapping(translations));
+      }
       case 4:
-         return Mesh("../../../mfem/data/periodic-segment.mesh");
-         break;
+      {
+         Mesh mesh = Mesh::MakeCartesian1D(count(32), 2.0 * M_PI);
+         std::vector<int> vertex_map(mesh.GetNV());
+         for (int v = 0; v < mesh.GetNV(); ++v) { vertex_map[v] = v; }
+         vertex_map.back() = 0;
+         return Mesh::MakePeriodic(mesh, vertex_map);
+      }
+      case 5:
+         return Mesh::MakeCartesian1D(count(200), 1.0);
+      case 6:
+         return Mesh::MakeCartesian2D(count(80), count(80), Element::QUADRILATERAL,
+                                      true, 1.0, 1.0);
+      case 7:
+      case 8:
+      {
+         Mesh mesh = Mesh::MakeCartesian1D(
+            count(problem == 7 ? 256 : 400), 10.0);
+         for (int vertex = 0; vertex < mesh.GetNV(); ++vertex)
+         {
+            mesh.GetVertex(vertex)[0] -= 5.0;
+         }
+         return mesh;
+      }
       default:
          MFEM_ABORT("Problem Undefined");
    }
@@ -349,9 +503,10 @@ VectorFunctionCoefficient EulerInitialCondition(const int problem,
          return VectorFunctionCoefficient(3, [](const Vector &x, Vector &y)
          {
             MFEM_ASSERT(x.Size() == 1, "");
-            const real_t density = 1.0 + 0.2 * std::sin(M_PI * 2 * x(0));
+            const real_t wave = std::sin(x(0));
+            const real_t density = 2.0 + 2.0 * wave * wave;
             const real_t velocity_x = 1.0;
-            const real_t pressure = 1.0;
+            const real_t pressure = 2.0;
             const real_t energy =
                pressure / (1.4 - 1.0) + density * 0.5 * (velocity_x * velocity_x);
 
@@ -359,9 +514,180 @@ VectorFunctionCoefficient EulerInitialCondition(const int problem,
             y(1) = density * velocity_x;
             y(2) = energy;
          });
+      case 5: // Woodward--Colella interacting blast waves
+         return VectorFunctionCoefficient(
+                   3, [specific_heat_ratio](const Vector &x, Vector &y)
+         {
+            MFEM_ASSERT(x.Size() == 1, "");
+            const real_t pressure = x(0) < 0.1 ? 1000.0
+                                    : (x(0) < 0.9 ? 0.01 : 100.0);
+            y(0) = 1.0;
+            y(1) = 0.0;
+            y(2) = pressure / (specific_heat_ratio - 1.0);
+         });
+      case 6: // first two-dimensional Riemann configuration
+         return VectorFunctionCoefficient(
+                   4, [specific_heat_ratio](const Vector &x, Vector &y)
+         {
+            MFEM_ASSERT(x.Size() == 2, "");
+
+            real_t density, velocity_x, velocity_y, pressure;
+            if (x(0) < 0.5 && x(1) < 0.5)
+            {
+               density = 0.8;
+               velocity_x = velocity_y = 0.0;
+               pressure = 1.0;
+            }
+            else if (x(0) < 0.5)
+            {
+               density = 1.0;
+               velocity_x = 0.7276;
+               velocity_y = 0.0;
+               pressure = 1.0;
+            }
+            else if (x(1) < 0.5)
+            {
+               density = 1.0;
+               velocity_x = 0.0;
+               velocity_y = 0.7276;
+               pressure = 1.0;
+            }
+            else
+            {
+               density = 0.5313;
+               velocity_x = velocity_y = 0.0;
+               pressure = 0.4;
+            }
+
+            y(0) = density;
+            y(1) = density * velocity_x;
+            y(2) = density * velocity_y;
+            y(3) = pressure / (specific_heat_ratio - 1.0) +
+                   0.5 * density *
+                   (velocity_x * velocity_x + velocity_y * velocity_y);
+         });
+      case 7: // scaled Lax problem; scaling is applied by the driver
+         return VectorFunctionCoefficient(
+                   3, [specific_heat_ratio](const Vector &x, Vector &y)
+         {
+            const real_t density = x(0) < 0.0 ? 0.445 : 0.5;
+            const real_t velocity = x(0) < 0.0 ? 0.698 : 0.0;
+            const real_t pressure = x(0) < 0.0 ? 3.528 : 0.571;
+            y(0) = density;
+            y(1) = density * velocity;
+            y(2) = pressure / (specific_heat_ratio - 1.0) +
+                   0.5 * density * velocity * velocity;
+         });
+      case 8: // Shu--Osher shock--entropy interaction
+         return VectorFunctionCoefficient(
+                   3, [specific_heat_ratio](const Vector &x, Vector &y)
+         {
+            real_t density, velocity, pressure;
+            if (x(0) < -4.0)
+            {
+               density = 3.857143;
+               velocity = 2.629369;
+               pressure = 10.33333;
+            }
+            else
+            {
+               density = 1.0 + 0.2 * std::sin(5.0 * x(0));
+               velocity = 0.0;
+               pressure = 1.0;
+            }
+            y(0) = density;
+            y(1) = density * velocity;
+            y(2) = pressure / (specific_heat_ratio - 1.0) +
+                   0.5 * density * velocity * velocity;
+         });
       default:
          MFEM_ABORT("Problem Undefined");
    }
+}
+
+VectorFunctionCoefficient EulerVortexExactCondition(
+   const int problem, const real_t time,
+   const real_t specific_heat_ratio, const real_t gas_constant)
+{
+   MFEM_VERIFY(problem >= 1 && problem <= 4,
+               "Exact state is defined only for Euler problems 1--4.");
+   if (problem == 3)
+   {
+      return VectorFunctionCoefficient(4, [time](const Vector &x, Vector &y)
+      {
+         const real_t density =
+            1.0 + 0.2 * std::sin(M_PI * (x(0) + x(1) - time));
+         const real_t velocity_x = 0.7;
+         const real_t velocity_y = 0.3;
+         const real_t pressure = 1.0;
+         y(0) = density;
+         y(1) = density * velocity_x;
+         y(2) = density * velocity_y;
+         y(3) = pressure / (1.4 - 1.0) + 0.5 * density *
+                (velocity_x * velocity_x + velocity_y * velocity_y);
+      });
+   }
+   if (problem == 4)
+   {
+      return VectorFunctionCoefficient(3, [time](const Vector &x, Vector &y)
+      {
+         const real_t wave = std::sin(x(0) - time);
+         const real_t density = 2.0 + 2.0 * wave * wave;
+         const real_t velocity = 1.0;
+         const real_t pressure = 2.0;
+         y(0) = density;
+         y(1) = density * velocity;
+         y(2) = pressure / (1.4 - 1.0) + 0.5 * density * velocity * velocity;
+      });
+   }
+   const real_t mach = problem == 1 ? 0.5 : 0.05;
+   const real_t beta = problem == 1 ? 1.0 / 5.0 : 1.0 / 50.0;
+   auto initial = GetMovingVortexInit(0.2, mach, beta, gas_constant,
+                                      specific_heat_ratio);
+   return VectorFunctionCoefficient(4, [initial, time](const Vector &x,
+                                                       Vector &state)
+   {
+      Vector foot(x);
+      foot(0) -= time;
+      foot(0) -= std::floor(foot(0));
+      initial(foot, state);
+   });
+}
+
+FunctionCoefficient EulerExactDensityCondition(
+   const int problem, const real_t time,
+   const real_t specific_heat_ratio, const real_t gas_constant)
+{
+   MFEM_VERIFY(problem >= 1 && problem <= 4,
+               "Exact density is defined only for Euler problems 1--4.");
+   if (problem == 1 || problem == 2)
+   {
+      const real_t mach = problem == 1 ? 0.5 : 0.05;
+      const real_t beta = problem == 1 ? 1.0 / 5.0 : 1.0 / 50.0;
+      auto initial = GetMovingVortexInit(0.2, mach, beta, gas_constant,
+                                         specific_heat_ratio);
+      return FunctionCoefficient([initial, time](const Vector &x)
+      {
+         Vector foot(x);
+         foot(0) -= time;
+         foot(0) -= std::floor(foot(0));
+         Vector state(4);
+         initial(foot, state);
+         return state(0);
+      });
+   }
+   if (problem == 3)
+   {
+      return FunctionCoefficient([time](const Vector &x)
+      {
+         return 1.0 + 0.2 * std::sin(M_PI * (x(0) + x(1) - time));
+      });
+   }
+   return FunctionCoefficient([time](const Vector &x)
+   {
+      const real_t wave = std::sin(x(0) - time);
+      return 2.0 + 2.0 * wave * wave;
+   });
 }
 
 } // namespace mfem

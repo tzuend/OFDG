@@ -1,4 +1,4 @@
-\chapter{Oscillation-Free Discontinuous Galerkin Stabilization}
+\section{Adapted Oscillation-Free Discontinuous Galerkin Stabilization}
 \label{chap:ofdg}
 
 This chapter describes the oscillation-free discontinuous Galerkin (OFDG)
@@ -12,10 +12,10 @@ The precise multidimensional sensor implemented here differs from the sensors in
 those papers; the differences are stated explicitly in
 \cref{sec:ofdg-relation-to-literature}.
 
-\section{Mathematical formulation}
+\subsection{Mathematical formulation}
 \label{sec:ofdg-mathematics}
 
-\subsection{Purpose of the stabilization}
+\subsubsection{Purpose of the stabilization}
 
 Consider a hyperbolic conservation law, or more specifically the transport problem
 \begin{equation}
@@ -76,7 +76,7 @@ stabilization operator.
   \label{fig:ofdg-pipeline}
 \end{figure}
 
-\subsection{Discrete setting}
+\subsubsection{Discrete setting}
 
 Let $\Omega\subset\R^d$ be partitioned into a mesh $\mathcal{T}_h$, and let
 $\mathcal{F}_h^{\mathrm{i}}$ denote the set of interior faces.  On each element
@@ -112,8 +112,12 @@ DG polynomial is represented by
   \label{eq:ofdg-local-expansion}
 \end{equation}
 The numbers $u_{K,i}$ are the local degrees of freedom.  Depending on the basis,
-they may be nodal values or general expansion coefficients.  The theory below is
-basis independent.
+they may be nodal values or general expansion coefficients.  No assumption is
+made here that $\{\phi_i\}$ is modal, orthogonal, or formed from Legendre
+polynomials.  The word \emph{modal} used later describes the invariant
+polynomial-degree subspaces selected by $L^2$ projections; it does not prescribe
+the coefficient basis in which the DG framework stores $u_h$.  Both the theory
+and its matrix realization below are independent of that storage basis.
 
 For $0\leq r\leq k$, denote by
 $\Pi_K^r:L^2(K)\rightarrow V^r(K)$ the element-local $L^2$ projection,
@@ -147,7 +151,7 @@ $l$th damping contribution is allowed to suppress.  The convention
 $\Pi_K^{-1}=\Pi_K^0$ ensures that no damping contribution changes the cell
 average, which is the constant mode carrying the locally conserved quantity.
 
-\subsection{Face jumps of physical derivatives}
+\subsubsection{Face jumps of physical derivatives}
 
 For the multi-index
 $\boldsymbol{\alpha}=(\alpha_1,\ldots,\alpha_d)\in\N_0^d$, define
@@ -281,7 +285,7 @@ representative speed when the velocity varies along the face.  In the code this
 maximum is approximated by evaluating the velocity at the face quadrature points.
 When no velocity is supplied, the implementation uses $\beta_{K,F}=1$.
 
-\subsection{Global scale and element damping rates}
+\subsubsection{Global scale and element damping rates}
 
 Following the scale-invariant idea of~\cite{PengEtAl2024}, each component is
 normalized by one global amplitude.  Define the componentwise extrema
@@ -386,7 +390,7 @@ factor multiplies the rates by the same factor, so the product of a damping time
 and a damping rate is unchanged under the corresponding rescaling of physical
 time.
 
-\subsection{Projection-based damping operator}
+\subsubsection{Projection-based damping operator}
 
 The local damping operator is
 \begin{equation}
@@ -481,7 +485,7 @@ of the rates give
 These two identities are direct consequences of the implemented projection
 operator and do not depend on the particular face sensor.
 
-\subsection{Exact decay as a modal filter}
+\subsubsection{Exact decay by polynomial-degree shells}
 \label{sec:ofdg-exact-decay}
 
 The same damping operator can be applied in a separate pseudo-time step.  Freeze
@@ -542,8 +546,12 @@ copied unchanged.
 
 Thus the cell average is unchanged, whereas increasingly high polynomial shells
 are multiplied by nonnegative decay factors.  This is the modal-filter
-interpretation emphasized in~\cite{PengEtAl2024}.  The exact map avoids a time-step
-restriction caused solely by stiffness of the frozen damping equation.
+interpretation emphasized in~\cite{PengEtAl2024}.  It is a statement about the
+orthogonal decomposition of the polynomial space, not about the basis used to
+store the coefficients: every projector and shell in
+\cref{eq:ofdg-exact-decay} is applied directly in the host basis.  The exact map
+avoids a time-step restriction caused solely by stiffness of the frozen damping
+equation.
 
 The coefficient-space stabilization and the exact decay are two representations
 of the same operator.  Indeed,
@@ -555,10 +563,10 @@ of the same operator.  Indeed,
 The first form is used by \texttt{ComputeStabilization}; the exponential of the
 second form is used by \texttt{CompDecay}.
 
-\section{Implementation decisions and details}
+\subsection{Implementation decisions and details}
 \label{sec:ofdg-implementation}
 
-\subsection{Scope and geometric assumptions}
+\subsubsection{Scope and geometric assumptions}
 
 The implementation is a standalone MFEM header.  It assumes that the finite
 element space is nonempty and discontinuous, that $k\geq 1$, and that all elements
@@ -589,7 +597,7 @@ is therefore a constant Jacobian on each individual element, not one globally
 identical Jacobian for the whole mesh.  The characteristic length $h_K$ in the
 damping rate is obtained from MFEM's element-size routine for that element.
 
-\subsection{Projection matrices}
+\subsubsection{Projection matrices}
 
 Let $\{\phi_i\}_{i=1}^{N_k}$ be the local degree-$k$ basis and
 $\{\psi_a^{(r)}\}_{a=1}^{N_r}$ the degree-$r$ basis.  The code assembles
@@ -612,12 +620,21 @@ the degree-$k$ and degree-$r$ mass matrices, respectively; $B_r$ couples the two
 bases; and $I$ is the $N_k\times N_k$ identity matrix.  The code stores $S_r$
 for $0\leq r\leq k$.
 
+Crucially, this construction never converts the solution to Legendre or other
+orthogonal modal coefficients.  It represents the same projection operator in
+whatever supported scalar polynomial DG basis the host framework supplies.
+Consequently, a nodal basis, a modal basis, or another polynomial coefficient
+basis produces the same function-space operation up to quadrature and roundoff.
+This basis-agnostic realization is what makes the implementation portable: a
+second framework need not add a special OFDG solution basis, provided it can
+form the corresponding polynomial-space projections.
+
 On an affine element, all three mass
 and coupling matrices contain the same constant physical Jacobian factor, which
 cancels in $S_r$.  Therefore the projection matrices are assembled on the first
 element and reused on every element even when the element Jacobians differ.
 
-\subsection{Coefficient-to-coefficient derivatives}
+\subsubsection{Coefficient-to-coefficient derivatives}
 
 The repeated derivatives required by~\eqref{eq:ofdg-face-jump} are represented as
 polynomial coefficients rather than only as values at quadrature points.  At the
@@ -647,6 +664,16 @@ $\boldsymbol{x}=T_K(\boldsymbol{\xi})$, the physical derivative matrices are
 The inverse Jacobian $J_K^{-1}$ is read once at the reference-element centre and
 one set of matrices $\{D_{x_j}^{K}\}_{j=1}^d$ is stored for every element.
 
+Only first reference derivatives of the supplied finite-element basis are
+requested from MFEM.  Repeated application of the resulting coefficient
+operators generates every higher derivative needed by OFDG.  In framework
+terms, the construction requires scalar polynomial DG basis values and first
+derivatives, quadrature, nested lower-order polynomial spaces or equivalent
+projection operators, element and face transformations, and local
+degree-of-freedom access.  It therefore avoids a modal-basis requirement, but it
+does not claim support for arbitrary nonpolynomial, $H(\mathrm{div})$,
+$H(\mathrm{curl})$, or mixed finite-element spaces.
+
 All multi-indices with total degree at most $k$ are organized in a directed
 acyclic graph.  Each nonzero multi-index selects one parent of degree one less and
 one physical derivative direction.  Walking this graph evaluates every required
@@ -656,7 +683,7 @@ is
   \sum_{l=0}^k\binom{l+d-1}{d-1}=\binom{k+d}{d}.
 \end{equation}
 
-\subsection{Face quadrature and cached evaluation}
+\subsubsection{Face quadrature and cached evaluation}
 
 MFEM remains the sole source of mesh connectivity.  The setup loops over MFEM
 face numbers and obtains the two adjacent elements from MFEM's face-transformation
@@ -695,7 +722,7 @@ The implementation therefore performs one subtraction and one absolute value for
 each derivative, component, and quadrature point.  No squared-jump accumulator or
 final square root is required.
 
-\subsection{Runtime sequence and storage policy}
+\subsubsection{Runtime sequence and storage policy}
 
 For every input state, the implementation performs the following operations:
 \begin{enumerate}
@@ -743,7 +770,7 @@ scratch arrays and optional internal timers are owned by the OFDG object.  Becau
 that scratch state is mutable and reused, concurrent calls on the same object are
 not supported.
 
-\subsection{Relation to the published formulations}
+\subsubsection{Relation to the published formulations}
 \label{sec:ofdg-relation-to-literature}
 
 The original multidimensional OFDG sensors in~\cite{LuEtAl2021,LiuEtAl2022}
@@ -765,7 +792,6 @@ directly from \cref{eq:ofdg-local-conservation} and
 vertex-based or characteristic-variable sensors do not, by themselves, constitute
 a proof for this modified sensor.
 
-The KXRCF troubled-cell indicator is intentionally not included in this chapter.
-Its eventual role is to provide the active-element set used by the existing mask
-interface; its definition and interaction with OFDG will be documented after the
-KXRCF implementation has been finalized.
+The KXRCF troubled-cell indicator supplies the optional active-element set used
+by this mask interface.  Its definition, normalization, and system coupling are
+given in \cref{chap:kxrcf}.

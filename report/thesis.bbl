@@ -1,18 +1,47 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
-\bibitem{hd2d_advection_public}
-R.~Dabetic and R.~K\"{a}ppeli.
-\newblock 2d code for linear advection equation.
-\newblock \url{https://gitlab.ethz.ch/dabeticbscthesis/hd2d_advection_public},
-  2023.
-\newblock Commit SHA: 5e3f7f8a02a27987e4b3d8322a9db7f7759607b1.
+\bibitem{AndersonEtAl2021}
+Robert Anderson, Julian Andrej, Andrew Barker, Jamie Bramwell, Jean-Sylvain
+  Camier, Jakub Cerveny, Veselin Dobrev, Yohann Dudouit, Aaron Fisher, Tzanio
+  Kolev, Will Pazner, Mark Stowell, Vladimir Tomov, Ido Akkerman, John Dahm,
+  David Medina, and Stefano Zampini.
+\newblock {MFEM}: A modular finite element methods library.
+\newblock {\em Computers \& Mathematics with Applications}, 81:42--74, 2021.
 
-\bibitem{Hiptmair2024}
-Ralf Hiptmair.
-\newblock Lecture notes for {``Numerical Methods for Partial Differential
-  Equations'' (401-0674-00)}.
-\newblock \url{https://people.math.ethz.ch/~grsam/NUMPDEFL/NUMPDE.pdf}, 2024.
-\newblock [Online; accessed 25-July-2024].
+\bibitem{CockburnShu1998}
+Bernardo Cockburn and Chi-Wang Shu.
+\newblock The {Runge--Kutta} discontinuous {Galerkin} method for conservation
+  laws {V}: Multidimensional systems.
+\newblock {\em Journal of Computational Physics}, 141(2):199--224, 1998.
+
+\bibitem{FuShu2017}
+Guosheng Fu and Chi-Wang Shu.
+\newblock A new troubled-cell indicator for discontinuous {Galerkin} methods
+  for hyperbolic conservation laws.
+\newblock {\em Journal of Computational Physics}, 347:305--327, 2017.
+
+\bibitem{GottliebShu1998}
+Sigal Gottlieb and Chi-Wang Shu.
+\newblock Total variation diminishing {Runge--Kutta} schemes.
+\newblock {\em Mathematics of Computation}, 67(221):73--85, 1998.
+
+\bibitem{JiangShu1996}
+Guang-Shan Jiang and Chi-Wang Shu.
+\newblock Efficient implementation of weighted {ENO} schemes.
+\newblock {\em Journal of Computational Physics}, 126(1):202--228, 1996.
+
+\bibitem{KrivodonovaEtAl2004}
+Lilia Krivodonova, Jianguo Xin, Jean-Fran\c{c}ois Remacle, Nicolas Chevaugeon,
+  and Joseph~E. Flaherty.
+\newblock Shock detection and limiting with discontinuous {G}alerkin methods
+  for hyperbolic conservation laws.
+\newblock {\em Applied Numerical Mathematics}, 48(3--4):323--338, 2004.
+
+\bibitem{LaxLiu1998}
+Peter~D. Lax and Xu-Dong Liu.
+\newblock Solution of two-dimensional {Riemann} problems of gas dynamics by
+  positive schemes.
+\newblock {\em SIAM Journal on Scientific Computing}, 19(2):319--340, 1998.
 
 \bibitem{LiuEtAl2022}
 Yong Liu, Jianfang Lu, and Chi-Wang Shu.
@@ -40,5 +69,41 @@ Jianxian Qiu and Chi-Wang Shu.
   limiters.
 \newblock {\em {SIAM} Journal on Scientific Computing}, 27(3):995--1013, jan
   2005.
+
+\bibitem{ShuOsher1989}
+Chi-Wang Shu and Stanley Osher.
+\newblock Efficient implementation of essentially non-oscillatory
+  shock-capturing schemes, {II}.
+\newblock {\em Journal of Computational Physics}, 83(1):32--78, 1989.
+
+\bibitem{Sod1978}
+Gary~A. Sod.
+\newblock A survey of several finite difference methods for systems of
+  nonlinear hyperbolic conservation laws.
+\newblock {\em Journal of Computational Physics}, 27(1):1--31, 1978.
+
+\bibitem{VuikRyan2014}
+Mathea~J. Vuik and Jennifer~K. Ryan.
+\newblock Multiwavelet troubled-cell indicator for discontinuity detection of
+  discontinuous {Galerkin} schemes.
+\newblock {\em Journal of Computational Physics}, 270:138--160, 2014.
+
+\bibitem{VuikRyan2016}
+Mathea~J. Vuik and Jennifer~K. Ryan.
+\newblock Automated parameters for troubled-cell indicators using outlier
+  detection.
+\newblock {\em SIAM Journal on Scientific Computing}, 38(1):A84--A104, 2016.
+
+\bibitem{WoodwardColella1984}
+Paul Woodward and Phillip Colella.
+\newblock The numerical simulation of two-dimensional fluid flow with strong
+  shocks.
+\newblock {\em Journal of Computational Physics}, 54(1):115--173, 1984.
+
+\bibitem{ZhangShu2010}
+Xiangxiong Zhang and Chi-Wang Shu.
+\newblock On positivity-preserving high order discontinuous {Galerkin} schemes
+  for compressible {Euler} equations on rectangular meshes.
+\newblock {\em Journal of Computational Physics}, 229(23):8918--8934, 2010.
 
 \end{thebibliography}

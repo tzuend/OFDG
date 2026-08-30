@@ -1,0 +1,84 @@
+\section{Implementation and Parallelization}
+\label{chap:implementation}
+
+\subsection{Software structure}
+
+The implementation separates physics from geometry.  A \emph{face physics}
+object receives two conservative traces and a unit normal, and returns the two
+nonnegative propagation radii required by OFDG together with the signed
+transport velocity required by KXRCF.  Policies are provided for unit-speed
+compatibility, prescribed advection, Burgers flow, and compressible Euler.  This
+keeps the OFDG and KXRCF loops independent of equation-specific indexing.
+
+The implementation also separates a function-space operation from its
+coefficient representation.  Polynomial-shell projections and first-derivative
+maps are assembled once in the scalar DG basis supplied by MFEM.  Runtime
+filtering then consists of dense operations on the existing local coefficients;
+neither the examples nor another host framework must store their solution in a
+Legendre or otherwise modal basis.
+
+The example programs reuse MFEM's \texttt{AdvectionFlux},
+\texttt{BurgersFlux}, \texttt{EulerFlux}, \texttt{RusanovFlux},
+\texttt{HyperbolicFormIntegrator}, and explicit ODE solvers.  Adapted OFDG is
+applied once after a complete MFEM step.  Earlier cadence experiments found no
+accuracy improvement from applying it at all four RK4 stages, so the custom
+stage-wise RK4 remains a regression experiment rather than the production OFDG
+path.  A separate small experiment driver implements SSPRK3 and RK4 callbacks
+for paper-faithful stage-wise OEDG and for Euler positivity checks.  Rejected
+callbacks leave both the accepted state and physical time unchanged.
+
+The command-line method and cadence interface is common to all drivers.  The
+\texttt{auto} cadence resolves to post-step MFEM integration for DG and OFDG,
+and to stage-wise integration for OEDG.  Compatibility flags map onto the same
+enumeration; they do not create a second implementation path.
+
+All maintained example drivers provide the same optional live-visualization
+interface.  Passing \texttt{-vis} streams the current parallel grid function to
+GLVis, while \texttt{-vs} selects the update interval.  A shared wrapper owns
+the socket protocol and requires a successful connection on every MPI rank;
+otherwise all ranks continue with visualization disabled.  Visualization is
+off by default and is not part of measured study runs.
+
+\subsection{Distributed meshes}
+
+MFEM distinguishes faces whose two elements are owned by one rank from shared
+faces whose second element is a halo neighbor.  Each stabilization call follows
+the same sequence:
+\begin{enumerate}
+  \item compute local element data and reduce global component scales;
+  \item exchange face-neighbor DG coefficients;
+  \item process ordinary interior faces and update both local neighbors;
+  \item process shared faces and update only the locally owned element;
+  \item apply the element-local OFDG decay map.
+\end{enumerate}
+The neighboring rank independently performs the complementary update.  KXRCF
+uses the same ownership rule.  A two-rank test partitions a one-dimensional
+mesh so that its only discontinuity lies on the processor boundary; it checks
+that KXRCF marks the inflow cell, OFDG and OEDG observe the derivative jump,
+and every element mean remains unchanged.  Collective diagnostic reductions
+are called by all ranks before root-only printing.  This ordering is protected
+by the same integration test.
+
+\subsection{Verification strategy}
+
+The test suite was established before changing the face physics.  It includes
+the following layers:
+\begin{itemize}
+  \item exact frozen OFDG stabilization and decay vectors for a discontinuous
+        one-dimensional state;
+  \item conservation, inactive-mask behavior, uniform-polynomial invariance,
+        and affine triangle and quadrilateral geometries;
+  \item KXRCF zero, constant, one- and two-dimensional jump fingerprints,
+        scale invariance, component pooling, and MFEM vector-order invariance;
+  \item analytical Burgers and Euler normal speeds and rejection of negative
+        density or pressure;
+  \item OEDG constants, means, modal attenuation, scale/evolution invariance,
+        and one- and two-dimensional fingerprints;
+  \item positivity invariance, mean preservation, positive evaluation states,
+        nonphysical means, and MPI consistency;
+  \item the MPI partition-boundary regression, stage rejection, RK cadence,
+        reference-solver, rate-calculation, and reduced end-to-end study tests.
+\end{itemize}
+Debug tests use address and undefined-behavior sanitizers.  Release tests are
+compiled separately so that stale debug objects cannot be mistaken for an
+optimized build.

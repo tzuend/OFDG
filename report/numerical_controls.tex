@@ -1,0 +1,30 @@
+\section{Common Numerical Controls}
+\label{sec:numerical-controls}
+
+\subsection{Euler admissibility}
+
+The common positivity limiter preserves each conservative cell average and
+scales all local degrees of freedom toward that mean.  Density is constrained
+first.  Pressure is then constrained by bisection along the same line segment,
+using the concavity of the admissible Euler set.  The evaluation set contains
+volume quadrature nodes and every local or shared face point used by the DG and
+filter operators.  This construction follows the mean-preserving scaling
+principle used by positivity-preserving high-order DG schemes
+\cite{ZhangShu2010}.
+
+If a mean is itself nonphysical, no mean-preserving correction exists.  The
+candidate stage is rejected and the step is retried with half the time step up
+to the documented retry limit.  Assisted comparisons apply the same limiter to
+RKDG, adapted OFDG, and OEDG.  Unassisted experiments record failure time and
+minimum density and pressure separately; they are not silently discarded.
+
+\subsection{Independent one-dimensional reference}
+
+An independent finite-volume program supplies discontinuous one-dimensional
+reference solutions.  It uses component-wise fifth-order WENO reconstruction,
+local Lax--Friedrichs flux splitting, and SSPRK3
+\cite{JiangShu1996,GottliebShu1998}.  It shares no DG projection, indicator, or
+filter code.  Validation uses a smooth periodic Euler wave and the exact Sod
+Riemann solution~\cite{Sod1978}.  Before a final reference is accepted, two
+successive reference grids must differ by substantially less than the error of
+every compared DG solution.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mfem.hpp"
+#include "face_physics.hpp"
 
 #include <algorithm>
 #include <array>
@@ -10,10 +11,23 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
 using namespace mfem;
+
+/** Configuration of the face sensor used by the modal decay kernel. */
+struct OFDGSensorOptions {
+    enum class FaceRule {
+        HighOrder,
+        Trapezoidal
+    };
+
+    FaceRule face_rule = FaceRule::HighOrder;
+    bool pool_components = false;
+    bool use_face_height = false;
+};
 
 // =============================================================================
 // Internal timing
@@ -713,11 +727,15 @@ struct OFDGScratch {
     OFDGJumpScratch jump;
 
     DenseMatrix jumps;
+    Vector face_state1;
+    Vector face_state2;
 
     void Initialize(int ndof, int ncomp, int volume_nq, int order)
     {
         volume.Initialize(ndof, ncomp, volume_nq);
         jumps.SetSize(ncomp, order + 1);
+        face_state1.SetSize(ncomp);
+        face_state2.SetSize(ncomp);
     }
 };
 
@@ -741,6 +759,8 @@ public:
         DenseMatrix evaluation1;
         DenseMatrix evaluation2;
         Vector normalized_weights;
+        double height1 = 1.0;
+        double height2 = 1.0;
     };
 
 private:
@@ -751,17 +771,69 @@ private:
     int order;
     int ndof;
     int ncomp;
+    OFDGSensorOptions::FaceRule face_rule;
 
     std::vector<FaceEvaluationData> face_data;
     int interior_face_count = 0;
 
+    double ElementFaceHeight(FaceElementTransformations *transformations,
+                             bool first) const
+    {
+        const IntegrationPoint &face_center_reference =
+            Geometries.GetCenter(transformations->GetGeometryType());
+        transformations->Face->SetIntPoint(&face_center_reference);
+        Vector face_center;
+        transformations->Face->Transform(face_center_reference, face_center);
+
+        ElementTransformation *element_transformation =
+            first ? transformations->Elem1 : transformations->Elem2;
+        const Geometry::Type geometry = operators.Geometry();
+        const IntegrationRule &vertices = *Geometries.GetVertices(geometry);
+        double height = 0.0;
+        Vector physical_vertex;
+        Vector displacement(operators.Dim());
+        Vector normal(operators.Dim());
+        if (operators.Dim() > 1) {
+            CalcOrtho(transformations->Face->Jacobian(), normal);
+            normal /= normal.Norml2();
+        } else {
+            normal = 1.0;
+        }
+        for (int vertex = 0; vertex < vertices.GetNPoints(); ++vertex) {
+            element_transformation->Transform(vertices.IntPoint(vertex),
+                                              physical_vertex);
+            subtract(physical_vertex, face_center, displacement);
+            height = std::max(height, std::abs(displacement * normal));
+        }
+        MFEM_VERIFY(height > 0.0, "OEDG face height must be positive.");
+        return height;
+    }
+
     void BuildFaceEvaluationData(FaceElementTransformations *Tr, DenseMatrix &evaluation1,
-                                 DenseMatrix &evaluation2, Vector &normalized_weights) const
+                                 DenseMatrix &evaluation2, Vector &normalized_weights,
+                                 double *height1 = nullptr,
+                                 double *height2 = nullptr) const
     {
         const FiniteElement *fe1 = fes->GetFE(Tr->Elem1No);
         const FiniteElement *fe2 = fes->GetFE(Tr->Elem2No);
+        if (height1) { *height1 = ElementFaceHeight(Tr, true); }
+        if (height2) { *height2 = ElementFaceHeight(Tr, false); }
 
-        const IntegrationRule &ir = IntRules.Get(Tr->GetGeometryType(), 2 * order + 1);
+        IntegrationRule trapezoidal_rule;
+        const IntegrationRule *rule = nullptr;
+        if (face_rule == OFDGSensorOptions::FaceRule::Trapezoidal &&
+            Tr->GetGeometryType() == Geometry::SEGMENT) {
+            trapezoidal_rule.SetSize(2);
+            trapezoidal_rule.IntPoint(0).Set1w(0.0, 0.5);
+            trapezoidal_rule.IntPoint(1).Set1w(1.0, 0.5);
+            rule = &trapezoidal_rule;
+        } else {
+            // A one-dimensional mesh has point faces, and three-dimensional
+            // faces retain a proper face rule until a published 3D OEDG rule
+            // is available.
+            rule = &IntRules.Get(Tr->GetGeometryType(), 2 * order + 1);
+        }
+        const IntegrationRule &ir = *rule;
 
         const int nq = ir.GetNPoints();
 
@@ -820,7 +892,8 @@ private:
 
             FaceEvaluationData &data = face_data[f];
             BuildFaceEvaluationData(Tr, data.evaluation1, data.evaluation2,
-                                    data.normalized_weights);
+                                    data.normalized_weights, &data.height1,
+                                    &data.height2);
             ++interior_face_count;
         }
     }
@@ -873,9 +946,11 @@ private:
 
 public:
     OFDGFaceEvaluation(const FiniteElementSpace *fes_, const OFDGOperators &operators_,
-                       OFDGInternalTiming &timing_)
+                       OFDGInternalTiming &timing_,
+                       OFDGSensorOptions::FaceRule face_rule_ =
+                           OFDGSensorOptions::FaceRule::HighOrder)
         : fes(fes_), operators(operators_), timing(timing_), order(operators_.Order()),
-          ndof(operators_.NDof()), ncomp(fes_->GetVDim())
+          ndof(operators_.NDof()), ncomp(fes_->GetVDim()), face_rule(face_rule_)
     {
         BuildCachedFaces();
     }
@@ -900,6 +975,11 @@ public:
         return bytes;
     }
 
+    double FaceHeight(int face, bool first) const
+    {
+        return first ? face_data[face].height1 : face_data[face].height2;
+    }
+
     void EvaluateDerivativeJumps(const DenseMatrix &derivatives1, const DenseMatrix &derivatives2,
                                  int face, DenseMatrix &jumps, OFDGJumpScratch &scratch) const
     {
@@ -909,10 +989,13 @@ public:
     // Used by the public one-face testing API.
     void EvaluateDerivativeJumps(const DenseMatrix &derivatives1, const DenseMatrix &derivatives2,
                                  FaceElementTransformations *Tr, DenseMatrix &jumps,
-                                 OFDGJumpScratch &scratch) const
+                                 OFDGJumpScratch &scratch,
+                                 double *height1 = nullptr,
+                                 double *height2 = nullptr) const
     {
         FaceEvaluationData data;
-        BuildFaceEvaluationData(Tr, data.evaluation1, data.evaluation2, data.normalized_weights);
+        BuildFaceEvaluationData(Tr, data.evaluation1, data.evaluation2,
+                                data.normalized_weights, height1, height2);
         Evaluate(derivatives1, derivatives2, data, jumps, scratch);
     }
 };
@@ -1045,6 +1128,39 @@ private:
         }
     }
 
+    void BuildStateFromLocalData(const Vector &local_state,
+                                 ElementTransformation &transformation,
+                                 OFDGDerivativeState &state) const
+    {
+        MFEM_VERIFY(local_state.Size() == ndof * ncomp,
+                    "Unexpected face-neighbor state size in parallel OFDG.");
+        state.root_vector = local_state;
+
+        transformation.SetIntPoint(&Geometries.GetCenter(operators.Geometry()));
+        const DenseMatrix &inverse_jacobian = transformation.InverseJacobian();
+        const auto &reference_derivatives = operators.ReferenceDerivatives();
+        std::vector<DenseMatrix> physical_derivatives(dim);
+
+        for (int direction = 0; direction < dim; ++direction) {
+            physical_derivatives[direction].SetSize(ndof);
+            physical_derivatives[direction] = 0.0;
+            for (int reference_direction = 0;
+                 reference_direction < dim; ++reference_direction) {
+                physical_derivatives[direction].Add(
+                    inverse_jacobian(reference_direction, direction),
+                    reference_derivatives[reference_direction]);
+            }
+        }
+
+        const auto &nodes = operators.DerivativeNodes();
+        for (int node = 1; node < static_cast<int>(nodes.size()); ++node) {
+            const OFDGDerivativeNode &info = nodes[node];
+            Mult(physical_derivatives[info.physical_direction],
+                 state.coefficient_views[info.parent],
+                 state.coefficient_views[node]);
+        }
+    }
+
 public:
     OFDGDerivativeProvider(const FiniteElementSpace *fes_, const OFDGOperators &operators_,
                            const OFDGMeshData &mesh_data_, OFDGInternalTiming &timing_)
@@ -1088,6 +1204,18 @@ public:
         return {&states[e1], &states[e2]};
     }
 
+    const OFDGDerivativeState &Get(int element) const
+    {
+        return states[element];
+    }
+
+    void BuildFaceNeighborState(const Vector &local_state,
+                                ElementTransformation &transformation,
+                                OFDGDerivativeState &state) const
+    {
+        BuildStateFromLocalData(local_state, transformation, state);
+    }
+
     std::size_t StorageBytes() const
     {
         return storage_bytes;
@@ -1118,10 +1246,8 @@ public:
 class OFDG {
 private:
     const FiniteElementSpace *fes;
-
-    mutable VectorFunctionCoefficient velocity;
-
-    bool use_unit_wave_speed;
+    std::shared_ptr<const FacePhysics> face_physics;
+    OFDGSensorOptions sensor_options;
 
     OFDGOperators operators;
 
@@ -1192,6 +1318,21 @@ private:
             }
         }
 
+#ifdef MFEM_USE_MPI
+        if (const auto *parallel_space =
+               dynamic_cast<const ParFiniteElementSpace *>(fes)) {
+            MPI_Comm communicator = parallel_space->GetComm();
+            MPI_Allreduce(MPI_IN_PLACE, volume.mean_integrals.GetData(), ncomp,
+                          MPITypeMap<real_t>::mpi_type, MPI_SUM, communicator);
+            MPI_Allreduce(MPI_IN_PLACE, volume.minimum_values.GetData(), ncomp,
+                          MPITypeMap<real_t>::mpi_type, MPI_MIN, communicator);
+            MPI_Allreduce(MPI_IN_PLACE, volume.maximum_values.GetData(), ncomp,
+                          MPITypeMap<real_t>::mpi_type, MPI_MAX, communicator);
+            MPI_Allreduce(MPI_IN_PLACE, &total_volume, 1,
+                          MPITypeMap<real_t>::mpi_type, MPI_SUM, communicator);
+        }
+#endif
+
         Vector local_means(ncomp);
 
         for (int c = 0; c < ncomp; ++c) {
@@ -1219,20 +1360,37 @@ public:
     // =========================================================================
 
     OFDG(const FiniteElementSpace *fes_, int btype_)
-        : OFDG(fes_, btype_,
-               VectorFunctionCoefficient(fes_->GetMesh()->Dimension(),
-                                         [](const Vector &, Vector &v) { v = 1.0; }))
+        : OFDG(fes_, btype_, std::make_shared<UnitFacePhysics>())
     {
-        use_unit_wave_speed = true;
     }
 
     OFDG(const FiniteElementSpace *fes_, int btype_, VectorFunctionCoefficient vel_)
-        : fes(fes_), velocity(vel_), use_unit_wave_speed(false), operators(fes_, btype_),
+        : OFDG(
+              fes_, btype_,
+              std::make_shared<AdvectionFacePhysics>(
+                  std::static_pointer_cast<VectorCoefficient>(
+                      std::make_shared<VectorFunctionCoefficient>(std::move(vel_)))))
+    {
+    }
+
+    OFDG(const FiniteElementSpace *fes_, int btype_,
+         std::shared_ptr<const FacePhysics> face_physics_)
+        : OFDG(fes_, btype_, std::move(face_physics_), OFDGSensorOptions{})
+    {
+    }
+
+    OFDG(const FiniteElementSpace *fes_, int btype_,
+         std::shared_ptr<const FacePhysics> face_physics_,
+         OFDGSensorOptions sensor_options_)
+        : fes(fes_), face_physics(std::move(face_physics_)),
+          sensor_options(sensor_options_), operators(fes_, btype_),
           dim(operators.Dim()), order(operators.Order()), ndof(operators.NDof()),
           ncomp(fes_->GetVDim()), mesh_data(fes_, operators), internal_timing(),
-          face_evaluation(fes_, operators, internal_timing),
+          face_evaluation(fes_, operators, internal_timing,
+                          sensor_options.face_rule),
           derivative_provider(fes_, operators, mesh_data, internal_timing)
     {
+        MFEM_VERIFY(face_physics != nullptr, "OFDG requires valid face physics.");
         sigma_elem.resize(ncomp);
 
         for (int c = 0; c < ncomp; ++c) {
@@ -1247,7 +1405,18 @@ public:
         const double face_storage_kib =
             static_cast<double>(face_evaluation.StorageBytes()) / 1024.0;
 
-        std::cout << "Optimized serial OFDG:\n"
+        bool print_information = true;
+#ifdef MFEM_USE_MPI
+        if (dynamic_cast<const ParFiniteElementSpace *>(fes)) {
+            print_information = Mpi::Root();
+        }
+#endif
+        if (print_information) {
+        std::cout << (sensor_options.pool_components &&
+                      sensor_options.face_rule ==
+                         OFDGSensorOptions::FaceRule::Trapezoidal
+                         ? "OEDG 2024 filter:\n"
+                         : "Optimized OFDG:\n")
                   << "  elements: " << fes->GetNE() << '\n'
                   << "  interior faces: " << face_evaluation.FaceCount() << '\n'
                   << "  components: " << ncomp << '\n'
@@ -1266,6 +1435,7 @@ public:
 #else
         std::cout << "  internal timing: disabled" << std::endl;
 #endif
+        }
     }
 
     // =========================================================================
@@ -1361,17 +1531,14 @@ public:
     // Normal wave speed
     // =========================================================================
 
-    void ComputeNormalSpeed(FaceElementTransformations *Tr, double &beta_1, double &beta_2) const
+    void ComputeNormalSpeed(FaceElementTransformations *Tr,
+                            const DenseMatrix &traces1,
+                            const DenseMatrix &traces2,
+                            double &beta_1, double &beta_2) const
     {
-        if (use_unit_wave_speed) {
-            beta_1 = 1.0;
-            beta_2 = Tr->Elem2 ? 1.0 : 0.0;
-            return;
-        }
-
         Vector normal(dim);
-        Vector vel1(dim);
-        Vector vel2(dim);
+        Vector &state1 = scratch.face_state1;
+        Vector &state2 = scratch.face_state2;
 
         beta_1 = 0.0;
         beta_2 = 0.0;
@@ -1391,31 +1558,15 @@ public:
                 normal /= normal.Norml2();
             }
 
-            const IntegrationPoint &ip1 = Tr->GetElement1IntPoint();
-
-            velocity.Eval(vel1, *Tr->Elem1, ip1);
-
-            double s1 = 0.0;
-
-            for (int d = 0; d < dim; ++d) {
-                s1 += normal(d) * vel1(d);
+            for (int c = 0; c < ncomp; ++c) {
+                state1(c) = traces1(q, c);
+                state2(c) = traces2(q, c);
             }
 
-            beta_1 = std::max(beta_1, std::abs(s1));
-
-            if (Tr->Elem2) {
-                const IntegrationPoint &ip2 = Tr->GetElement2IntPoint();
-
-                velocity.Eval(vel2, *Tr->Elem2, ip2);
-
-                double s2 = 0.0;
-
-                for (int d = 0; d < dim; ++d) {
-                    s2 -= normal(d) * vel2(d);
-                }
-
-                beta_2 = std::max(beta_2, std::abs(s2));
-            }
+            const FacePhysicsSample physics =
+                face_physics->Evaluate(state1, state2, normal, *Tr);
+            beta_1 = std::max(beta_1, static_cast<double>(physics.beta1));
+            beta_2 = std::max(beta_2, static_cast<double>(physics.beta2));
         }
     }
 
@@ -1512,6 +1663,12 @@ public:
                 continue;
             }
 
+            const auto derivatives = derivative_provider.GetPair(e1, e2);
+
+            face_evaluation.EvaluateDerivativeJumps(derivatives.first->all_coefficients,
+                                                    derivatives.second->all_coefficients, f, jumps,
+                                                    scratch.jump);
+
             double beta_1 = 0.0;
             double beta_2 = 0.0;
 
@@ -1519,17 +1676,12 @@ public:
             const auto beta_timer_begin = OFDGTimingClock::now();
 #endif
 
-            ComputeNormalSpeed(FTr, beta_1, beta_2);
+            ComputeNormalSpeed(FTr, scratch.jump.traces1, scratch.jump.traces2,
+                               beta_1, beta_2);
 
 #ifdef OFDG_INTERNAL_TIMING
             internal_timing.normal_speed += OFDGSecondsSince(beta_timer_begin);
 #endif
-
-            const auto derivatives = derivative_provider.GetPair(e1, e2);
-
-            face_evaluation.EvaluateDerivativeJumps(derivatives.first->all_coefficients,
-                                                    derivatives.second->all_coefficients, f, jumps,
-                                                    scratch.jump);
 
 #ifdef OFDG_INTERNAL_TIMING
             const auto sigma_timer_begin = OFDGTimingClock::now();
@@ -1543,17 +1695,111 @@ public:
                 const double inverse_scaling = 1.0 / scaling(c);
 
                 for (int l = 0; l <= order; ++l) {
+                    const double prefactor1 = sensor_options.use_face_height
+                        ? operators.SensorCommon(l) * std::pow(
+                              face_evaluation.FaceHeight(f, true), l - 1)
+                        : mesh_data.SensorPrefactor(e1, l);
+                    const double prefactor2 = sensor_options.use_face_height
+                        ? operators.SensorCommon(l) * std::pow(
+                              face_evaluation.FaceHeight(f, false), l - 1)
+                        : mesh_data.SensorPrefactor(e2, l);
                     sigma_elem[c](e1, l) +=
-                        beta_1 * mesh_data.SensorPrefactor(e1, l) * jumps(c, l) * inverse_scaling;
+                        beta_1 * prefactor1 * jumps(c, l) * inverse_scaling;
 
                     sigma_elem[c](e2, l) +=
-                        beta_2 * mesh_data.SensorPrefactor(e2, l) * jumps(c, l) * inverse_scaling;
+                        beta_2 * prefactor2 * jumps(c, l) * inverse_scaling;
                 }
             }
 
 #ifdef OFDG_INTERNAL_TIMING
             internal_timing.sigma_accumulation += OFDGSecondsSince(sigma_timer_begin);
 #endif
+        }
+
+#ifdef MFEM_USE_MPI
+        // MFEM stores processor-boundary faces separately from local interior
+        // faces. Exchange the DG trace once, then let this rank accumulate only
+        // the sigma contribution of its locally owned element.
+        if (auto *parallel_space =
+               dynamic_cast<ParFiniteElementSpace *>(
+                  const_cast<FiniteElementSpace *>(fes))) {
+            ParMesh *parallel_mesh = parallel_space->GetParMesh();
+            ParGridFunction parallel_state(parallel_space);
+            parallel_state = x;
+            parallel_state.ExchangeFaceNbrData();
+
+            Array<int> neighbor_vdofs;
+            Vector neighbor_state;
+            OFDGDerivativeState neighbor_derivatives(
+                ndof, ncomp, operators.DerivativeCount());
+
+            for (int shared_face = 0;
+                 shared_face < parallel_mesh->GetNSharedFaces(); ++shared_face) {
+                FaceElementTransformations *transformations =
+                    parallel_mesh->GetSharedFaceTransformations(shared_face, true);
+                const int local_element = transformations->Elem1No;
+                const int neighbor_element =
+                    transformations->Elem2No - parallel_mesh->GetNE();
+
+                if (active && !(*active)[local_element]) { continue; }
+
+                parallel_space->GetFaceNbrElementVDofs(neighbor_element,
+                                                        neighbor_vdofs);
+                neighbor_state.SetSize(neighbor_vdofs.Size());
+                parallel_state.FaceNbrData().GetSubVector(neighbor_vdofs,
+                                                          neighbor_state);
+                derivative_provider.BuildFaceNeighborState(
+                    neighbor_state, *transformations->Elem2,
+                    neighbor_derivatives);
+
+                const OFDGDerivativeState &local_derivatives =
+                    derivative_provider.Get(local_element);
+                double local_face_height = 1.0;
+                double neighbor_face_height = 1.0;
+                face_evaluation.EvaluateDerivativeJumps(
+                    local_derivatives.all_coefficients,
+                    neighbor_derivatives.all_coefficients,
+                    transformations, jumps, scratch.jump,
+                    &local_face_height, &neighbor_face_height);
+
+                double beta_local = 0.0;
+                double beta_neighbor = 0.0;
+                ComputeNormalSpeed(transformations, scratch.jump.traces1,
+                                   scratch.jump.traces2,
+                                   beta_local, beta_neighbor);
+
+                for (int c = 0; c < ncomp; ++c) {
+                    if (scaling(c) <= 1e-14) { continue; }
+                    const double inverse_scaling = 1.0 / scaling(c);
+                    for (int l = 0; l <= order; ++l) {
+                        const double prefactor = sensor_options.use_face_height
+                            ? operators.SensorCommon(l) *
+                                  std::pow(local_face_height, l - 1)
+                            : mesh_data.SensorPrefactor(local_element, l);
+                        sigma_elem[c](local_element, l) +=
+                            beta_local * prefactor *
+                            jumps(c, l) * inverse_scaling;
+                    }
+                }
+            }
+        }
+#endif
+
+        // The 2024 OEDG system extension uses one damping coefficient for the
+        // complete conservative state: the largest normalized component
+        // sensor controls every component on an element.
+        if (sensor_options.pool_components && ncomp > 1) {
+            for (int e = 0; e < fes->GetNE(); ++e) {
+                for (int l = 0; l <= order; ++l) {
+                    double pooled = 0.0;
+                    for (int c = 0; c < ncomp; ++c) {
+                        pooled = std::max(pooled, sigma_elem[c](e, l));
+                    }
+                    for (int c = 0; c < ncomp; ++c) {
+                        sigma_elem[c](e, l) = pooled;
+                    }
+                }
+            }
         }
 
 #ifdef OFDG_INTERNAL_TIMING

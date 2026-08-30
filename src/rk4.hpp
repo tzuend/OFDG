@@ -40,12 +40,6 @@ public:
    {
    }
 
-   // stabiliser: ofdg(fes, btype_, velocity_)
-   explicit OEDG_RK4Solver(FiniteElementSpace &fes, int btype_, VectorFunctionCoefficient &velocity_)
-      : stabilizer(fes, btype_, velocity_)
-   {
-   }
-
    void Init(TimeDependentOperator &f_) override
    {
       ODESolver::Init(f_);

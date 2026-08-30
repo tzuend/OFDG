@@ -1,0 +1,65 @@
+\section{Experimental Methodology}
+\label{sec:experimental-methodology}
+
+The numerical study is currently in its design phase.  The final manifest is
+therefore marked \emph{draft} and cannot be executed by the study runner.  A
+dry run expands every proposed row, checks its metadata, and estimates its cost
+from development measurements without launching a numerical solver.  Final
+measurements will begin only after the matrix has been reviewed and its status
+is changed explicitly to \emph{approved}.
+
+\subsection{Comparison contract}
+
+The headline methods are conventional RKDG, adapted OFDG restricted by KXRCF,
+and the 2024 OEDG comparator.  All-cell adapted OFDG is a targeted ablation.
+For a given row, the methods share the governing problem, mesh, polynomial
+degree, numerical flux, CFL rule, final time, and, where required, the common
+positivity treatment.  Comparisons across degrees are reported both at equal
+mesh and at approximately equal actual global degrees of freedom; these answer
+different questions and are not combined.
+
+Smooth problems record $L^1$, $L^2$, and $L^\infty$ errors.  For uniform
+refinement from $h$ to $h/2$, the observed rate is
+\begin{equation}
+  r=\frac{\log(E_h/E_{h/2})}{\log 2}.
+  \label{eq:observed-rate}
+\end{equation}
+The 1D advection superconvergence experiment additionally records the
+cell-average and downwind-point errors defined in
+\cref{sec:results-convergence-tables}.  Discontinuous cases record independent
+reference error, total variation, extrema, overshoot, undershoot, conservation
+drift, troubled- and limited-cell activity, rejected steps, and failure time.
+
+Timing is separate from accuracy.  Proposed timing rows specify one unrecorded
+warm-up and five repetitions, to be summarized by the median and interquartile
+range.  Fixed-work strong scaling uses one, two, and four MPI ranks.  A pilot
+will select a workload whose one-rank time is long enough to dominate startup
+cost.  No timing value from the reduced CI checkpoint is interpreted as a
+performance result.
+
+\subsection{Proposed experiment families}
+
+The approval matrix includes smooth $P^1$--$P^3$ sequences for one- and
+two-dimensional advection, pre-shock Burgers flow, the one- and two-dimensional
+Euler waves, the transported vortex, and a triangular-mesh sequence.  The
+discontinuous group contains post-shock Burgers flow, scaled Lax data,
+Woodward--Colella blast waves~\cite{WoodwardColella1984}, the Shu--Osher
+shock--entropy interaction~\cite{ShuOsher1989}, and a two-dimensional Euler
+Riemann problem~\cite{LaxLiu1998}.
+
+Targeted ablations vary the KXRCF threshold, compare all-cell and gated OFDG,
+compare physical and unit wave-speed scaling, and compare stage-wise with
+post-step OFDG cadence.  Robustness is measured first without assistance and
+then with the common positivity limiter.  The exact proposed meshes, final
+times, metrics, references, estimated costs, and intended report artifacts are
+listed in \cref{app:study-design}; they remain proposals rather than completed
+experiments.
+
+\subsection{Reproducibility and provenance}
+
+Each eventual row will record its full command, actual DOFs, time-integration
+parameters, MPI ranks, source revision, MFEM revision, compiler, host, and UTC
+timestamp.  Raw logs and rank-local profiles are retained.  Derived CSV,
+tables, and figures are generated in a separate deterministic analysis step.
+The software implementation uses MFEM for meshes, finite element spaces,
+parallel ownership, and operator assembly~\cite{AndersonEtAl2021}.

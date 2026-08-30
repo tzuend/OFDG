@@ -1,0 +1,26 @@
+\chapter{Discussion}
+\label{chap:discussion}
+
+\ifdraftresults
+This chapter is intentionally limited to the interpretation framework.  The
+final discussion will be written only after the approved experiment matrix has
+been executed.  It will answer the research questions in the order posed in
+\cref{chap:methods}: the effect of physical wave-speed scaling, the selectivity
+and cost of KXRCF gating, distributed-memory behavior, and the comparative
+accuracy and robustness of RKDG, adapted OFDG--KXRCF, and OEDG.
+
+The discussion will distinguish observations from established theory.  In
+particular, conservation follows from preservation of cell averages, whereas
+convergence, nonoscillatory behavior, and robustness of the modified sensor
+must be supported by the final measurements.  It will also address temporal
+error, reference-grid independence, positivity-limiter intervention, detector
+threshold sensitivity, implementation-specific bases and fluxes, and the
+limited rank count of the local scaling study.  Basis independence will be
+distinguished from geometric generality: the projection construction does not
+prescribe a coefficient basis, whereas the current verified implementation
+still assumes fixed, affine, uniform-order scalar polynomial DG elements.
+\else
+\InputIfFileExists{generated/final/discussion.tex}{}{%
+  \PackageError{thesis}{Approved final discussion is missing}{Generate the
+  final discussion after reviewing the approved results.}}
+\fi
