@@ -6,6 +6,9 @@
 
 #include <memory>
 
+namespace ofdg
+{
+
 struct StudyFilterStatistics {
     long applications = 0;
     long active_elements = 0;
@@ -94,3 +97,5 @@ public:
         return result;
     }
 };
+
+} // namespace ofdg

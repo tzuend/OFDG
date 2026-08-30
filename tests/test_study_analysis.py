@@ -60,6 +60,25 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
+        portable_profiles = root / "profiles"
+        portable_references = root / "references"
+        portable_profiles.mkdir()
+        portable_references.mkdir()
+        profile_name = "retained-profile"
+        (portable_profiles / f"{profile_name}.rank000000.csv").write_text(
+            "sample,x,value\ncenter,0.5,1.0\n")
+        (portable_references / "retained-reference.csv").write_text(
+            "x,density\n0.5,1.0\n")
+        portable_row = {
+            "profile_prefix": f"/former/checkout/{profile_name}",
+            "reference": "/former/checkout/retained-reference.csv",
+        }
+        ANALYSIS.rebase_recorded_paths([portable_row], root)
+        if Path(portable_row["profile_prefix"]).parent != portable_profiles:
+            raise RuntimeError("retained profile path was not made portable")
+        if Path(portable_row["reference"]).parent != portable_references:
+            raise RuntimeError("retained reference path was not made portable")
+
         figure_dir = root / "figures"
         report_dir = root / "report"
         ANALYSIS.convergence_figures(summary, figure_dir, report_dir)

@@ -7,6 +7,7 @@
 #include <string>
 
 using namespace mfem;
+using namespace ofdg;
 
 namespace {
 

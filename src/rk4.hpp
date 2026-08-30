@@ -5,7 +5,13 @@
 
 // #include "util.hpp"
 
-using namespace mfem;
+namespace ofdg
+{
+
+using mfem::ODESolver;
+using mfem::real_t;
+using mfem::TimeDependentOperator;
+using mfem::Vector;
 
 /**
  * Classical fourth-order explicit Runge-Kutta solver with an OE decay
@@ -138,5 +144,7 @@ public:
       f->SetTime(t);
    }
 };
+
+} // namespace ofdg
 
 #endif

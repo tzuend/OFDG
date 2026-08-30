@@ -7,8 +7,14 @@
 #include <memory>
 #include <string>
 
-namespace mfem
+namespace ofdg
 {
+
+using mfem::FaceElementTransformations;
+using mfem::IntegrationPoint;
+using mfem::real_t;
+using mfem::Vector;
+using mfem::VectorCoefficient;
 
 /** Face-local propagation information used by OFDG and KXRCF.
  *
@@ -238,4 +244,4 @@ public:
    }
 };
 
-} // namespace mfem
+} // namespace ofdg

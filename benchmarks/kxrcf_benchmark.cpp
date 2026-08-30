@@ -5,6 +5,7 @@
 #include <iostream>
 
 using namespace mfem;
+using namespace ofdg;
 
 int main(int argc, char *argv[])
 {

@@ -4,6 +4,9 @@
 
 #include <memory>
 
+namespace ofdg
+{
+
 /**
  * Oscillation-eliminating DG filter of Peng, Sun, and Wu (2024).
  *
@@ -65,3 +68,5 @@ public:
         filter.CompDecay(state, result, decay_time, active);
     }
 };
+
+} // namespace ofdg

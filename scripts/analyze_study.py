@@ -51,6 +51,27 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(stream))
 
 
+def rebase_recorded_paths(rows: list[dict[str, str]], data_root: Path) -> None:
+    """Make a retained study checkpoint portable across checkout locations.
+
+    Raw rows retain the paths emitted by the original run for provenance. If
+    such a path is unavailable, use a same-named profile or reference beside
+    the input CSV. Rows from a live run continue to use their original paths.
+    """
+    for row in rows:
+        prefix = row.get("profile_prefix", "")
+        if prefix and not profile_files(prefix):
+            local_prefix = data_root / "profiles" / Path(prefix).name
+            if profile_files(str(local_prefix)):
+                row["profile_prefix"] = str(local_prefix)
+
+        reference = row.get("reference", "")
+        if reference and not Path(reference).exists():
+            local_reference = data_root / "references" / Path(reference).name
+            if local_reference.exists():
+                row["reference"] = str(local_reference)
+
+
 def profile_files(prefix: str) -> list[Path]:
     if not prefix:
         return []
@@ -580,7 +601,9 @@ def main() -> int:
 
     study_dir = ROOT / "measurements" / "study" / args.profile
     source = args.input or study_dir / "results.csv"
-    summary = summarize(read_rows(source))
+    rows = read_rows(source)
+    rebase_recorded_paths(rows, source.resolve().parent)
+    summary = summarize(rows)
     destination = study_dir / "summary.csv"
     write_summary(destination, summary)
 

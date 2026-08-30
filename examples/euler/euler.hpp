@@ -1,5 +1,7 @@
 #pragma once
 
+// Derived from MFEM Example 18 (BSD 3-Clause). See
+// ../../THIRD_PARTY_NOTICES.md for copyright and licence terms.
 //                  MFEM Example 18 - Serial/Parallel Shared Code
 //                      (Implementation of Time-dependent DG Operator)
 //
@@ -103,7 +105,7 @@ public:
          {
             Vector unit_normal(normal);
             unit_normal /= unit_normal.Norml2();
-            ReflectEulerState(state_in, unit_normal, dimension, state_out);
+            ofdg::ReflectEulerState(state_in, unit_normal, dimension, state_out);
          }
          else
          {

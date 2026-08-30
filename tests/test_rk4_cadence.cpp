@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 using namespace mfem;
+using namespace ofdg;
 
 namespace
 {

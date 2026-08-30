@@ -38,6 +38,7 @@
 *.exe
 *.out
 *.app
+*.dSYM/
 
 # Build directories
 build/
@@ -69,6 +70,32 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+__pycache__/
+*.py[cod]
+.matplotlib/
+
+# Generated study products. The preliminary quick results CSV and the selected
+# raw profiles/references it uses are intentionally retained as a draft-data
+# checkpoint; subsequent generated products remain ignored.
+/measurements/results.csv
+/measurements/study/plans/*.csv
+/measurements/study/local-quick/
+/measurements/study/*/figures/
+/measurements/study/*/summary.csv
+/report/generated/
+
+# LaTeX intermediates and locally built report PDFs
+/report/*.aux
+/report/*.bbl
+/report/*.blg
+/report/*.fdb_latexmk
+/report/*.fls
+/report/*.log
+/report/*.out
+/report/*.thm
+/report/*.toc
+/report/thesis.pdf
+/report/*.synctex*
 
 # Optional MFEM rank-local output
 /euler-*

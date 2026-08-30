@@ -7,6 +7,7 @@ CONFIG_MK = $(or $(wildcard $(MFEM_BUILD_DIR)/config/config.mk),\
 -include $(CONFIG_MK)
 
 BUILD_DIR := build
+LOCAL_QUICK_DIR := measurements/study/local-quick
 DEBUG_DIR := $(BUILD_DIR)/debug
 RELEASE_DIR := $(BUILD_DIR)/release
 DEBUG_TEST_DIR := $(DEBUG_DIR)/tests
@@ -28,8 +29,11 @@ RELEASE_TESTS := $(addprefix $(RELEASE_TEST_DIR)/,$(TEST_NAMES))
 EXAMPLE_NAMES := advection burgers euler
 DEBUG_EXAMPLES := $(addprefix $(DEBUG_EXAMPLE_DIR)/,$(EXAMPLE_NAMES))
 RELEASE_EXAMPLES := $(addprefix $(RELEASE_EXAMPLE_DIR)/,$(EXAMPLE_NAMES))
+FILTER_HEADERS := src/ofdg.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp \
+	src/oedg_2024.hpp src/face_physics.hpp src/support_contract.hpp \
+	src/study_filter.hpp src/study_method.hpp
 
-.PHONY: all test test-parallel test-release test-study examples release \
+.PHONY: all test test-parallel test-public-headers test-release test-study examples release \
 	benchmark-kxrcf reference-solver study-plan study-quick study-full \
 	figures figures-draft report report-draft report-final clean
 
@@ -44,8 +48,18 @@ test-parallel: $(DEBUG_TEST_DIR)/test_parallel_consistency $(RELEASE_EXAMPLES)
 	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_parallel_examples.py \
 		--example-dir $(RELEASE_EXAMPLE_DIR)
 
-test-release: $(RELEASE_TESTS)
+test-release: test-public-headers $(RELEASE_TESTS) $(RELEASE_TEST_DIR)/test_support_contract
 	@for test in $(RELEASE_TESTS); do $$test || exit 1; done
+	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_support_contract.py \
+		$(RELEASE_TEST_DIR)/test_support_contract --mfem-data $(MFEM_DIR)/data
+
+test-public-headers:
+	@for header in face_physics.hpp ofdg_serial_optimized.hpp kxrcf.hpp \
+		oedg_2024.hpp study_method.hpp study_filter.hpp ofdg.hpp; do \
+		$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) -fsyntax-only -x c++ \
+			-include src/$$header /dev/null || exit 1; \
+	done
+	@! grep -R -n '^[[:space:]]*using namespace mfem' src
 
 test-study: reference-solver
 	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_study_analysis.py
@@ -62,8 +76,9 @@ benchmark-kxrcf: $(RELEASE_DIR)/benchmarks/kxrcf
 reference-solver: $(RELEASE_DIR)/benchmarks/euler_reference_weno
 
 study-quick: release reference-solver
-	python3 scripts/run_study.py --profile quick --skip-build
-	python3 scripts/analyze_study.py --profile quick --report-mode draft
+	python3 scripts/run_study.py --profile quick --skip-build --output $(LOCAL_QUICK_DIR)
+	python3 scripts/analyze_study.py --profile quick \
+		--input $(LOCAL_QUICK_DIR)/results.csv --report-mode draft
 
 study-plan:
 	python3 scripts/run_study.py --profile full --dry-run
@@ -87,19 +102,19 @@ $(DEBUG_TEST_DIR) $(RELEASE_TEST_DIR) $(DEBUG_EXAMPLE_DIR) $(RELEASE_EXAMPLE_DIR
 $(RELEASE_DIR)/benchmarks:
 	mkdir -p $@
 
-$(RELEASE_DIR)/benchmarks/kxrcf: benchmarks/kxrcf_benchmark.cpp src/kxrcf.hpp src/face_physics.hpp | $(RELEASE_DIR)/benchmarks
+$(RELEASE_DIR)/benchmarks/kxrcf: benchmarks/kxrcf_benchmark.cpp src/kxrcf.hpp src/face_physics.hpp src/support_contract.hpp | $(RELEASE_DIR)/benchmarks
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) -DKXRCF_INTERNAL_TIMING $< -o $@ $(MFEM_LIBS)
 
-$(DEBUG_TEST_DIR)/test_ofdg_geometry: tests/test_ofdg_geometry.cpp src/ofdg_serial_optimized.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_ofdg_geometry: tests/test_ofdg_geometry.cpp src/ofdg_serial_optimized.hpp src/support_contract.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_TEST_DIR)/test_kxrcf: tests/test_kxrcf.cpp src/kxrcf.hpp src/face_physics.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_kxrcf: tests/test_kxrcf.cpp src/kxrcf.hpp src/face_physics.hpp src/support_contract.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp src/ofdg_serial_optimized.hpp src/face_physics.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp src/ofdg_serial_optimized.hpp src/face_physics.hpp src/support_contract.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/face_physics.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/face_physics.hpp src/support_contract.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
 $(DEBUG_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp | $(DEBUG_TEST_DIR)
@@ -114,19 +129,22 @@ $(DEBUG_TEST_DIR)/test_rk4_cadence: tests/test_rk4_cadence.cpp src/rk4.hpp | $(D
 $(DEBUG_TEST_DIR)/test_experiment_rk: tests/test_experiment_rk.cpp src/experiment_rk.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_TEST_DIR)/test_parallel_consistency: tests/test_parallel_consistency.cpp src/ofdg_serial_optimized.hpp src/oedg_2024.hpp src/euler_positivity.hpp src/kxrcf.hpp src/face_physics.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_support_contract: tests/test_support_contract.cpp src/ofdg.hpp src/support_contract.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(RELEASE_TEST_DIR)/test_ofdg_geometry: tests/test_ofdg_geometry.cpp src/ofdg_serial_optimized.hpp | $(RELEASE_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_parallel_consistency: tests/test_parallel_consistency.cpp $(FILTER_HEADERS) src/euler_positivity.hpp | $(DEBUG_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
+
+$(RELEASE_TEST_DIR)/test_ofdg_geometry: tests/test_ofdg_geometry.cpp src/ofdg_serial_optimized.hpp src/support_contract.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(RELEASE_TEST_DIR)/test_kxrcf: tests/test_kxrcf.cpp src/kxrcf.hpp src/face_physics.hpp | $(RELEASE_TEST_DIR)
+$(RELEASE_TEST_DIR)/test_kxrcf: tests/test_kxrcf.cpp src/kxrcf.hpp src/face_physics.hpp src/support_contract.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(RELEASE_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp src/ofdg_serial_optimized.hpp src/face_physics.hpp | $(RELEASE_TEST_DIR)
+$(RELEASE_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp src/ofdg_serial_optimized.hpp src/face_physics.hpp src/support_contract.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(RELEASE_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/face_physics.hpp | $(RELEASE_TEST_DIR)
+$(RELEASE_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/face_physics.hpp src/support_contract.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
 $(RELEASE_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp | $(RELEASE_TEST_DIR)
@@ -141,22 +159,25 @@ $(RELEASE_TEST_DIR)/test_rk4_cadence: tests/test_rk4_cadence.cpp src/rk4.hpp | $
 $(RELEASE_TEST_DIR)/test_experiment_rk: tests/test_experiment_rk.cpp src/experiment_rk.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(DEBUG_EXAMPLE_DIR)
-	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
-
-$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(DEBUG_EXAMPLE_DIR)
-	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
-
-$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/euler_positivity.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(DEBUG_EXAMPLE_DIR)
-	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
-
-$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(RELEASE_EXAMPLE_DIR)
+$(RELEASE_TEST_DIR)/test_support_contract: tests/test_support_contract.cpp src/ofdg.hpp src/support_contract.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(RELEASE_EXAMPLE_DIR)
+$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) | $(DEBUG_EXAMPLE_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
+
+$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) | $(DEBUG_EXAMPLE_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
+
+$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) | $(DEBUG_EXAMPLE_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
+
+$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) | $(RELEASE_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/study_filter.hpp src/oedg_2024.hpp src/euler_positivity.hpp src/ofdg_serial_optimized.hpp src/kxrcf.hpp | $(RELEASE_EXAMPLE_DIR)
+$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) | $(RELEASE_EXAMPLE_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) | $(RELEASE_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
 report: report-draft

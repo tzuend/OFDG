@@ -15,10 +15,16 @@ drivers. MFEM supplies meshes, DG spaces, flux assembly, and the normal explicit
 solvers. The scalar and Euler examples share face-local physics, filter
 dispatch, MPI ownership rules, diagnostics, and study output.
 
+The code is publicly accessible for inspection and reproducibility, but a
+project-wide reuse licence has not yet been approved. It must not currently be
+described as open-source. See `LICENSE_STATUS.md` and
+`THIRD_PARTY_NOTICES.md` before redistributing any file.
+
 ## Requirements
 
 - C++17 and an MPI compiler wrapper;
-- MFEM built with MPI, Hypre, and METIS;
+- MFEM commit `a1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18`, built with MPI,
+  Hypre, and METIS;
 - `make` and Python 3 with NumPy and Matplotlib;
 - `latexmk` for the thesis report.
 
@@ -42,7 +48,8 @@ make test-study
 make release reference-solver
 ```
 
-The suite covers frozen OFDG fingerprints, affine and mixed mesh geometries,
+The suite covers frozen OFDG fingerprints and several homogeneous affine
+element families,
 mean preservation, OEDG attenuation and scale/evolution invariance, KXRCF
 component pooling, Euler normal wave speeds, positivity limiting, rejected RK
 steps, synthetic rate/plot calculations, a smooth WENO convergence check, an
@@ -50,6 +57,29 @@ exact Sod Riemann check, and shared-face consistency on two MPI ranks.
 The MPI target also runs bounded one- versus two-rank comparisons through all
 maintained example drivers, so a mismatched collective fails in CI instead of
 hanging indefinitely.
+
+Mixed element geometries, variable polynomial order, curvilinear mappings, and
+mesh changes after filter construction are deliberately rejected with explicit
+diagnostics. The exact current boundary between mathematical portability and
+verified implementation support is recorded in `docs/support-matrix.md`.
+
+## Library interface
+
+Applications should include the stable facade and use project-qualified names:
+
+```cpp
+#include "src/ofdg.hpp"
+
+auto physics = std::make_shared<ofdg::AdvectionFacePhysics>(&velocity);
+ofdg::OFDG filter(&space, mfem::BasisType::GaussLegendre, physics);
+filter.CompDecay(state, filtered_state, time_step);
+```
+
+The public interface lives in `namespace ofdg`; including a project header does
+not import the MFEM namespace. Internal file layout and `ofdg::detail` types are
+not part of the supported API. The coefficient basis supplied by MFEM need not
+be modal, orthogonal, or Legendre-based. This basis independence does not imply
+support for arbitrary mappings or finite-element ranges.
 
 ## Common command-line interface
 
@@ -123,10 +153,12 @@ settings, metrics, independent-reference check, priority, intended artifact,
 estimated runtime, and proposed command.  Changing the full-profile status to
 `approved` is a deliberate later step after this design has been reviewed.
 
-`make study-quick` remains available as a development and CI checkpoint.  It
-does execute a reduced matrix, but its values are never thesis-final evidence.
-Its analysis can write only to `report/generated/draft`; the generator rejects
-any attempt to write quick data into `report/generated/final`.
+`make study-quick` remains available as a development and CI checkpoint. It
+writes to the ignored `measurements/study/local-quick` directory and never
+overwrites the versioned preliminary checkpoint. It does execute a reduced
+matrix, but its values are never thesis-final evidence. Its analysis can write
+only to `report/generated/draft`; the generator rejects any attempt to write
+quick data into `report/generated/final`.
 
 When it is eventually approved, the full profile will perform one unrecorded
 warm-up and five recorded timing repetitions. Every recorded row includes the
@@ -194,8 +226,9 @@ headline methods plus one reference, and split 2D contours from line cuts.
 
 Important implementation files are:
 
-- `src/ofdg_serial_optimized.hpp`: adapted OFDG, immutable caches, MPI halos,
-  and exact modal decay;
+- `src/ofdg.hpp`: stable public facade;
+- `src/ofdg_serial_optimized.hpp`: internal adapted OFDG implementation,
+  immutable caches, MPI halos, and exact modal decay;
 - `src/oedg_2024.hpp`: fixed 2024 OEDG choices (interface L1 jumps,
   trapezoidal 2D faces, face heights, component pooling, and scale invariance);
 - `src/kxrcf.hpp`: troubled-cell indicator and profiling;
@@ -204,6 +237,10 @@ Important implementation files are:
 - `scripts/run_study.py` and `scripts/analyze_study.py`: reproducible runs,
   metrics, tables, and figures;
 - `tests/`: deterministic serial, MPI, and study-level validation.
+
+`DEPENDENCIES.md` pins the reproducible build baseline. The next geometry
+extension is specified in `docs/geometry-design.md`; it intentionally starts
+with mixed affine triangle–quadrilateral meshes before curved mappings.
 
 The full local study is intentionally smaller than the published $1280^2$
 suite. Double-Mach reflection, the Mach-2000 jet, and the largest grids are HPC

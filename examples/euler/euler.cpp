@@ -1,3 +1,5 @@
+// Derived from MFEM Example 18 (BSD 3-Clause). See
+// ../../THIRD_PARTY_NOTICES.md for copyright and licence terms.
 //                                MFEM Example 18
 //
 // Compile with: make ex18
@@ -59,10 +61,11 @@
 #include "../../src/conservation.hpp"
 #include "../../src/experiment_rk.hpp"
 #include "../../src/glvis_output.hpp"
-#include "../../src/study_filter.hpp"
+#include "../../src/ofdg.hpp"
 
 using namespace std;
 using namespace mfem;
+using namespace ofdg;
 
 namespace
 {

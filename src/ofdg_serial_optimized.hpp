@@ -2,6 +2,7 @@
 
 #include "mfem.hpp"
 #include "face_physics.hpp"
+#include "support_contract.hpp"
 
 #include <algorithm>
 #include <array>
@@ -15,7 +16,37 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace mfem;
+namespace ofdg
+{
+
+using mfem::AddMult_a_VVt;
+using mfem::AddMult_a_VWt;
+using mfem::Array;
+using mfem::BasisType;
+using mfem::CalcOrtho;
+using mfem::DenseMatrix;
+using mfem::DG_FECollection;
+using mfem::ElementTransformation;
+using mfem::FaceElementTransformations;
+using mfem::FiniteElement;
+using mfem::FiniteElementSpace;
+using mfem::Geometries;
+using mfem::Geometry;
+using mfem::IntegrationPoint;
+using mfem::IntegrationRule;
+using mfem::IntRules;
+using mfem::Mesh;
+using mfem::Mpi;
+using mfem::MPITypeMap;
+using mfem::Mult;
+using mfem::MultAtB;
+using mfem::ParFiniteElementSpace;
+using mfem::ParGridFunction;
+using mfem::ParMesh;
+using mfem::real_t;
+using mfem::Vector;
+using mfem::VectorCoefficient;
+using mfem::VectorFunctionCoefficient;
 
 /** Configuration of the face sensor used by the modal decay kernel. */
 struct OFDGSensorOptions {
@@ -28,6 +59,9 @@ struct OFDGSensorOptions {
     bool pool_components = false;
     bool use_face_height = false;
 };
+
+namespace detail
+{
 
 // =============================================================================
 // Internal timing
@@ -1222,6 +1256,8 @@ public:
     }
 };
 
+} // namespace detail
+
 // =============================================================================
 // OFDG
 //
@@ -1246,25 +1282,26 @@ public:
 class OFDG {
 private:
     const FiniteElementSpace *fes;
+    detail::SupportedSpaceContract contract;
     std::shared_ptr<const FacePhysics> face_physics;
     OFDGSensorOptions sensor_options;
 
-    OFDGOperators operators;
+    detail::OFDGOperators operators;
 
     const int dim;
     const int order;
     const int ndof;
     const int ncomp;
 
-    OFDGMeshData mesh_data;
+    detail::OFDGMeshData mesh_data;
 
-    mutable OFDGInternalTiming internal_timing;
+    mutable detail::OFDGInternalTiming internal_timing;
 
-    OFDGFaceEvaluation face_evaluation;
+    detail::OFDGFaceEvaluation face_evaluation;
 
-    mutable OFDGDerivativeProvider derivative_provider;
+    mutable detail::OFDGDerivativeProvider derivative_provider;
 
-    mutable OFDGScratch scratch;
+    mutable detail::OFDGScratch scratch;
 
     // sigma_elem[c](e,l)
     mutable std::vector<DenseMatrix> sigma_elem;
@@ -1275,7 +1312,7 @@ private:
 
     void ComputeMeansAndScaling(const Vector &x, Vector *means, Vector *scaling) const
     {
-        OFDGVolumeScratch &volume = scratch.volume;
+        detail::OFDGVolumeScratch &volume = scratch.volume;
 
         volume.mean_integrals = 0.0;
 
@@ -1382,7 +1419,8 @@ public:
     OFDG(const FiniteElementSpace *fes_, int btype_,
          std::shared_ptr<const FacePhysics> face_physics_,
          OFDGSensorOptions sensor_options_)
-        : fes(fes_), face_physics(std::move(face_physics_)),
+        : fes(fes_), contract(fes_, "OFDG"),
+          face_physics(std::move(face_physics_)),
           sensor_options(sensor_options_), operators(fes_, btype_),
           dim(operators.Dim()), order(operators.Order()), ndof(operators.NDof()),
           ncomp(fes_->GetVDim()), mesh_data(fes_, operators), internal_timing(),
@@ -1445,7 +1483,7 @@ public:
     void ResetInternalTimings() const
     {
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing = OFDGInternalTiming{};
+        internal_timing = detail::OFDGInternalTiming{};
 #endif
     }
 
@@ -1475,6 +1513,7 @@ public:
 
     void Test()
     {
+        contract.VerifyUnchanged("OFDG");
         operators.TestCommutators();
     }
 
@@ -1484,6 +1523,7 @@ public:
 
     void ComputeMean(const Vector &x, Vector &means) const
     {
+        contract.VerifyUnchanged("OFDG");
         MFEM_VERIFY(x.Size() == fes->GetVSize(),
                     "OFDG input size does not match the finite element space.");
 
@@ -1502,17 +1542,18 @@ public:
 
     void ComputeGlobalMeanScaling(const Vector &x, Vector &scaling) const
     {
+        contract.VerifyUnchanged("OFDG");
         MFEM_VERIFY(x.Size() == fes->GetVSize(),
                     "OFDG input size does not match the finite element space.");
 
 #ifdef OFDG_INTERNAL_TIMING
-        const auto timer_begin = OFDGTimingClock::now();
+        const auto timer_begin = detail::OFDGTimingClock::now();
 #endif
 
         ComputeMeansAndScaling(x, nullptr, &scaling);
 
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing.global_scaling += OFDGSecondsSince(timer_begin);
+        internal_timing.global_scaling += detail::OFDGSecondsSince(timer_begin);
 #endif
     }
 
@@ -1536,6 +1577,7 @@ public:
                             const DenseMatrix &traces2,
                             double &beta_1, double &beta_2) const
     {
+        contract.VerifyUnchanged("OFDG");
         Vector normal(dim);
         Vector &state1 = scratch.face_state1;
         Vector &state2 = scratch.face_state2;
@@ -1577,6 +1619,7 @@ public:
     void ComputeDerivativeJumpsAllComponents(const Vector &x, FaceElementTransformations *Tr,
                                              DenseMatrix &jumps) const
     {
+        contract.VerifyUnchanged("OFDG");
         MFEM_VERIFY(x.Size() == fes->GetVSize(),
                     "OFDG input size does not match the finite element space.");
 
@@ -1626,8 +1669,11 @@ public:
 
     void ComputeJumps(const Vector &x, const Array<bool> *active = nullptr) const
     {
+        contract.VerifyUnchanged("OFDG");
+        MFEM_VERIFY(x.Size() == fes->GetVSize(),
+                    "OFDG input size does not match the finite element space.");
 #ifdef OFDG_INTERNAL_TIMING
-        const auto total_timer_begin = OFDGTimingClock::now();
+        const auto total_timer_begin = detail::OFDGTimingClock::now();
 #endif
 
         for (int c = 0; c < ncomp; ++c) {
@@ -1636,11 +1682,11 @@ public:
 
         Vector scaling;
 #ifdef OFDG_INTERNAL_TIMING
-        const auto scaling_timer_begin = OFDGTimingClock::now();
+        const auto scaling_timer_begin = detail::OFDGTimingClock::now();
 #endif
         ComputeMeansAndScaling(x, nullptr, &scaling);
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing.global_scaling += OFDGSecondsSince(scaling_timer_begin);
+        internal_timing.global_scaling += detail::OFDGSecondsSince(scaling_timer_begin);
 #endif
 
         // Build every element derivative once for the current solution.
@@ -1673,18 +1719,18 @@ public:
             double beta_2 = 0.0;
 
 #ifdef OFDG_INTERNAL_TIMING
-            const auto beta_timer_begin = OFDGTimingClock::now();
+            const auto beta_timer_begin = detail::OFDGTimingClock::now();
 #endif
 
             ComputeNormalSpeed(FTr, scratch.jump.traces1, scratch.jump.traces2,
                                beta_1, beta_2);
 
 #ifdef OFDG_INTERNAL_TIMING
-            internal_timing.normal_speed += OFDGSecondsSince(beta_timer_begin);
+            internal_timing.normal_speed += detail::OFDGSecondsSince(beta_timer_begin);
 #endif
 
 #ifdef OFDG_INTERNAL_TIMING
-            const auto sigma_timer_begin = OFDGTimingClock::now();
+            const auto sigma_timer_begin = detail::OFDGTimingClock::now();
 #endif
 
             for (int c = 0; c < ncomp; ++c) {
@@ -1712,7 +1758,7 @@ public:
             }
 
 #ifdef OFDG_INTERNAL_TIMING
-            internal_timing.sigma_accumulation += OFDGSecondsSince(sigma_timer_begin);
+            internal_timing.sigma_accumulation += detail::OFDGSecondsSince(sigma_timer_begin);
 #endif
         }
 
@@ -1730,7 +1776,7 @@ public:
 
             Array<int> neighbor_vdofs;
             Vector neighbor_state;
-            OFDGDerivativeState neighbor_derivatives(
+            detail::OFDGDerivativeState neighbor_derivatives(
                 ndof, ncomp, operators.DerivativeCount());
 
             for (int shared_face = 0;
@@ -1752,7 +1798,7 @@ public:
                     neighbor_state, *transformations->Elem2,
                     neighbor_derivatives);
 
-                const OFDGDerivativeState &local_derivatives =
+                const detail::OFDGDerivativeState &local_derivatives =
                     derivative_provider.Get(local_element);
                 double local_face_height = 1.0;
                 double neighbor_face_height = 1.0;
@@ -1803,7 +1849,7 @@ public:
         }
 
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing.compute_jumps += OFDGSecondsSince(total_timer_begin);
+        internal_timing.compute_jumps += detail::OFDGSecondsSince(total_timer_begin);
 #endif
     }
 
@@ -1821,7 +1867,7 @@ public:
         ComputeJumps(x, active);
 
 #ifdef OFDG_INTERNAL_TIMING
-        const auto timer_begin = OFDGTimingClock::now();
+        const auto timer_begin = detail::OFDGTimingClock::now();
 #endif
 
         Vector u_e(ndof);
@@ -1852,7 +1898,7 @@ public:
         }
 
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing.stabilization_application += OFDGSecondsSince(timer_begin);
+        internal_timing.stabilization_application += detail::OFDGSecondsSince(timer_begin);
 #endif
     }
 
@@ -1870,7 +1916,7 @@ public:
         ComputeJumps(x, active);
 
 #ifdef OFDG_INTERNAL_TIMING
-        const auto timer_begin = OFDGTimingClock::now();
+        const auto timer_begin = detail::OFDGTimingClock::now();
 #endif
 
         Vector u_e(ndof);
@@ -1919,7 +1965,9 @@ public:
         }
 
 #ifdef OFDG_INTERNAL_TIMING
-        internal_timing.decay_application += OFDGSecondsSince(timer_begin);
+        internal_timing.decay_application += detail::OFDGSecondsSince(timer_begin);
 #endif
     }
 };
+
+} // namespace ofdg

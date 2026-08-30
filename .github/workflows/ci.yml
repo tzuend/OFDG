@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install MPI and MFEM dependencies
@@ -17,7 +17,12 @@ jobs:
             libmetis-dev python3-numpy python3-matplotlib
       - name: Build MPI MFEM
         run: |
-          git clone --depth 1 https://github.com/mfem/mfem.git ../mfem
+          git init ../mfem
+          git -C ../mfem remote add origin https://github.com/mfem/mfem.git
+          git -C ../mfem fetch --depth 1 origin a1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18
+          git -C ../mfem checkout --detach FETCH_HEAD
+          test "$(git -C ../mfem rev-parse HEAD)" = \
+            "a1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18"
           make -C ../mfem config MFEM_USE_MPI=YES MFEM_USE_METIS_5=YES
           make -C ../mfem -j2
       - name: Unit, MPI, and independent-reference tests
@@ -31,3 +36,7 @@ jobs:
             --skip-build --output /tmp/oedg-ci-study
           python3 scripts/analyze_study.py --profile quick \
             --input /tmp/oedg-ci-study/results.csv
+      - name: Verify clean reproducible checkout
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"

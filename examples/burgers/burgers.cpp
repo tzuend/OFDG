@@ -9,7 +9,7 @@
 #include "../../src/conservation.hpp"
 #include "../../src/glvis_output.hpp"
 #include "../../src/profile_output.hpp"
-#include "../../src/study_filter.hpp"
+#include "../../src/ofdg.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -19,6 +19,7 @@
 #include <sstream>
 
 using namespace mfem;
+using namespace ofdg;
 using namespace std;
 
 namespace

@@ -9,6 +9,7 @@
 #include <string>
 
 using namespace mfem;
+using namespace ofdg;
 
 namespace
 {
@@ -115,4 +116,3 @@ int main()
    std::cout << "OEDG 2024 tests passed.\n";
    return 0;
 }
-

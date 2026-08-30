@@ -3,6 +3,9 @@
 #include <stdexcept>
 #include <string>
 
+namespace ofdg
+{
+
 enum class StudyMethod {
     DG,
     OFDG,
@@ -63,3 +66,4 @@ inline const char *FilterCadenceName(FilterCadence cadence)
     return "unknown";
 }
 
+} // namespace ofdg

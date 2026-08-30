@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -8,8 +10,34 @@
 
 #include "mfem.hpp"
 #include "face_physics.hpp"
+#include "support_contract.hpp"
 
-using namespace mfem;
+namespace ofdg
+{
+
+using mfem::Array;
+using mfem::CalcOrtho;
+using mfem::DenseMatrix;
+using mfem::ElementTransformation;
+using mfem::FaceElementTransformations;
+using mfem::FiniteElement;
+using mfem::FiniteElementSpace;
+using mfem::Geometries;
+using mfem::Geometry;
+using mfem::IntegrationPoint;
+using mfem::IntegrationRule;
+using mfem::IntRules;
+using mfem::Mesh;
+using mfem::MPITypeMap;
+using mfem::ParFiniteElementSpace;
+using mfem::ParGridFunction;
+using mfem::ParMesh;
+using mfem::real_t;
+using mfem::Vector;
+using mfem::VectorCoefficient;
+
+namespace detail
+{
 
 struct KXRCFInternalTiming
 {
@@ -26,6 +54,8 @@ inline double KXRCFSecondsSince(const KXRCFTimingClock::time_point &begin)
    return std::chrono::duration<double>(KXRCFTimingClock::now() - begin).count();
 }
 #endif
+
+} // namespace detail
 
 
 /**
@@ -90,6 +120,7 @@ class KXRCFIndicator
 {
 private:
    FiniteElementSpace *fes;
+   detail::SupportedSpaceContract contract;
    std::shared_ptr<const FacePhysics> face_physics;
 
    int dim;
@@ -120,7 +151,7 @@ private:
       const IntegrationRule *rule = nullptr;
    };
    std::vector<LocalFaceCache> local_face_cache;
-   mutable KXRCFInternalTiming internal_timing;
+   mutable detail::KXRCFInternalTiming internal_timing;
 
    struct FaceScratch
    {
@@ -227,6 +258,7 @@ public:
                   real_t threshold_ = 1.0,
                   real_t relative_scale_floor_ = 1e-14)
       : fes(fes_),
+        contract(fes_, "KXRCF"),
         face_physics(std::move(face_physics_)),
         dim(0),
         ncomp(0),
@@ -296,7 +328,7 @@ public:
 
    void ResetInternalTimings() const
    {
-      internal_timing = KXRCFInternalTiming{};
+      internal_timing = detail::KXRCFInternalTiming{};
    }
 
    void PrintInternalTimings(std::ostream &out = std::cout) const
@@ -814,10 +846,11 @@ void KXRCFIndicator::Compute(
    const Vector &x,
    Array<bool> &active,
    Vector *indicator_values,
-   DenseMatrix *component_indicator_values) const
+DenseMatrix *component_indicator_values) const
 {
+   contract.VerifyUnchanged("KXRCF");
 #ifdef KXRCF_INTERNAL_TIMING
-   const auto total_timer_begin = KXRCFTimingClock::now();
+   const auto total_timer_begin = detail::KXRCFTimingClock::now();
 #endif
    MFEM_VERIFY(x.Size() == fes->GetVSize(),
                "KXRCF input size does not match "
@@ -852,11 +885,12 @@ void KXRCFIndicator::Compute(
 
    DenseMatrix solution_scales;
 #ifdef KXRCF_INTERNAL_TIMING
-   const auto scales_timer_begin = KXRCFTimingClock::now();
+   const auto scales_timer_begin = detail::KXRCFTimingClock::now();
 #endif
    ComputeElementScales(x, solution_scales);
 #ifdef KXRCF_INTERNAL_TIMING
-   internal_timing.element_scales += KXRCFSecondsSince(scales_timer_begin);
+   internal_timing.element_scales +=
+      detail::KXRCFSecondsSince(scales_timer_begin);
 #endif
 
 
@@ -947,7 +981,7 @@ void KXRCFIndicator::Compute(
    Array<int> vdofs2;
 
 #ifdef KXRCF_INTERNAL_TIMING
-   const auto faces_timer_begin = KXRCFTimingClock::now();
+   const auto faces_timer_begin = detail::KXRCFTimingClock::now();
 #endif
 
    Vector local_state1;
@@ -999,8 +1033,9 @@ void KXRCFIndicator::Compute(
 #endif
 
 #ifdef KXRCF_INTERNAL_TIMING
-   internal_timing.face_integration += KXRCFSecondsSince(faces_timer_begin);
-   const auto normalization_timer_begin = KXRCFTimingClock::now();
+   internal_timing.face_integration +=
+      detail::KXRCFSecondsSince(faces_timer_begin);
+   const auto normalization_timer_begin = detail::KXRCFTimingClock::now();
 #endif
 
 
@@ -1107,7 +1142,9 @@ void KXRCFIndicator::Compute(
 
 #ifdef KXRCF_INTERNAL_TIMING
    internal_timing.normalization +=
-      KXRCFSecondsSince(normalization_timer_begin);
-   internal_timing.total += KXRCFSecondsSince(total_timer_begin);
+      detail::KXRCFSecondsSince(normalization_timer_begin);
+   internal_timing.total += detail::KXRCFSecondsSince(total_timer_begin);
 #endif
 }
+
+} // namespace ofdg

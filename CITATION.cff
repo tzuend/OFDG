@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software in research, please cite the accompanying master's
+  thesis and the specific repository revision used.
+title: Oscillation-Free Discontinuous Galerkin Stabilization in MFEM
+type: software
+repository-code: https://github.com/tzuend/OFDG
+authors:
+  - family-names: Zund
+    given-names: Timo
