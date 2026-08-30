@@ -1,0 +1,44 @@
+\begin{thebibliography}{1}
+
+\bibitem{hd2d_advection_public}
+R.~Dabetic and R.~K\"{a}ppeli.
+\newblock 2d code for linear advection equation.
+\newblock \url{https://gitlab.ethz.ch/dabeticbscthesis/hd2d_advection_public},
+  2023.
+\newblock Commit SHA: 5e3f7f8a02a27987e4b3d8322a9db7f7759607b1.
+
+\bibitem{Hiptmair2024}
+Ralf Hiptmair.
+\newblock Lecture notes for {``Numerical Methods for Partial Differential
+  Equations'' (401-0674-00)}.
+\newblock \url{https://people.math.ethz.ch/~grsam/NUMPDEFL/NUMPDE.pdf}, 2024.
+\newblock [Online; accessed 25-July-2024].
+
+\bibitem{LiuEtAl2022}
+Yong Liu, Jianfang Lu, and Chi-Wang Shu.
+\newblock An essentially oscillation-free discontinuous {G}alerkin method for
+  hyperbolic systems.
+\newblock {\em SIAM Journal on Scientific Computing}, 44(1):A230--A259, 2022.
+
+\bibitem{LuEtAl2021}
+Jianfang Lu, Yong Liu, and Chi-Wang Shu.
+\newblock An {Oscillation}-free {Discontinuous} {Galerkin} {Method} for
+  {Scalar} {Hyperbolic} {Conservation} {Laws}.
+\newblock {\em SIAM Journal on Numerical Analysis}, 59(3):1299--1324, January
+  2021.
+
+\bibitem{PengEtAl2024}
+Manting Peng, Zheng Sun, and Kailiang Wu.
+\newblock {OEDG}: {Oscillation}-eliminating discontinuous {Galerkin} method for
+  hyperbolic conservation laws.
+\newblock {\em Mathematics of Computation}, 2024.
+
+\bibitem{QiuShu2005}
+Jianxian Qiu and Chi-Wang Shu.
+\newblock A comparison of troubled-cell indicators for runge--kutta
+  discontinuous galerkin methods using weighted essentially nonoscillatory
+  limiters.
+\newblock {\em {SIAM} Journal on Scientific Computing}, 27(3):995--1013, jan
+  2005.
+
+\end{thebibliography}

@@ -1,0 +1,37 @@
+\changetocdepth {2}
+\babel@toc {english}{}\relax 
+\contentsline {chapter}{Contents}{iii}{chapter*.1}%
+\contentsline {chapter}{\chapternumberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Features}{1}{section.1.1}%
+\contentsline {subsection}{\numberline {1.1.1}Extra package includes}{2}{subsection.1.1.1}%
+\contentsline {subsection}{\numberline {1.1.2}Layout setup}{2}{subsection.1.1.2}%
+\contentsline {subsection}{\numberline {1.1.3}Theorem setup}{2}{subsection.1.1.3}%
+\contentsline {subsection}{\numberline {1.1.4}Macro setup}{3}{subsection.1.1.4}%
+\contentsline {chapter}{\chapternumberline {2}Writing scientific texts in English}{5}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Basic writing rules}{5}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Being nice to the reader}{5}{section.2.2}%
+\contentsline {section}{\numberline {2.3}A few important grammar rules}{6}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Things you (usually) don't say in English}{9}{section.2.4}%
+\contentsline {chapter}{\chapternumberline {3}Typography}{11}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Punctuation}{11}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Spacing}{12}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Choice of `fonts'}{13}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Displayed equations}{13}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Floats}{14}{section.3.5}%
+\contentsline {chapter}{\chapternumberline {4}Oscillation-Free Discontinuous Galerkin Stabilization}{17}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Mathematical formulation}{17}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Purpose of the stabilization}{17}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Discrete setting}{18}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Face jumps of physical derivatives}{19}{subsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.1.4}Global scale and element damping rates}{22}{subsection.4.1.4}%
+\contentsline {subsection}{\numberline {4.1.5}Projection-based damping operator}{23}{subsection.4.1.5}%
+\contentsline {subsection}{\numberline {4.1.6}Exact decay as a modal filter}{25}{subsection.4.1.6}%
+\contentsline {section}{\numberline {4.2}Implementation decisions and details}{26}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Scope and geometric assumptions}{26}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Projection matrices}{27}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Coefficient-to-coefficient derivatives}{27}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Face quadrature and cached evaluation}{28}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}Runtime sequence and storage policy}{28}{subsection.4.2.5}%
+\contentsline {subsection}{\numberline {4.2.6}Relation to the published formulations}{29}{subsection.4.2.6}%
+\contentsline {appendix}{\chapternumberline {A}Dummy Appendix}{31}{appendix.A}%
+\contentsline {chapter}{Bibliography}{33}{chapter*.3}%
