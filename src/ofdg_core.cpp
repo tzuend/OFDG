@@ -1133,7 +1133,7 @@ public:
 
 } // namespace detail
 
-class FilterCoreImplementation {
+class StabilizationCoreImplementation {
 private:
     const mfem::FiniteElementSpace *fes;
     std::shared_ptr<const FacePhysics> face_physics;
@@ -1269,13 +1269,17 @@ private:
 
 public:
 
-    FilterCoreImplementation(const mfem::FiniteElementSpace *fes_, int btype_)
-        : FilterCoreImplementation(fes_, btype_, std::make_shared<UnitFacePhysics>())
+    StabilizationCoreImplementation(const mfem::FiniteElementSpace *fes_,
+                                    int btype_)
+        : StabilizationCoreImplementation(
+              fes_, btype_, std::make_shared<UnitFacePhysics>())
     {
     }
 
-    FilterCoreImplementation(const mfem::FiniteElementSpace *fes_, int btype_, mfem::VectorFunctionCoefficient vel_)
-        : FilterCoreImplementation(
+    StabilizationCoreImplementation(
+        const mfem::FiniteElementSpace *fes_, int btype_,
+        mfem::VectorFunctionCoefficient vel_)
+        : StabilizationCoreImplementation(
               fes_, btype_,
               std::make_shared<AdvectionFacePhysics>(
                   std::static_pointer_cast<mfem::VectorCoefficient>(
@@ -1283,15 +1287,19 @@ public:
     {
     }
 
-    FilterCoreImplementation(const mfem::FiniteElementSpace *fes_, int btype_,
-         std::shared_ptr<const FacePhysics> face_physics_)
-        : FilterCoreImplementation(fes_, btype_, std::move(face_physics_), detail::OFDGSensorOptions{})
+    StabilizationCoreImplementation(
+        const mfem::FiniteElementSpace *fes_, int btype_,
+        std::shared_ptr<const FacePhysics> face_physics_)
+        : StabilizationCoreImplementation(
+              fes_, btype_, std::move(face_physics_),
+              detail::OFDGSensorOptions{})
     {
     }
 
-    FilterCoreImplementation(const mfem::FiniteElementSpace *fes_, int btype_,
-         std::shared_ptr<const FacePhysics> face_physics_,
-         detail::OFDGSensorOptions sensor_options_)
+    StabilizationCoreImplementation(
+        const mfem::FiniteElementSpace *fes_, int btype_,
+        std::shared_ptr<const FacePhysics> face_physics_,
+        detail::OFDGSensorOptions sensor_options_)
         : fes(fes_),
           face_physics(std::move(face_physics_)),
           sensor_options(sensor_options_), operator_repository(btype_),
@@ -1686,50 +1694,53 @@ public:
     }
 };
 
-class FilterCore::Implementation
+class StabilizationCore::Implementation
 {
 public:
-    FilterCoreImplementation filter;
+    StabilizationCoreImplementation stabilization;
 
     Implementation(const mfem::FiniteElementSpace *fes, int basis_type,
                    std::shared_ptr<const FacePhysics> face_physics,
                    detail::OFDGSensorOptions options)
-        : filter(fes, basis_type, std::move(face_physics), options)
+        : stabilization(fes, basis_type, std::move(face_physics), options)
     {
     }
 };
 
-FilterCore::FilterCore(const mfem::FiniteElementSpace *fes, int basis_type,
-                       std::shared_ptr<const FacePhysics> face_physics)
-    : FilterCore(fes, basis_type, std::move(face_physics),
-                 detail::OFDGSensorOptions{})
+StabilizationCore::StabilizationCore(
+    const mfem::FiniteElementSpace *fes, int basis_type,
+    std::shared_ptr<const FacePhysics> face_physics)
+    : StabilizationCore(fes, basis_type, std::move(face_physics),
+                        detail::OFDGSensorOptions{})
 {
 }
 
-FilterCore::FilterCore(const mfem::FiniteElementSpace *fes, int basis_type,
-                       std::shared_ptr<const FacePhysics> face_physics,
-                       detail::OFDGSensorOptions options)
+StabilizationCore::StabilizationCore(
+    const mfem::FiniteElementSpace *fes, int basis_type,
+    std::shared_ptr<const FacePhysics> face_physics,
+    detail::OFDGSensorOptions options)
     : implementation(std::make_unique<Implementation>(
          fes, basis_type, std::move(face_physics), options))
 {
 }
 
-FilterCore::~FilterCore() = default;
-FilterCore::FilterCore(FilterCore &&) noexcept = default;
-FilterCore &FilterCore::operator=(FilterCore &&) noexcept = default;
+StabilizationCore::~StabilizationCore() = default;
+StabilizationCore::StabilizationCore(StabilizationCore &&) noexcept = default;
+StabilizationCore &StabilizationCore::operator=(StabilizationCore &&) noexcept =
+    default;
 
-void FilterCore::ComputeStabilization(
+void StabilizationCore::ComputeStabilization(
     const mfem::Vector &state, mfem::Vector &result,
     const mfem::Array<bool> *active) const
 {
-    implementation->filter.ComputeStabilization(state, result, active);
+    implementation->stabilization.ComputeStabilization(state, result, active);
 }
 
-void FilterCore::CompDecay(const mfem::Vector &state, mfem::Vector &result,
-                           double decay_time,
-                           const mfem::Array<bool> *active) const
+void StabilizationCore::CompDecay(
+    const mfem::Vector &state, mfem::Vector &result, double decay_time,
+    const mfem::Array<bool> *active) const
 {
-    implementation->filter.CompDecay(state, result, decay_time, active);
+    implementation->stabilization.CompDecay(state, result, decay_time, active);
 }
 
 } // namespace ofdg

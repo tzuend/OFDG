@@ -5,14 +5,14 @@ for the thesis *Oscillation-Free Discontinuous Galerkin Stabilization in MFEM*.
 It compares four configurations:
 
 - `dg`: conventional RKDG without an oscillation-elimination step;
-- `ofdg-kxrcf`: the adapted OFDG filter restricted to KXRCF troubled cells
+- `ofdg-kxrcf`: adapted OFDG stabilization restricted to KXRCF troubled cells
   (the primary project method);
 - `oedg`: the 2024 OEDG method of Peng, Sun, and Wu;
-- `ofdg`: the adapted OFDG filter on every cell (an ablation).
+- `ofdg`: adapted OFDG stabilization on every cell (an ablation).
 
 The implementation favors readable, shared building blocks over duplicated
 drivers. MFEM supplies meshes, DG spaces, flux assembly, and the normal explicit
-solvers. The scalar and Euler examples share face-local physics, filter
+solvers. The scalar and Euler examples share face-local physics, stabilization
 dispatch, MPI ownership rules, diagnostics, and study output.
 
 The code is publicly accessible for inspection and reproducibility, but a
@@ -76,8 +76,8 @@ Applications should include the stable facade and use project-qualified names:
 #include "src/ofdg.hpp"
 
 auto physics = std::make_shared<ofdg::AdvectionFacePhysics>(&velocity);
-ofdg::OFDG filter(&space, mfem::BasisType::GaussLegendre, physics);
-filter.CompDecay(state, filtered_state, time_step);
+ofdg::OFDG method(&space, mfem::BasisType::GaussLegendre, physics);
+method.CompDecay(state, stabilized_state, time_step);
 ```
 
 The public interface lives in `namespace ofdg`; including a project header does
@@ -96,7 +96,7 @@ Every example accepts:
 -cadence auto|step|stage
 ```
 
-`auto` uses one post-step filter application with MFEM's standard solver for
+`auto` uses one post-step stabilization application with MFEM's standard solver for
 OFDG and stage-wise filtering for the paper-faithful OEDG comparison. The small
 experiment RK driver is also used when positivity checks must occur at every
 stage. The older `-stab` and `-kxrcf` flags remain compatibility aliases.

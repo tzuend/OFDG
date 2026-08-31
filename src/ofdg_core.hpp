@@ -28,20 +28,20 @@ struct OFDGSensorOptions
 
 } // namespace detail
 
-class FilterCore
+class StabilizationCore
 {
 public:
-   FilterCore(const mfem::FiniteElementSpace *fes, int basis_type,
-              std::shared_ptr<const FacePhysics> face_physics);
-   FilterCore(const mfem::FiniteElementSpace *fes, int basis_type,
-              std::shared_ptr<const FacePhysics> face_physics,
-              detail::OFDGSensorOptions options);
+   StabilizationCore(const mfem::FiniteElementSpace *fes, int basis_type,
+                     std::shared_ptr<const FacePhysics> face_physics);
+   StabilizationCore(const mfem::FiniteElementSpace *fes, int basis_type,
+                     std::shared_ptr<const FacePhysics> face_physics,
+                     detail::OFDGSensorOptions options);
 
-   ~FilterCore();
-   FilterCore(FilterCore &&) noexcept;
-   FilterCore &operator=(FilterCore &&) noexcept;
-   FilterCore(const FilterCore &) = delete;
-   FilterCore &operator=(const FilterCore &) = delete;
+   ~StabilizationCore();
+   StabilizationCore(StabilizationCore &&) noexcept;
+   StabilizationCore &operator=(StabilizationCore &&) noexcept;
+   StabilizationCore(const StabilizationCore &) = delete;
+   StabilizationCore &operator=(const StabilizationCore &) = delete;
 
    void ComputeStabilization(
       const mfem::Vector &state, mfem::Vector &result,

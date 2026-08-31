@@ -26,11 +26,11 @@ detail::OFDGSensorOptions PaperOptions()
 class OEDG2024::Implementation
 {
 public:
-   FilterCore filter;
+   StabilizationCore stabilization;
 
    Implementation(const mfem::FiniteElementSpace *fes, int basis_type,
                   std::shared_ptr<const FacePhysics> face_physics)
-      : filter(fes, basis_type, std::move(face_physics), PaperOptions())
+      : stabilization(fes, basis_type, std::move(face_physics), PaperOptions())
    {
    }
 };
@@ -50,14 +50,14 @@ void OEDG2024::ComputeStabilization(
    const mfem::Vector &state, mfem::Vector &result,
    const mfem::Array<bool> *active) const
 {
-   implementation->filter.ComputeStabilization(state, result, active);
+   implementation->stabilization.ComputeStabilization(state, result, active);
 }
 
 void OEDG2024::CompDecay(const mfem::Vector &state, mfem::Vector &result,
                          double decay_time,
                          const mfem::Array<bool> *active) const
 {
-   implementation->filter.CompDecay(state, result, decay_time, active);
+   implementation->stabilization.CompDecay(state, result, decay_time, active);
 }
 
 } // namespace ofdg

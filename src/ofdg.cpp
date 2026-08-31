@@ -10,11 +10,11 @@ namespace ofdg
 class OFDG::Implementation
 {
 public:
-   FilterCore filter;
+   StabilizationCore stabilization;
 
    Implementation(const mfem::FiniteElementSpace *fes, int basis_type,
                   std::shared_ptr<const FacePhysics> face_physics)
-      : filter(fes, basis_type, std::move(face_physics))
+      : stabilization(fes, basis_type, std::move(face_physics))
    {
    }
 };
@@ -51,14 +51,14 @@ void OFDG::ComputeStabilization(const mfem::Vector &state,
                                 mfem::Vector &result,
                                 const mfem::Array<bool> *active) const
 {
-   implementation->filter.ComputeStabilization(state, result, active);
+   implementation->stabilization.ComputeStabilization(state, result, active);
 }
 
 void OFDG::CompDecay(const mfem::Vector &state, mfem::Vector &result,
                      double decay_time,
                      const mfem::Array<bool> *active) const
 {
-   implementation->filter.CompDecay(state, result, decay_time, active);
+   implementation->stabilization.CompDecay(state, result, decay_time, active);
 }
 
 } // namespace ofdg

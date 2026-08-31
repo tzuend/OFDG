@@ -316,7 +316,7 @@ void TestMixedThreeDimensionalConsistency()
            std::isfinite(decay.Norml2()) &&
            std::isfinite(masked_decay.Norml2()) &&
            std::isfinite(oedg_decay.Norml2()),
-           "distributed mixed 3D filter result is not finite");
+           "distributed mixed 3D stabilization result is not finite");
 
    real_t local_norm = stabilization * stabilization;
    real_t global_norm = 0.0;
@@ -361,7 +361,7 @@ void RunParallelChecks()
 
    // The positivity limiter must be safe as the first object that requests
    // shared-face transformations. This catches missing MFEM face-neighbor
-   // initialization instead of letting an earlier filter hide it.
+   // initialization instead of letting earlier stabilization hide it.
    ParFiniteElementSpace euler_space(
       &mesh, &collection, 3, Ordering::byVDIM);
    ParGridFunction euler_state(&euler_space);

@@ -226,6 +226,6 @@ int main()
       return 1;
    }
 
-   std::cout << "Mixed affine 2D and 3D filter tests passed.\n";
+   std::cout << "Mixed affine 2D and 3D stabilization tests passed.\n";
    return 0;
 }

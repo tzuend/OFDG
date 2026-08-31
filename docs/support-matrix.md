@@ -14,7 +14,7 @@ not promise runtime diagnostics for them.
 | Mixed element geometries | Multiple affine signatures at one uniform order | Same | Triangle--quadrilateral and tetrahedron--hexahedron--prism meshes, P1--P3 |
 | Polynomial order | One order throughout the space | One order throughout the space | Variable-order spaces are not verified |
 | Geometry mapping | Affine mappings only | Affine mappings only | Nonuniform and skewed affine meshes |
-| Mesh evolution | Geometry and topology remain fixed after construction | Same | Reconstruct the filter after any mesh change |
+| Mesh evolution | Geometry and topology remain fixed after construction | Same | Reconstruct the method object after any mesh change |
 | Parallel execution | Independently sized local and remote face sides | Same | Mixed 2D and 3D shared faces across two ranks |
 | Live visualization | Provided by the maintained drivers | Provided by the maintained drivers | Serial and MPI driver checks |
 

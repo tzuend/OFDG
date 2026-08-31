@@ -8,7 +8,7 @@
 namespace ofdg
 {
 
-/** Oscillation-eliminating DG filter of Peng, Sun, and Wu (2024). */
+/** Oscillation-eliminating DG method of Peng, Sun, and Wu (2024). */
 class OEDG2024
 {
 public:
