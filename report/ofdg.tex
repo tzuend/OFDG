@@ -576,6 +576,9 @@ each component must form one contiguous block.  All element maps are assumed to
 be affine, and the mesh must remain unchanged during the lifetime of the OFDG
 object.  These conditions are preconditions rather than properties checked at run
 time.
+The public header exposes the OFDG constructors, stabilization, and decay only.
+KXRCF is an independent optional method and is included explicitly when the
+activation mask is required.
 
 Different elements need not have the same Jacobian.  They may have different
 sizes and may be translated, rotated, or affinely skewed.  General bilinear
@@ -765,10 +768,9 @@ lookups and replacement decisions from the face loop.
 
 An optional active-element mask can restrict stabilization or decay to selected
 elements.  A face is omitted only when neither neighbor is active, so an active
-element still receives contributions from every adjacent interior face.  Runtime
-scratch arrays and optional internal timers are owned by the OFDG object.  Because
-that scratch state is mutable and reused, concurrent calls on the same object are
-not supported.
+element still receives contributions from every adjacent interior face. Runtime
+scratch arrays are owned by the OFDG object. Because this scratch state is
+mutable and reused, concurrent calls on the same object are unsupported.
 
 \subsubsection{Relation to the published formulations}
 \label{sec:ofdg-relation-to-literature}

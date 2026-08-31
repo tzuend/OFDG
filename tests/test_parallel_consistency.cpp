@@ -3,7 +3,7 @@
 #include "../src/kxrcf.hpp"
 #include "../src/oedg_2024.hpp"
 #include "../src/euler_positivity.hpp"
-#include "../src/ofdg_serial_optimized.hpp"
+#include "../src/ofdg.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -30,6 +30,40 @@ VectorFunctionCoefficient PositiveVelocity()
    });
 }
 
+Mesh MakeMixedMesh()
+{
+   Mesh mesh(2, 6, 4);
+   mesh.AddVertex(0.0, 0.0);
+   mesh.AddVertex(2.0, 0.0);
+   mesh.AddVertex(2.0, 1.0);
+   mesh.AddVertex(0.0, 1.0);
+   mesh.AddVertex(0.5, 0.5);
+   mesh.AddVertex(1.5, 0.5);
+   mesh.AddQuad(0, 1, 5, 4);
+   mesh.AddTriangle(1, 2, 5);
+   mesh.AddQuad(2, 3, 4, 5);
+   mesh.AddTriangle(3, 0, 4);
+   mesh.FinalizeTopology();
+   return mesh;
+}
+
+void SetGeometryState(FiniteElementSpace &space, Vector &state)
+{
+   state = 0.0;
+   Array<int> dofs;
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      space.GetElementDofs(e, dofs);
+      const real_t label = space.GetFE(e)->GetGeomType() ==
+                           Geometry::TRIANGLE ? 2.0 : 1.0;
+      for (int j = 0; j < dofs.Size(); ++j)
+      {
+         state(space.DofToVDof(dofs[j], 0)) = 1.0;
+         state(space.DofToVDof(dofs[j], 1)) = label;
+      }
+   }
+}
+
 real_t ElementIntegral(const GridFunction &state, int element)
 {
    const FiniteElementSpace *space = state.FESpace();
@@ -47,6 +81,90 @@ real_t ElementIntegral(const GridFunction &state, int element)
                   state.GetValue(element, ip);
    }
    return integral;
+}
+
+void TestMixedMeshConsistency()
+{
+   Mesh serial_mesh = MakeMixedMesh();
+   L2_FECollection serial_collection(2, 2);
+   FiniteElementSpace serial_space(&serial_mesh, &serial_collection, 2,
+                                   Ordering::byNODES);
+   GridFunction serial_state(&serial_space);
+   SetGeometryState(serial_space, serial_state);
+   VectorFunctionCoefficient serial_velocity(
+      2, [](const Vector &, Vector &velocity)
+      {
+         velocity.SetSize(2);
+         velocity = 0.0;
+         velocity(0) = 1.0;
+      });
+   KXRCFIndicator serial_indicator(&serial_space, &serial_velocity, 1e-10);
+   Array<bool> serial_active;
+   Vector serial_values;
+   serial_indicator.Compute(serial_state, serial_active, &serial_values);
+
+   int expected_active = 0;
+   real_t expected_sum = 0.0;
+   real_t expected_maximum = 0.0;
+   for (int e = 0; e < serial_space.GetNE(); ++e)
+   {
+      expected_active += serial_active[e] ? 1 : 0;
+      expected_sum += serial_values(e);
+      expected_maximum = std::max(expected_maximum, serial_values(e));
+   }
+
+   int partitioning[4] = {0, 1, 0, 1};
+   ParMesh mesh(MPI_COMM_WORLD, serial_mesh, partitioning);
+   L2_FECollection collection(2, 2);
+   ParFiniteElementSpace space(&mesh, &collection, 2, Ordering::byNODES);
+   ParGridFunction state(&space);
+   SetGeometryState(space, state);
+   VectorFunctionCoefficient velocity(
+      2, [](const Vector &, Vector &value)
+      {
+         value.SetSize(2);
+         value = 0.0;
+         value(0) = 1.0;
+      });
+   KXRCFIndicator indicator(&space, &velocity, 1e-10);
+   Array<bool> active;
+   Vector values;
+   indicator.Compute(state, active, &values);
+
+   int local_active = 0;
+   real_t local_sum = 0.0;
+   real_t local_maximum = 0.0;
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      local_active += active[e] ? 1 : 0;
+      local_sum += values(e);
+      local_maximum = std::max(local_maximum, values(e));
+   }
+
+   int global_active = 0;
+   real_t global_sum = 0.0;
+   real_t global_maximum = 0.0;
+   MPI_Allreduce(&local_active, &global_active, 1, MPI_INT, MPI_SUM,
+                 mesh.GetComm());
+   MPI_Allreduce(&local_sum, &global_sum, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_SUM, mesh.GetComm());
+   MPI_Allreduce(&local_maximum, &global_maximum, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_MAX, mesh.GetComm());
+
+   Require(global_active == expected_active,
+           "distributed mixed-mesh active count differs from serial");
+   Require(std::abs(global_sum - expected_sum) < 2e-12,
+           "distributed mixed-mesh indicator sum differs from serial");
+   Require(std::abs(global_maximum - expected_maximum) < 2e-12,
+           "distributed mixed-mesh indicator maximum differs from serial");
+
+   state = 3.0;
+   indicator.Compute(state, active, &values);
+   local_maximum = values.Size() == 0 ? 0.0 : values.Normlinf();
+   MPI_Allreduce(&local_maximum, &global_maximum, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_MAX, mesh.GetComm());
+   Require(global_maximum < 1e-12,
+           "distributed mixed-mesh constant state produced an indicator");
 }
 
 void RunParallelChecks()
@@ -185,6 +303,7 @@ int main(int argc, char *argv[])
    {
       Require(Mpi::WorldSize() == 2,
               "parallel consistency test must run with two MPI ranks");
+      TestMixedMeshConsistency();
       RunParallelChecks();
    }
    catch (const std::exception &error)

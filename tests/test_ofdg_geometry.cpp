@@ -1,6 +1,6 @@
 #include "mfem.hpp"
 
-#include "../src/ofdg_serial_optimized.hpp"
+#include "../src/ofdg.hpp"
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -16,28 +16,6 @@ void Require(bool condition, const std::string &message)
     if (!condition) {
         throw std::runtime_error(message);
     }
-}
-
-FaceElementTransformations *FirstInteriorFace(Mesh &mesh)
-{
-    for (int f = 0; f < mesh.GetNumFaces(); ++f) {
-        FaceElementTransformations *Tr = mesh.GetFaceElementTransformations(f);
-        if (Tr && Tr->Elem1No >= 0 && Tr->Elem2No >= 0) {
-            return Tr;
-        }
-    }
-    return nullptr;
-}
-
-FaceElementTransformations *FirstBoundaryFace(Mesh &mesh)
-{
-    for (int f = 0; f < mesh.GetNumFaces(); ++f) {
-        FaceElementTransformations *Tr = mesh.GetFaceElementTransformations(f);
-        if (Tr && Tr->Elem1No >= 0 && Tr->Elem2No < 0) {
-            return Tr;
-        }
-    }
-    return nullptr;
 }
 
 Mesh MakeNonuniformRectangles()
@@ -111,10 +89,6 @@ double ScalarPolynomial(const Vector &x)
     return 1.0 + 2.0 * x(0) - 0.7 * x(1) + 0.3 * x(0) * x(0) + 0.2 * x(0) * x(1);
 }
 
-double YCoordinate(const Vector &x)
-{
-    return x(1);
-}
 
 double ElementPolynomial(const Vector &x, int element)
 {
@@ -178,34 +152,6 @@ void ValidateBasisIndependence()
     }
 }
 
-void ValidateMeanAbsoluteJump()
-{
-    Mesh mesh = MakeNonuniformRectangles();
-    DG_FECollection fec(2, 2, BasisType::GaussLobatto);
-    FiniteElementSpace fes(&mesh, &fec);
-    GridFunction x(&fes);
-    FunctionCoefficient y_coordinate(YCoordinate);
-    x.ProjectCoefficient(y_coordinate);
-
-    // Across the interior face, element zero contains u = 0 and element one u = y.
-    Array<int> vdofs;
-    fes.GetElementVDofs(0, vdofs);
-    x.SetSubVector(vdofs, 0.0);
-
-    OFDG ofdg(&fes, BasisType::GaussLobatto);
-    FaceElementTransformations *Tr = FirstInteriorFace(mesh);
-    Require(Tr != nullptr, "mean-absolute-jump mesh has no interior face");
-
-    DenseMatrix jumps;
-    ofdg.ComputeDerivativeJumpsAllComponents(x, Tr, jumps);
-
-    // mean_{y in [0,1]} |0-y| = 1/2, while the old RMS value was sqrt(1/3).
-    Require(std::abs(jumps(0, 0) - 0.5) < 1e-12, "solution jump is not the mean absolute jump");
-    Require(std::abs(jumps(0, 1) - 1.0) < 1e-12,
-            "first-derivative jump is not the mean absolute jump");
-    Require(std::abs(jumps(0, 2)) < 1e-12, "second-derivative jump should vanish");
-}
-
 void ValidateUniformCase(int components)
 {
     Mesh mesh = Mesh::MakeCartesian2D(2, 2, Element::QUADRILATERAL, true, 2.0, 2.0);
@@ -223,18 +169,6 @@ void ValidateUniformCase(int components)
 
     OFDG ofdg(&fes, BasisType::GaussLobatto);
 
-    FaceElementTransformations *interior = FirstInteriorFace(mesh);
-    Require(interior != nullptr, "uniform mesh has no interior face");
-
-    DenseMatrix jumps;
-    ofdg.ComputeDerivativeJumpsAllComponents(x, interior, jumps);
-    Require(jumps.FNorm() < 1e-12, "uniform continuous-polynomial derivative jumps are nonzero");
-
-    FaceElementTransformations *boundary = FirstBoundaryFace(mesh);
-    Require(boundary != nullptr, "uniform mesh has no boundary face");
-    ofdg.ComputeDerivativeJumpsAllComponents(x, boundary, jumps);
-    Require(jumps.FNorm() == 0.0, "boundary face produced derivative jumps");
-
     Vector stabilization;
     Vector decay;
     ofdg.ComputeStabilization(x, stabilization);
@@ -243,13 +177,6 @@ void ValidateUniformCase(int components)
 
     decay -= x;
     Require(decay.Norml2() < 1e-10, "uniform continuous polynomial decayed");
-
-    Vector mean;
-    Vector scaling;
-    ofdg.ComputeMean(x, mean);
-    ofdg.ComputeGlobalMeanScaling(x, scaling);
-    Require(std::isfinite(mean.Norml2()) && std::isfinite(scaling.Norml2()),
-            "uniform mesh produced invalid mean/scaling");
 
     Array<int> vdofs;
     fes.GetElementVDofs(0, vdofs);
@@ -275,20 +202,6 @@ void ValidateAffineMesh(Mesh &mesh, const std::string &name)
     x.ProjectCoefficient(polynomial);
 
     OFDG ofdg(&fes, BasisType::GaussLobatto);
-
-    FaceElementTransformations *Tr = FirstInteriorFace(mesh);
-    Require(Tr != nullptr, name + " has no interior face");
-
-    DenseMatrix jumps;
-    ofdg.ComputeDerivativeJumpsAllComponents(x, Tr, jumps);
-    Require(jumps.FNorm() < 1e-12, name + " continuous-polynomial derivative jumps are nonzero");
-
-    Vector mean;
-    Vector scaling;
-    ofdg.ComputeMean(x, mean);
-    ofdg.ComputeGlobalMeanScaling(x, scaling);
-    Require(std::isfinite(mean.Norml2()) && std::isfinite(scaling.Norml2()),
-            name + " produced invalid mean/scaling");
 
     Array<int> vdofs;
     fes.GetElementVDofs(0, vdofs);
@@ -320,7 +233,6 @@ int main()
         ValidateBasisIndependence();
         ValidateUniformCase(1);
         ValidateUniformCase(2);
-        ValidateMeanAbsoluteJump();
 
         Mesh rectangles = MakeNonuniformRectangles();
         ValidateAffineMesh(rectangles, "nonuniform rectangles");

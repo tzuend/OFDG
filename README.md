@@ -48,20 +48,23 @@ make test-study
 make release reference-solver
 ```
 
-The suite covers frozen OFDG fingerprints and several homogeneous affine
-element families,
-mean preservation, OEDG attenuation and scale/evolution invariance, KXRCF
-component pooling, Euler normal wave speeds, positivity limiting, rejected RK
-steps, synthetic rate/plot calculations, a smooth WENO convergence check, an
-exact Sod Riemann check, and shared-face consistency on two MPI ranks.
+The suite covers frozen OFDG fingerprints and homogeneous affine element
+families, KXRCF on mixed P2 triangle--quadrilateral faces with unequal local
+DOF counts, mean preservation, OEDG attenuation and scale/evolution invariance,
+KXRCF component pooling, Euler normal wave speeds, positivity limiting,
+rejected RK steps, synthetic rate/plot calculations, a smooth WENO convergence
+check, an exact Sod Riemann check, and shared-face consistency on two MPI ranks.
 The MPI target also runs bounded one- versus two-rank comparisons through all
 maintained example drivers, so a mismatched collective fails in CI instead of
 hanging indefinitely.
 
-Mixed element geometries, variable polynomial order, curvilinear mappings, and
-mesh changes after filter construction are deliberately rejected with explicit
-diagnostics. The exact current boundary between mathematical portability and
-verified implementation support is recorded in `docs/support-matrix.md`.
+OFDG and OEDG require one element geometry and DOF signature throughout a
+space. KXRCF additionally supports affine 2D meshes mixing triangles and
+quadrilaterals, including such faces across MPI partitions. Variable order,
+curvilinear or moving meshes, and mixed three-dimensional meshes remain outside
+the verified implementation. These conditions are documented preconditions,
+not fail-fast runtime checks. The exact boundary between mathematical
+portability and verified support is recorded in `docs/support-matrix.md`.
 
 ## Library interface
 
@@ -76,10 +79,11 @@ filter.CompDecay(state, filtered_state, time_step);
 ```
 
 The public interface lives in `namespace ofdg`; including a project header does
-not import the MFEM namespace. Internal file layout and `ofdg::detail` types are
-not part of the supported API. The coefficient basis supplied by MFEM need not
-be modal, orthogonal, or Legendre-based. This basis independence does not imply
-support for arbitrary mappings or finite-element ranges.
+not import the MFEM namespace. KXRCF users include `src/kxrcf.hpp` explicitly.
+Internal file layout and `ofdg::detail` types are not part of the supported API.
+The coefficient basis supplied by MFEM need not be modal, orthogonal, or
+Legendre-based. This basis independence does not imply support for arbitrary
+mappings or finite-element ranges.
 
 ## Common command-line interface
 
@@ -226,12 +230,11 @@ headline methods plus one reference, and split 2D contours from line cuts.
 
 Important implementation files are:
 
-- `src/ofdg.hpp`: stable public facade;
-- `src/ofdg_serial_optimized.hpp`: internal adapted OFDG implementation,
-  immutable caches, MPI halos, and exact modal decay;
+- `src/ofdg.hpp`: adapted OFDG implementation, immutable caches, MPI halos,
+  and exact modal decay;
+- `src/kxrcf.hpp`: troubled-cell indicator with mixed affine 2D support;
 - `src/oedg_2024.hpp`: fixed 2024 OEDG choices (interface L1 jumps,
   trapezoidal 2D faces, face heights, component pooling, and scale invariance);
-- `src/kxrcf.hpp`: troubled-cell indicator and profiling;
 - `src/euler_positivity.hpp`: conservative Euler positivity limiter;
 - `src/face_physics.hpp`: advection, Burgers, and Euler propagation policies;
 - `scripts/run_study.py` and `scripts/analyze_study.py`: reproducible runs,
@@ -239,8 +242,9 @@ Important implementation files are:
 - `tests/`: deterministic serial, MPI, and study-level validation.
 
 `DEPENDENCIES.md` pins the reproducible build baseline. The next geometry
-extension is specified in `docs/geometry-design.md`; it intentionally starts
-with mixed affine triangle–quadrilateral meshes before curved mappings.
+extension is specified in `docs/geometry-design.md`. Mixed affine 2D support is
+complete for KXRCF; the next production geometry task is the corresponding
+OFDG/OEDG operator refactor, followed by curved mappings.
 
 The full local study is intentionally smaller than the published $1280^2$
 suite. Double-Mach reflection, the Mach-2000 jet, and the largest grids are HPC

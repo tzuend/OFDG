@@ -41,6 +41,40 @@ int CountActive(const Array<bool> &active)
    return count;
 }
 
+Mesh MakeMixedMesh()
+{
+   Mesh mesh(2, 6, 4);
+   mesh.AddVertex(0.0, 0.0);
+   mesh.AddVertex(2.0, 0.0);
+   mesh.AddVertex(2.0, 1.0);
+   mesh.AddVertex(0.0, 1.0);
+   mesh.AddVertex(0.5, 0.5);
+   mesh.AddVertex(1.5, 0.5);
+   mesh.AddQuad(0, 1, 5, 4);
+   mesh.AddTriangle(1, 2, 5);
+   mesh.AddQuad(2, 3, 4, 5);
+   mesh.AddTriangle(3, 0, 4);
+   mesh.FinalizeTopology();
+   return mesh;
+}
+
+void SetGeometryState(FiniteElementSpace &space, Vector &state)
+{
+   state = 0.0;
+   Array<int> dofs;
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      space.GetElementDofs(e, dofs);
+      const real_t label = space.GetFE(e)->GetGeomType() ==
+                           Geometry::TRIANGLE ? 2.0 : 1.0;
+      for (int j = 0; j < dofs.Size(); ++j)
+      {
+         state(space.DofToVDof(dofs[j], 0)) = 1.0;
+         state(space.DofToVDof(dofs[j], 1)) = label;
+      }
+   }
+}
+
 VectorFunctionCoefficient ConstantVelocity(int dim, real_t x_velocity)
 {
    return VectorFunctionCoefficient(
@@ -236,6 +270,65 @@ void TestVectorOrderingInvariance()
    }
 }
 
+void TestMixedTriangleQuadrilateralMesh()
+{
+   Mesh mesh = MakeMixedMesh();
+   L2_FECollection fec(2, 2);
+   FiniteElementSpace space(&mesh, &fec, 2, Ordering::byNODES);
+   GridFunction state(&space);
+   auto velocity = ConstantVelocity(2, 1.0);
+   KXRCFIndicator indicator(&space, &velocity, 1e-10);
+   Array<bool> active;
+   Vector values;
+   DenseMatrix components;
+
+   bool found_triangle = false;
+   bool found_quadrilateral = false;
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      found_triangle |= space.GetFE(e)->GetDof() == 6;
+      found_quadrilateral |= space.GetFE(e)->GetDof() == 9;
+   }
+   Require(found_triangle && found_quadrilateral,
+           "mixed P2 mesh does not contain both element DOF counts");
+
+   state = 0.0;
+   indicator.Compute(state, active, &values);
+   Require(CountActive(active) == 0 && values.Normlinf() == 0.0,
+           "mixed mesh zero state produced an indicator");
+
+   state = 2.5;
+   indicator.Compute(state, active, &values);
+   Require(CountActive(active) == 0 && values.Normlinf() < 1e-12,
+           "mixed mesh constant state produced an indicator");
+
+   SetGeometryState(space, state);
+   indicator.Compute(state, active, &values, &components);
+   Require(CountActive(active) > 0,
+           "mixed-face discontinuity did not activate any cells");
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      Require(std::isfinite(values(e)),
+              "mixed mesh produced a non-finite indicator");
+      Require(Near(components(0, e), 0.0),
+              "constant component produced a mixed-mesh indicator");
+      Require(Near(values(e), components(1, e)),
+              "mixed-mesh component pooling changed");
+   }
+
+   const Vector reference_values(values);
+   const Array<bool> reference_active(active);
+   state *= 19.0;
+   indicator.Compute(state, active, &values);
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      Require(active[e] == reference_active[e],
+              "scaling changed the mixed-mesh active mask");
+      Require(Near(values(e), reference_values(e), 2e-12),
+              "scaling changed a mixed-mesh indicator");
+   }
+}
+
 } // namespace
 
 int main()
@@ -247,6 +340,7 @@ int main()
       TestTwoDimensionalInflowLayer();
       TestMultiplicativeScalingAndPooling();
       TestVectorOrderingInvariance();
+      TestMixedTriangleQuadrilateralMesh();
    }
    catch (const std::exception &error)
    {

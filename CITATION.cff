@@ -6,5 +6,5 @@ title: Oscillation-Free Discontinuous Galerkin Stabilization in MFEM
 type: software
 repository-code: https://github.com/tzuend/OFDG
 authors:
-  - family-names: Zund
+  - family-names: Zünd
     given-names: Timo

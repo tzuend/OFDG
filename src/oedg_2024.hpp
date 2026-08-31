@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ofdg_serial_optimized.hpp"
+#include "ofdg.hpp"
 
 #include <memory>
 
@@ -28,10 +28,10 @@ class OEDG2024 {
 private:
     OFDG filter;
 
-    static OFDGSensorOptions PaperOptions()
+    static detail::OFDGSensorOptions PaperOptions()
     {
-        OFDGSensorOptions options;
-        options.face_rule = OFDGSensorOptions::FaceRule::Trapezoidal;
+        detail::OFDGSensorOptions options;
+        options.face_rule = detail::OFDGSensorOptions::FaceRule::Trapezoidal;
         options.pool_components = true;
         options.use_face_height = true;
         return options;
@@ -42,17 +42,6 @@ public:
              std::shared_ptr<const FacePhysics> face_physics)
         : filter(fes, basis_type, std::move(face_physics), PaperOptions())
     {
-    }
-
-    void ComputeMean(const mfem::Vector &state, mfem::Vector &means) const
-    {
-        filter.ComputeMean(state, means);
-    }
-
-    void ComputeGlobalMeanScaling(const mfem::Vector &state,
-                                  mfem::Vector &scaling) const
-    {
-        filter.ComputeGlobalMeanScaling(state, scaling);
     }
 
     void ComputeStabilization(const mfem::Vector &state, mfem::Vector &result,

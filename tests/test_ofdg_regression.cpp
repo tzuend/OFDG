@@ -1,6 +1,6 @@
 #include "mfem.hpp"
 
-#include "../src/ofdg_serial_optimized.hpp"
+#include "../src/ofdg.hpp"
 
 #include <algorithm>
 #include <cmath>

@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
       indicator.Compute(state, active);
    }
 
-   indicator.ResetInternalTimings();
    tic_toc.Clear();
    tic_toc.Start();
    for (int repetition = 0; repetition < repetitions; ++repetition)
@@ -81,6 +80,5 @@ int main(int argc, char *argv[])
              << " seconds=" << tic_toc.RealTime()
              << " seconds_per_call=" << tic_toc.RealTime() / repetitions
              << '\n';
-   indicator.PrintInternalTimings();
    return 0;
 }

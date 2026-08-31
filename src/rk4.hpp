@@ -8,10 +8,6 @@
 namespace ofdg
 {
 
-using mfem::ODESolver;
-using mfem::real_t;
-using mfem::TimeDependentOperator;
-using mfem::Vector;
 
 /**
  * Classical fourth-order explicit Runge-Kutta solver with an OE decay
@@ -19,26 +15,26 @@ using mfem::Vector;
  *
  * StabilizerType must provide:
  *
- *    void CompDecay(const Vector &input, Vector &output) const;
+ *    void CompDecay(const mfem::Vector &input, mfem::Vector &output) const;
  *
  * If CompDecay depends on dt, call stabilizer.SetTimeStep(dt) at the
  * beginning of Step, or change CompDecay to accept dt explicitly.
  */
 template <typename StabilizerType>
-class OEDG_RK4Solver : public ODESolver
+class OEDG_RK4Solver : public mfem::ODESolver
 {
 private:
    StabilizerType &stabilizer;
 
-   Vector x0;
+   mfem::Vector x0;
 
-   Vector k1;
-   Vector k2;
-   Vector k3;
-   Vector k4;
+   mfem::Vector k1;
+   mfem::Vector k2;
+   mfem::Vector k3;
+   mfem::Vector k4;
 
-   Vector stage_raw;
-   Vector stage_decayed;
+   mfem::Vector stage_raw;
+   mfem::Vector stage_decayed;
 
 public:
    explicit OEDG_RK4Solver(StabilizerType &stabilizer_)
@@ -46,9 +42,9 @@ public:
    {
    }
 
-   void Init(TimeDependentOperator &f_) override
+   void Init(mfem::TimeDependentOperator &f_) override
    {
-      ODESolver::Init(f_);
+      mfem::ODESolver::Init(f_);
 
       const int size = f_.Height();
 
@@ -63,7 +59,7 @@ public:
       stage_decayed.SetSize(size);
    }
 
-   void Step(Vector &x, real_t &t, real_t &dt) override
+   void Step(mfem::Vector &x, mfem::real_t &t, mfem::real_t &dt) override
    {
       MFEM_VERIFY(f != nullptr,
                   "OEDG_RK4Solver must be initialized before Step().");

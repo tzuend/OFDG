@@ -61,7 +61,7 @@
 #include "../../src/conservation.hpp"
 #include "../../src/experiment_rk.hpp"
 #include "../../src/glvis_output.hpp"
-#include "../../src/ofdg.hpp"
+#include "../../src/study_filter.hpp"
 
 using namespace std;
 using namespace mfem;
@@ -205,7 +205,6 @@ int main(int argc, char *argv[])
    bool save_output = false;
    int vis_steps = 50;
 
-   bool DOFDG_INTERNAL_TIMING = false;
    bool stabilization = true;
    bool use_kxrcf = true;
    real_t kxrcf_threshold = 1.0;
@@ -271,8 +270,6 @@ int main(int argc, char *argv[])
                   "Maximum rejected-step halvings for inadmissible means.");
    args.AddOption(&profile_prefix, "-profile", "--profile-prefix",
                   "Write rank-local CSV samples using this file prefix.");
-   args.AddOption(&DOFDG_INTERNAL_TIMING, "-timing", "--internal-timing", "-no-timing", "--no-internal-timing",
-                  "Enable or disable internal timing of DOFDG.");
 
    args.ParseCheck();
 

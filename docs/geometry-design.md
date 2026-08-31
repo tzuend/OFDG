@@ -2,15 +2,15 @@
 
 ## Decision
 
-Geometry support will be extended in four ordered steps:
+KXRCF now supports the first two geometry milestones: affine 2D meshes mixing
+triangles and quadrilaterals, including MPI faces with unequal side-specific
+DOF counts. The remaining production order is:
 
-1. affine two-dimensional meshes containing triangles and quadrilaterals;
-2. MPI partition faces whose two elements have different local DOF counts;
-3. additional affine three-dimensional element families;
-4. static curvilinear mappings.
+1. add the same mixed affine 2D support to OFDG and OEDG;
+2. add further affine three-dimensional element families;
+3. add static curvilinear mappings.
 
-The first implementation must not combine mixed-element and curved-map changes
-in one patch. Every stage retains the current affine fingerprints and public
+The OFDG mixed-element refactor must remain separate from curved-map changes. Every stage retains the current affine fingerprints and public
 `ofdg::` interface.
 
 For curvilinear elements, repeated physical derivatives will be defined through
@@ -38,7 +38,7 @@ available for all requested polynomial degrees, and would weaken the intended
 framework portability. They may later be implemented only as a validation
 oracle for element families where MFEM exposes the required Hessians.
 
-## Affine mixed-element architecture
+## Remaining OFDG/OEDG mixed-element architecture
 
 Replace the single operator built from `GetFE(0)` by an immutable repository
 keyed by an element signature containing geometry, polynomial order, scalar DOF
@@ -57,8 +57,10 @@ cache. Obtain the remote finite element with
 finite element's signature and transformation. Ownership remains unchanged:
 each rank accumulates damping only for its local element.
 
-The first mixed test mesh is MFEM's `square-mixed.mesh`; a partition must be
-chosen with at least one triangle–quadrilateral interface crossing ranks.
+KXRCF is already tested on an in-memory P2 mesh with two triangles and two
+quadrilaterals. Its explicit two-rank partition places triangle--quadrilateral
+faces across ranks and compares active count, indicator sum, and maximum with
+the serial result. The OFDG/OEDG refactor will reuse this test geometry.
 
 ## Curvilinear geometry data
 
@@ -113,11 +115,11 @@ scope for the first curved implementation.
   equivalent parameterizations of the same physical geometry.
 - Normalize curved face jumps with physical face measure and verify equal and
   opposite two-sided traces for a continuous manufactured state.
-- Exercise mixed local faces and mixed MPI faces with unequal local DOF counts.
-- Run OFDG, OFDG–KXRCF, OEDG, and Euler positivity checks on MFEM mixed and
-  NURBS meshes.
-- Reject mesh or nodal-coordinate changes after construction with a precise
-  reconstruction message.
+- Reuse the verified KXRCF mixed local and MPI cases for OFDG/OEDG.
+- Run OFDG, OFDG--KXRCF, and OEDG checks on mixed meshes, then repeat the
+  relevant filter and positivity checks on MFEM NURBS meshes.
+- Document that filters must be reconstructed after mesh or nodal-coordinate
+  changes.
 
 Curvilinear support is complete only when the serial, MPI, conservation, and
 manufactured-convergence tests all pass. Merely accepting a NURBS mesh is not

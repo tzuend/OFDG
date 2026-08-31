@@ -180,7 +180,9 @@ and takes the largest center-to-vertex distance.  This is an exact
 circumradius for the supported symmetric cells and a documented generalized
 radius for other affine MFEM element families.  Volume quadrature supplies
 $S_{K,c}$; face quadrature integrates the signed trace jump and the physical
-inflow measure.
+inflow measure.  Each element and each side of a face owns its own evaluation
+matrix, so affine two-dimensional meshes may mix triangles and quadrilaterals
+at one polynomial order.
 
 A relative scale floor prevents division by a vanishing component scale.  It is
 defined from the global maximum of the component scales and is used only when
@@ -199,19 +201,17 @@ neighbor coefficients; the neighboring rank performs the complementary
 update.  All ranks participate in the component-scale reductions before any
 root-only diagnostics are printed.
 
-The first implementation recomputed radii, shapes, normals, and quadrature
-weights on every call.  On the fixed benchmark with 9,216 quadrilateral
-elements, degree three, four components, and 100 indicator calls, this required
-2.8784 seconds.  The cached version requires 1.9436 seconds, a 32.5\% reduction.
-Face integration remains the dominant phase at 1.5875 seconds, followed by
-element scales at 0.3372 seconds and normalization at 0.0141 seconds.  Further
-compression was not adopted because it would obscure the geometry and
-ownership logic for a comparatively small additional benefit.
+The standalone benchmark times complete \texttt{Compute} calls after warm-up.
+No clocks, counters, or phase-specific timing branches are embedded in the
+indicator itself; this keeps the core implementation focused on the numerical
+method. Runtime comparisons are reserved for the approved final study.
 
 \subsection{Limitations}
 
-The implementation assumes affine, full-dimensional MFEM elements and a fixed
-mesh during the lifetime of the indicator.  Its radius generalization,
+The implementation assumes affine, full-dimensional MFEM elements, uniform
+polynomial order, and a fixed mesh during the lifetime of the indicator. Mixed
+geometry support is currently verified only for two-dimensional triangles and
+quadrilaterals.  Its radius generalization,
 component pooling, scale floor, boundary omission, and Euler inflow velocity
 are engineering choices rather than claims from the original KXRCF analysis.
 Moreover, selecting fewer cells does not itself guarantee that the resulting

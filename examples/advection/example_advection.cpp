@@ -9,7 +9,7 @@
 #include "../../src/conservation.hpp"
 #include "../../src/glvis_output.hpp"
 #include "../../src/profile_output.hpp"
-#include "../../src/ofdg.hpp"
+#include "../../src/study_filter.hpp"
 
 #include <algorithm>
 #include <cmath>
