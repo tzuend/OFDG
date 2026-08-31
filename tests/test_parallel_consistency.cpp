@@ -32,17 +32,16 @@ VectorFunctionCoefficient PositiveVelocity()
 
 Mesh MakeMixedMesh()
 {
-   Mesh mesh(2, 6, 4);
+   Mesh mesh(2, 6, 3);
    mesh.AddVertex(0.0, 0.0);
+   mesh.AddVertex(1.0, 0.0);
    mesh.AddVertex(2.0, 0.0);
-   mesh.AddVertex(2.0, 1.0);
    mesh.AddVertex(0.0, 1.0);
-   mesh.AddVertex(0.5, 0.5);
-   mesh.AddVertex(1.5, 0.5);
-   mesh.AddQuad(0, 1, 5, 4);
+   mesh.AddVertex(1.0, 1.0);
+   mesh.AddVertex(2.0, 1.0);
+   mesh.AddQuad(0, 1, 4, 3);
    mesh.AddTriangle(1, 2, 5);
-   mesh.AddQuad(2, 3, 4, 5);
-   mesh.AddTriangle(3, 0, 4);
+   mesh.AddTriangle(1, 5, 4);
    mesh.FinalizeTopology();
    return mesh;
 }
@@ -54,8 +53,8 @@ void SetGeometryState(FiniteElementSpace &space, Vector &state)
    for (int e = 0; e < space.GetNE(); ++e)
    {
       space.GetElementDofs(e, dofs);
-      const real_t label = space.GetFE(e)->GetGeomType() ==
-                           Geometry::TRIANGLE ? 2.0 : 1.0;
+      const real_t label =
+         static_cast<real_t>(space.GetFE(e)->GetGeomType());
       for (int j = 0; j < dofs.Size(); ++j)
       {
          state(space.DofToVDof(dofs[j], 0)) = 1.0;
@@ -113,7 +112,7 @@ void TestMixedMeshConsistency()
       expected_maximum = std::max(expected_maximum, serial_values(e));
    }
 
-   int partitioning[4] = {0, 1, 0, 1};
+   int partitioning[3] = {0, 1, 1};
    ParMesh mesh(MPI_COMM_WORLD, serial_mesh, partitioning);
    L2_FECollection collection(2, 2);
    ParFiniteElementSpace space(&mesh, &collection, 2, Ordering::byNODES);
@@ -158,6 +157,48 @@ void TestMixedMeshConsistency()
    Require(std::abs(global_maximum - expected_maximum) < 2e-12,
            "distributed mixed-mesh indicator maximum differs from serial");
 
+   auto serial_physics =
+      std::make_shared<AdvectionFacePhysics>(&serial_velocity);
+   OFDG serial_ofdg(&serial_space, BasisType::GaussLobatto, serial_physics);
+   OEDG2024 serial_oedg(&serial_space, BasisType::GaussLobatto,
+                        serial_physics);
+   Vector serial_stabilization, serial_decay, serial_oedg_decay;
+   serial_ofdg.ComputeStabilization(serial_state, serial_stabilization);
+   serial_ofdg.CompDecay(serial_state, serial_decay, 0.02);
+   serial_oedg.CompDecay(serial_state, serial_oedg_decay, 0.02);
+
+   auto physics = std::make_shared<AdvectionFacePhysics>(&velocity);
+   OFDG mixed_ofdg(&space, BasisType::GaussLobatto, physics);
+   OEDG2024 mixed_oedg(&space, BasisType::GaussLobatto, physics);
+   Vector stabilization, decay, masked_decay, oedg_decay;
+   mixed_ofdg.ComputeStabilization(state, stabilization);
+   mixed_ofdg.CompDecay(state, decay, 0.02);
+   mixed_ofdg.CompDecay(state, masked_decay, 0.02, &active);
+   mixed_oedg.CompDecay(state, oedg_decay, 0.02);
+
+   real_t local_stabilization_norm = stabilization * stabilization;
+   real_t global_stabilization_norm = 0.0;
+   MPI_Allreduce(&local_stabilization_norm, &global_stabilization_norm, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_SUM, mesh.GetComm());
+   Require(std::abs(global_stabilization_norm -
+                    serial_stabilization * serial_stabilization) < 2e-10,
+           "distributed mixed-mesh OFDG stabilization differs from serial");
+
+   ParGridFunction decayed(&space, decay);
+   ParGridFunction oedg_decayed(&space, oedg_decay);
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      Require(std::abs(ElementIntegral(state, e) -
+                       ElementIntegral(decayed, e)) < 3e-12,
+              "mixed-mesh OFDG changed an element mean");
+      Require(std::abs(ElementIntegral(state, e) -
+                       ElementIntegral(oedg_decayed, e)) < 3e-12,
+              "mixed-mesh OEDG changed an element mean");
+   }
+
+   Require(std::isfinite(masked_decay.Norml2()),
+           "mixed-mesh OFDG-KXRCF decay is not finite");
+
    state = 3.0;
    indicator.Compute(state, active, &values);
    local_maximum = values.Size() == 0 ? 0.0 : values.Normlinf();
@@ -165,6 +206,137 @@ void TestMixedMeshConsistency()
                  MPITypeMap<real_t>::mpi_type, MPI_MAX, mesh.GetComm());
    Require(global_maximum < 1e-12,
            "distributed mixed-mesh constant state produced an indicator");
+}
+
+void TestMixedThreeDimensionalConsistency()
+{
+   Mesh serial_mesh(std::string(OFDG_MFEM_DATA_DIR) +
+                    "/fichera-mixed.mesh");
+   L2_FECollection serial_collection(2, 3);
+   FiniteElementSpace serial_space(&serial_mesh, &serial_collection, 2,
+                                   Ordering::byNODES);
+   GridFunction serial_state(&serial_space);
+   SetGeometryState(serial_space, serial_state);
+   VectorFunctionCoefficient serial_velocity(
+      3, [](const Vector &, Vector &velocity)
+      {
+         velocity.SetSize(3);
+         velocity = 1.0;
+      });
+   auto serial_physics =
+      std::make_shared<AdvectionFacePhysics>(&serial_velocity);
+   KXRCFIndicator serial_indicator(&serial_space, serial_physics, 1e-10);
+   Array<bool> serial_active;
+   Vector serial_values;
+   serial_indicator.Compute(serial_state, serial_active, &serial_values);
+   OFDG serial_ofdg(&serial_space, BasisType::GaussLegendre,
+                    serial_physics);
+   Vector serial_stabilization;
+   serial_ofdg.ComputeStabilization(serial_state, serial_stabilization);
+
+   int partitioning[14];
+   for (int e = 0; e < 14; ++e) { partitioning[e] = e % 2; }
+   ParMesh mesh(MPI_COMM_WORLD, serial_mesh, partitioning);
+   L2_FECollection collection(2, 3);
+   ParFiniteElementSpace space(&mesh, &collection, 2, Ordering::byNODES);
+   space.ExchangeFaceNbrData();
+   bool local_mixed_shared_face = false;
+   for (int face = 0; face < mesh.GetNSharedFaces(); ++face)
+   {
+      FaceElementTransformations *transformations =
+         mesh.GetSharedFaceTransformations(face, true);
+      const int local_element = transformations->Elem1No;
+      const int neighbor_element = transformations->Elem2No - mesh.GetNE();
+      local_mixed_shared_face |=
+         space.GetFE(local_element)->GetGeomType() !=
+         space.GetFaceNbrFE(neighbor_element)->GetGeomType();
+   }
+   int local_mixed = local_mixed_shared_face ? 1 : 0;
+   int global_mixed = 0;
+   MPI_Allreduce(&local_mixed, &global_mixed, 1, MPI_INT, MPI_MAX,
+                 mesh.GetComm());
+   Require(global_mixed == 1,
+           "3D partition has no shared face joining different signatures");
+
+   ParGridFunction state(&space);
+   SetGeometryState(space, state);
+   VectorFunctionCoefficient velocity(
+      3, [](const Vector &, Vector &value)
+      {
+         value.SetSize(3);
+         value = 1.0;
+      });
+   auto physics = std::make_shared<AdvectionFacePhysics>(&velocity);
+   KXRCFIndicator indicator(&space, physics, 1e-10);
+   Array<bool> active;
+   Vector values;
+   indicator.Compute(state, active, &values);
+
+   int local_active = 0;
+   real_t local_sum = 0.0;
+   real_t local_maximum = 0.0;
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      local_active += active[e] ? 1 : 0;
+      local_sum += values(e);
+      local_maximum = std::max(local_maximum, values(e));
+   }
+   int global_active = 0;
+   real_t global_sum = 0.0;
+   real_t global_maximum = 0.0;
+   MPI_Allreduce(&local_active, &global_active, 1, MPI_INT, MPI_SUM,
+                 mesh.GetComm());
+   MPI_Allreduce(&local_sum, &global_sum, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_SUM, mesh.GetComm());
+   MPI_Allreduce(&local_maximum, &global_maximum, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_MAX, mesh.GetComm());
+
+   int expected_active = 0;
+   real_t expected_sum = 0.0;
+   real_t expected_maximum = 0.0;
+   for (int e = 0; e < serial_space.GetNE(); ++e)
+   {
+      expected_active += serial_active[e] ? 1 : 0;
+      expected_sum += serial_values(e);
+      expected_maximum = std::max(expected_maximum, serial_values(e));
+   }
+   Require(global_active == expected_active &&
+           std::abs(global_sum - expected_sum) < 2e-10 &&
+           std::abs(global_maximum - expected_maximum) < 2e-10,
+           "distributed mixed 3D KXRCF result differs from serial");
+
+   OFDG ofdg(&space, BasisType::GaussLegendre, physics);
+   OEDG2024 oedg(&space, BasisType::GaussLegendre, physics);
+   Vector stabilization, decay, masked_decay, oedg_decay;
+   ofdg.ComputeStabilization(state, stabilization);
+   ofdg.CompDecay(state, decay, 0.02);
+   ofdg.CompDecay(state, masked_decay, 0.02, &active);
+   oedg.CompDecay(state, oedg_decay, 0.02);
+   Require(std::isfinite(stabilization.Norml2()) &&
+           std::isfinite(decay.Norml2()) &&
+           std::isfinite(masked_decay.Norml2()) &&
+           std::isfinite(oedg_decay.Norml2()),
+           "distributed mixed 3D filter result is not finite");
+
+   real_t local_norm = stabilization * stabilization;
+   real_t global_norm = 0.0;
+   MPI_Allreduce(&local_norm, &global_norm, 1,
+                 MPITypeMap<real_t>::mpi_type, MPI_SUM, mesh.GetComm());
+   Require(std::abs(global_norm -
+                    serial_stabilization * serial_stabilization) < 2e-8,
+           "distributed mixed 3D OFDG stabilization differs from serial");
+
+   ParGridFunction decayed(&space, decay);
+   ParGridFunction oedg_decayed(&space, oedg_decay);
+   for (int e = 0; e < space.GetNE(); ++e)
+   {
+      Require(std::abs(ElementIntegral(state, e) -
+                       ElementIntegral(decayed, e)) < 2e-10,
+              "distributed mixed 3D OFDG changed an element mean");
+      Require(std::abs(ElementIntegral(state, e) -
+                       ElementIntegral(oedg_decayed, e)) < 2e-10,
+              "distributed mixed 3D OEDG changed an element mean");
+   }
 }
 
 void RunParallelChecks()
@@ -304,6 +476,7 @@ int main(int argc, char *argv[])
       Require(Mpi::WorldSize() == 2,
               "parallel consistency test must run with two MPI ranks");
       TestMixedMeshConsistency();
+      TestMixedThreeDimensionalConsistency();
       RunParallelChecks();
    }
    catch (const std::exception &error)

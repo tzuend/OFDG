@@ -77,6 +77,22 @@ Mesh MakeAffineTriangles()
     return mesh;
 }
 
+Mesh MakeMixedMesh()
+{
+    Mesh mesh(2, 6, 3);
+    mesh.AddVertex(0.0, 0.0);
+    mesh.AddVertex(1.0, 0.0);
+    mesh.AddVertex(2.0, 0.0);
+    mesh.AddVertex(0.0, 1.0);
+    mesh.AddVertex(1.0, 1.0);
+    mesh.AddVertex(2.0, 1.0);
+    mesh.AddQuad(0, 1, 4, 3);
+    mesh.AddTriangle(1, 2, 5);
+    mesh.AddTriangle(1, 5, 4);
+    mesh.FinalizeTopology();
+    return mesh;
+}
+
 void Polynomial(const Vector &x, Vector &value)
 {
     value.SetSize(2);
@@ -242,6 +258,9 @@ int main()
 
         Mesh triangles = MakeAffineTriangles();
         ValidateAffineMesh(triangles, "affine triangles");
+
+        Mesh mixed = MakeMixedMesh();
+        ValidateAffineMesh(mixed, "mixed triangles and quadrilaterals");
     } catch (const std::exception &error) {
         std::cerr << "FAILED: " << error.what() << '\n';
         return 1;

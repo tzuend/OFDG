@@ -53,7 +53,10 @@ where $\beta_e$ is the local normal spectral radius.  Thus advection uses
 $|\boldsymbol a\cdot\boldsymbol n|$, Burgers uses the corresponding normal
 flux derivative, and Euler uses
 $|\boldsymbol v\cdot\boldsymbol n|+c$.  This is the material correction to the
-historical unit-speed assumption.
+historical unit-speed assumption.  Following the paper, state-dependent speeds
+are evaluated from the adjacent element means rather than from face traces;
+spatially varying prescribed velocities and normals are still sampled along
+the face.
 
 Multiplying a full conservative state by a positive constant multiplies both
 the jump numerator and $A_i$ by that constant, leaving
@@ -87,7 +90,8 @@ pseudo-time discretization error is introduced, and every element mean is
 preserved to roundoff.
 
 The public \texttt{OEDG2024} type fixes the face quadrature, face-height,
-component-pooling, normalization, wave-speed, and exact-decay choices.  It
+per-face component pooling, relative constant-state test, mean-state wave
+speed, normalization, and exact-decay choices.  It
 reuses the already tested projection, derivative, immutable face cache, and MPI
 halo machinery of the adapted OFDG kernel.  This sharing removes duplicate
 geometry code without allowing the comparator to inherit KXRCF or an

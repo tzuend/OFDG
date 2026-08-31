@@ -2,16 +2,14 @@
 
 ## Decision
 
-KXRCF now supports the first two geometry milestones: affine 2D meshes mixing
-triangles and quadrilaterals, including MPI faces with unequal side-specific
-DOF counts. The remaining production order is:
+OFDG, OEDG, and KXRCF now use the finite element and actual DOF count from each
+side of every face. Their affine path has no geometry allow-list. Verification
+covers mixed triangle--quadrilateral meshes and MFEM's mixed
+tetrahedron--hexahedron--prism mesh, including unequal-signature MPI faces.
+The remaining production geometry task is static curvilinear mappings.
 
-1. add the same mixed affine 2D support to OFDG and OEDG;
-2. add further affine three-dimensional element families;
-3. add static curvilinear mappings.
-
-The OFDG mixed-element refactor must remain separate from curved-map changes. Every stage retains the current affine fingerprints and public
-`ofdg::` interface.
+The completed mixed-element refactor remains separate from curved-map changes
+and preserves the public `ofdg::` interfaces and homogeneous fingerprints.
 
 For curvilinear elements, repeated physical derivatives will be defined through
 recursive element-local (L^2) projection of first physical derivatives. This
@@ -38,9 +36,9 @@ available for all requested polynomial degrees, and would weaken the intended
 framework portability. They may later be implemented only as a validation
 oracle for element families where MFEM exposes the required Hessians.
 
-## Remaining OFDG/OEDG mixed-element architecture
+## Implemented affine operator architecture
 
-Replace the single operator built from `GetFE(0)` by an immutable repository
+An immutable repository replaces the former operator built from `GetFE(0)` and is
 keyed by an element signature containing geometry, polynomial order, scalar DOF
 count, map type, and coefficient-basis identifier. Each local element stores a
 handle to its operator set rather than assuming a common matrix size.
@@ -50,17 +48,18 @@ and element 2. Runtime scratch storage grows to the largest local signature but
 views retain the actual side-specific dimensions. No padding participates in a
 matrix operation.
 
-For shared MPI faces, initialize face-neighbour metadata before building the
-cache. Obtain the remote finite element with
+For shared MPI faces, face-neighbour metadata is initialized before the
+repository is frozen. The remote finite element is obtained with
 `ParFiniteElementSpace::GetFaceNbrFE`, obtain its vector DOFs with
 `GetFaceNbrElementVDofs`, and construct the remote derivative state from that
 finite element's signature and transformation. Ownership remains unchanged:
 each rank accumulates damping only for its local element.
 
-KXRCF is already tested on an in-memory P2 mesh with two triangles and two
-quadrilaterals. Its explicit two-rank partition places triangle--quadrilateral
-faces across ranks and compares active count, indicator sum, and maximum with
-the serial result. The OFDG/OEDG refactor will reuse this test geometry.
+The in-memory affine 2D fixture contains a parallelogram and two triangles; its
+explicit two-rank partition places a triangle--quadrilateral face across ranks.
+The pinned MFEM `fichera-mixed.mesh` fixture similarly exercises tetrahedra,
+hexahedra, prisms, triangular and quadrilateral faces in serial and across two
+ranks. All three methods use these fixtures.
 
 ## Curvilinear geometry data
 
@@ -115,9 +114,8 @@ scope for the first curved implementation.
   equivalent parameterizations of the same physical geometry.
 - Normalize curved face jumps with physical face measure and verify equal and
   opposite two-sided traces for a continuous manufactured state.
-- Reuse the verified KXRCF mixed local and MPI cases for OFDG/OEDG.
-- Run OFDG, OFDG--KXRCF, and OEDG checks on mixed meshes, then repeat the
-  relevant filter and positivity checks on MFEM NURBS meshes.
+- Retain the verified mixed local and MPI cases for all three filters.
+- Repeat the relevant filter and positivity checks on MFEM NURBS meshes.
 - Document that filters must be reconstructed after mesh or nodal-coordinate
   changes.
 

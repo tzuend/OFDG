@@ -9,13 +9,13 @@ not promise runtime diagnostics for them.
 |---|---|---|---|
 | Solution coefficient basis | No modal, orthogonal, or Legendre storage basis is required | Same | Gauss--Legendre and Gauss--Lobatto OFDG fingerprints agree |
 | Equations | Scalar fields and systems represented as repeated scalar DG spaces | Same | Advection, Burgers, and compressible Euler tests |
-| Dimensions | Full-dimensional affine meshes in 1D--3D | Full-dimensional affine meshes in 1D--3D | Routine coverage is strongest in 1D and 2D |
-| Homogeneous element families | One geometry and local DOF signature per space | Per-element finite elements and DOF counts | Segments, triangles, rectangles, and skewed affine quadrilaterals |
-| Mixed element geometries | Not supported | Affine 2D triangle--quadrilateral meshes at uniform order | P2 local faces and explicit two-rank mixed partition faces |
+| Dimensions | Full-dimensional affine meshes in 1D--3D | Same | Serial and MPI tests in 1D--3D |
+| Homogeneous element families | Operators are constructed from each MFEM finite element | Same | Segments, triangles, quadrilaterals, tetrahedra, hexahedra, and prisms |
+| Mixed element geometries | Multiple affine signatures at one uniform order | Same | Triangle--quadrilateral and tetrahedron--hexahedron--prism meshes, P1--P3 |
 | Polynomial order | One order throughout the space | One order throughout the space | Variable-order spaces are not verified |
 | Geometry mapping | Affine mappings only | Affine mappings only | Nonuniform and skewed affine meshes |
 | Mesh evolution | Geometry and topology remain fixed after construction | Same | Reconstruct the filter after any mesh change |
-| Parallel execution | Homogeneous shared faces | Homogeneous and mixed triangle--quadrilateral shared faces | One- and two-rank regression tests |
+| Parallel execution | Independently sized local and remote face sides | Same | Mixed 2D and 3D shared faces across two ranks |
 | Live visualization | Provided by the maintained drivers | Provided by the maintained drivers | Serial and MPI driver checks |
 
 ## Claim boundaries
@@ -24,6 +24,11 @@ The projection and decay operators are represented in the coefficient basis
 supplied by MFEM. This is a basis-agnostic realization, not a claim that every
 finite-element range or mapping is supported. The current code requires scalar,
 `VALUE`-mapped DG elements repeated over the vector dimension.
+
+The implementation has no geometry allow-list. Other compatible affine MFEM
+element combinations follow the same per-signature path, but are unverified
+until a representative serial and MPI case is added. Pyramid and curvilinear
+elements are not included in the present affine claim.
 
 KXRCF gating prevents OFDG from changing inactive elements. Their numerical
 update is therefore the unfiltered DG update, apart from roundoff in shared

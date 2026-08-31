@@ -568,20 +568,21 @@ second form is used by \texttt{CompDecay}.
 
 \subsubsection{Scope and geometric assumptions}
 
-The implementation is a standalone MFEM header.  It assumes that the finite
-element space is nonempty and discontinuous, that $k\geq 1$, and that all elements
-have the same geometry, order, dimension, number of local degrees of freedom, and
-component layout.  For a multicomponent field, the local degrees of freedom of
-each component must form one contiguous block.  All element maps are assumed to
-be affine, and the mesh must remain unchanged during the lifetime of the OFDG
-object.  These conditions are preconditions rather than properties checked at run
-time.
+The implementation is a small compiled MFEM library.  It assumes that the
+finite element space is nonempty and discontinuous, that $k\geq 1$, and that
+all elements have the same order and dimension.  Geometry and local degree-of-
+freedom counts may differ.  All element maps are assumed affine, and the mesh
+must remain unchanged during the lifetime of the OFDG object.  These conditions
+are preconditions rather than properties checked at run time.
 The public header exposes the OFDG constructors, stabilization, and decay only.
 KXRCF is an independent optional method and is included explicitly when the
 activation mask is required.
 
 Different elements need not have the same Jacobian.  They may have different
-sizes and may be translated, rotated, or affinely skewed.  General bilinear
+sizes, reference geometries, and local coefficient counts, and may be
+translated, rotated, or affinely skewed.  An immutable repository constructs
+the required projection and derivative operators once per finite-element
+signature.  General bilinear
 quadrilaterals and curved elements are outside the present scope because their
 inverse Jacobians vary within an element.
 

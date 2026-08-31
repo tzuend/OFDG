@@ -181,8 +181,9 @@ circumradius for the supported symmetric cells and a documented generalized
 radius for other affine MFEM element families.  Volume quadrature supplies
 $S_{K,c}$; face quadrature integrates the signed trace jump and the physical
 inflow measure.  Each element and each side of a face owns its own evaluation
-matrix, so affine two-dimensional meshes may mix triangles and quadrilaterals
-at one polynomial order.
+matrix, so affine meshes may mix finite-element signatures at one polynomial
+order.  The verified cases combine triangles with quadrilaterals and combine
+tetrahedra, hexahedra, and prisms.
 
 A relative scale floor prevents division by a vanishing component scale.  It is
 defined from the global maximum of the component scales and is used only when
@@ -210,8 +211,9 @@ method. Runtime comparisons are reserved for the approved final study.
 
 The implementation assumes affine, full-dimensional MFEM elements, uniform
 polynomial order, and a fixed mesh during the lifetime of the indicator. Mixed
-geometry support is currently verified only for two-dimensional triangles and
-quadrilaterals.  Its radius generalization,
+geometry support is verified in two and three dimensions, including MPI faces
+whose sides have different finite-element signatures. Other compatible affine
+combinations follow the same path but remain unverified. Its radius generalization,
 component pooling, scale floor, boundary omission, and Euler inflow velocity
 are engineering choices rather than claims from the original KXRCF analysis.
 Moreover, selecting fewer cells does not itself guarantee that the resulting

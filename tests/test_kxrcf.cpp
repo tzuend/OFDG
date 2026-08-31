@@ -43,17 +43,16 @@ int CountActive(const Array<bool> &active)
 
 Mesh MakeMixedMesh()
 {
-   Mesh mesh(2, 6, 4);
+   Mesh mesh(2, 6, 3);
    mesh.AddVertex(0.0, 0.0);
+   mesh.AddVertex(1.0, 0.0);
    mesh.AddVertex(2.0, 0.0);
-   mesh.AddVertex(2.0, 1.0);
    mesh.AddVertex(0.0, 1.0);
-   mesh.AddVertex(0.5, 0.5);
-   mesh.AddVertex(1.5, 0.5);
-   mesh.AddQuad(0, 1, 5, 4);
+   mesh.AddVertex(1.0, 1.0);
+   mesh.AddVertex(2.0, 1.0);
+   mesh.AddQuad(0, 1, 4, 3);
    mesh.AddTriangle(1, 2, 5);
-   mesh.AddQuad(2, 3, 4, 5);
-   mesh.AddTriangle(3, 0, 4);
+   mesh.AddTriangle(1, 5, 4);
    mesh.FinalizeTopology();
    return mesh;
 }
