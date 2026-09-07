@@ -1,0 +1,253 @@
+{
+  "profile": "preview",
+  "status": "approved",
+  "purpose": "Supervisor discussion; not a final comparative study",
+  "limits": {
+    "memory_mib": 4096,
+    "check_seconds": 300,
+    "launch_seconds": 2700,
+    "total_seconds": 3600
+  },
+  "cases": [
+    {
+      "name": "smooth_advection",
+      "program": "advection",
+      "orders": [
+        1,
+        2,
+        3
+      ],
+      "resolutions": [
+        32,
+        64,
+        128,
+        256
+      ],
+      "final_time": 1.1,
+      "args": [],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15
+    },
+    {
+      "name": "piecewise_advection",
+      "program": "advection",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        128,
+        256
+      ],
+      "final_time": 1.1,
+      "args": [
+        "-piecewise"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15,
+      "oedg_resolution": 256
+    },
+    {
+      "name": "smooth_burgers",
+      "program": "burgers",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        32,
+        64,
+        128
+      ],
+      "final_time": 0.6,
+      "args": [
+        "-p",
+        "1"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15
+    },
+    {
+      "name": "shock_burgers",
+      "program": "burgers",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        128,
+        256
+      ],
+      "final_time": 2.2,
+      "args": [
+        "-p",
+        "2"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15,
+      "oedg_resolution": 256
+    },
+    {
+      "name": "lax",
+      "program": "euler",
+      "orders": [
+        1,
+        2,
+        3
+      ],
+      "resolutions": [
+        192,
+        128,
+        96
+      ],
+      "final_time": 1.3,
+      "args": [
+        "-p",
+        "7"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.3,
+      "zip_order_resolution": true,
+      "oedg_resolution": 128
+    },
+    {
+      "name": "shu_osher",
+      "program": "euler",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        200,
+        400
+      ],
+      "final_time": 1.8,
+      "args": [
+        "-p",
+        "8"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.3,
+      "oedg_resolution": 400
+    },
+    {
+      "name": "straight_advection_2d",
+      "program": "advection",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        8,
+        16,
+        32
+      ],
+      "final_time": 1.0,
+      "args": [
+        "-d",
+        "2"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15,
+      "dimension": 2
+    },
+    {
+      "name": "curved_advection_2d",
+      "program": "advection",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        8,
+        16,
+        32
+      ],
+      "final_time": 1.0,
+      "args": [
+        "-d",
+        "2",
+        "-curved"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.15,
+      "dimension": 2
+    },
+    {
+      "name": "riemann_2d",
+      "program": "euler",
+      "orders": [
+        2
+      ],
+      "resolutions": [
+        32,
+        64
+      ],
+      "final_time": 0.25,
+      "args": [
+        "-p",
+        "6",
+        "-outflow"
+      ],
+      "methods": [
+        "dg",
+        "ofdg",
+        "ofdg-kxrcf"
+      ],
+      "cfl": 0.3,
+      "dimension": 2
+    }
+  ],
+  "references": [
+    {
+      "name": "lax_2048",
+      "problem": 7,
+      "cells": 2048,
+      "final_time": 1.3
+    },
+    {
+      "name": "lax_4096",
+      "problem": 7,
+      "cells": 4096,
+      "final_time": 1.3
+    },
+    {
+      "name": "shu_osher_2048",
+      "problem": 8,
+      "cells": 2048,
+      "final_time": 1.8
+    },
+    {
+      "name": "shu_osher_4096",
+      "problem": 8,
+      "cells": 4096,
+      "final_time": 1.8
+    }
+  ]
+}

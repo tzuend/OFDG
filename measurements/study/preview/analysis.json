@@ -1,0 +1,690 @@
+{
+  "scalar_differences": {
+    "piecewise_advection": {
+      "ofdg-kxrcf": 0.0007084924811532334,
+      "oedg": 0.0020022030536376023
+    },
+    "shock_burgers": {
+      "ofdg-kxrcf": 0.0004948508768849863,
+      "oedg": 0.23769619999136787
+    }
+  },
+  "wave_ranges": {
+    "reference": 1.614616052303505,
+    "dg": 1.5898310662071569,
+    "ofdg": 1.495016860777136,
+    "ofdg-kxrcf": 1.529011003242327,
+    "oedg": 1.383102583760854
+  },
+  "cut_differences": {
+    "32": {
+      "dg": 0.2703670324085773,
+      "ofdg-kxrcf": 0.017302838277960197
+    },
+    "64": {
+      "dg": 0.17700062465995892,
+      "ofdg-kxrcf": 0.022647891221262872
+    }
+  },
+  "riemann_map_range": [
+    0.5160286558490413,
+    1.6649516551905488
+  ],
+  "convergence": [
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 1,
+      "n": 32,
+      "l2": 0.005163298309083353,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 1,
+      "n": 64,
+      "l2": 0.00097053981684469,
+      "observed_order": 2.411433645583293,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 1,
+      "n": 128,
+      "l2": 0.0002168358812974517,
+      "observed_order": 2.162183892447665,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 1,
+      "n": 256,
+      "l2": 5.244892069602192e-05,
+      "observed_order": 2.047618518771843,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0001046236818681734,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 2,
+      "n": 64,
+      "l2": 1.30598435560186e-05,
+      "observed_order": 3.0019999266340096,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 2,
+      "n": 128,
+      "l2": 1.632396912710725e-06,
+      "observed_order": 3.0000738226207844,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 2,
+      "n": 256,
+      "l2": 2.040508628832665e-07,
+      "observed_order": 2.9999911706570956,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 3,
+      "n": 32,
+      "l2": 2.519698849170228e-06,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 3,
+      "n": 64,
+      "l2": 1.575969812440929e-07,
+      "observed_order": 3.9989395096864926,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 3,
+      "n": 128,
+      "l2": 9.851632971182677e-09,
+      "observed_order": 3.999733209818953,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "dg",
+      "p": 3,
+      "n": 256,
+      "l2": 6.157556401743551e-10,
+      "observed_order": 3.9999330376830082,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 1,
+      "n": 32,
+      "l2": 0.04463502254104081,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 1,
+      "n": 64,
+      "l2": 0.007245964228531473,
+      "observed_order": 2.6229265657971292,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 1,
+      "n": 128,
+      "l2": 0.001111232833323433,
+      "observed_order": 2.7050165515755524,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 1,
+      "n": 256,
+      "l2": 0.0001559961758772246,
+      "observed_order": 2.832578563910861,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.001527504621310042,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 2,
+      "n": 64,
+      "l2": 8.091244576920874e-05,
+      "observed_order": 4.238671302743912,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 2,
+      "n": 128,
+      "l2": 4.768065569498337e-06,
+      "observed_order": 4.084885651101594,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 2,
+      "n": 256,
+      "l2": 3.36260350102849e-07,
+      "observed_order": 3.825753495935995,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 3,
+      "n": 32,
+      "l2": 4.791851773727423e-05,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 3,
+      "n": 64,
+      "l2": 1.603089220939716e-06,
+      "observed_order": 4.901656655014541,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 3,
+      "n": 128,
+      "l2": 5.275119744985412e-08,
+      "observed_order": 4.925507068297047,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg",
+      "p": 3,
+      "n": 256,
+      "l2": 1.763173382444032e-09,
+      "observed_order": 4.902957588495951,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 1,
+      "n": 32,
+      "l2": 0.03439182345946652,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 1,
+      "n": 64,
+      "l2": 0.00625382583217393,
+      "observed_order": 2.459254663632442,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 1,
+      "n": 128,
+      "l2": 0.0009565989477708976,
+      "observed_order": 2.708752931529719,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 1,
+      "n": 256,
+      "l2": 0.0001406637604110027,
+      "observed_order": 2.765663513425951,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0005340257524197494,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 64,
+      "l2": 1.5368060316842e-05,
+      "observed_order": 5.118902323376865,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 128,
+      "l2": 1.635223545045278e-06,
+      "observed_order": 3.232375306901749,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 256,
+      "l2": 2.040524631748172e-07,
+      "observed_order": 3.0024758434360974,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 3,
+      "n": 32,
+      "l2": 2.911343556085204e-05,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 3,
+      "n": 64,
+      "l2": 7.164548979525432e-07,
+      "observed_order": 5.3446653987373685,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 3,
+      "n": 128,
+      "l2": 1.802670405954261e-08,
+      "observed_order": 5.312668338649601,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_advection",
+      "method": "ofdg-kxrcf",
+      "p": 3,
+      "n": 256,
+      "l2": 6.945857473028413e-10,
+      "observed_order": 4.697839025923955,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "dg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0005218608683274354,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "dg",
+      "p": 2,
+      "n": 64,
+      "l2": 6.996343457952419e-05,
+      "observed_order": 2.8989922061583644,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "dg",
+      "p": 2,
+      "n": 128,
+      "l2": 9.305366758334177e-06,
+      "observed_order": 2.9104661960600198,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0006795306447494251,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg",
+      "p": 2,
+      "n": 64,
+      "l2": 7.936473824870214e-05,
+      "observed_order": 3.0979685481219836,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg",
+      "p": 2,
+      "n": 128,
+      "l2": 9.885372429788726e-06,
+      "observed_order": 3.0051309349592157,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0005218608683274354,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 64,
+      "l2": 6.996343457952419e-05,
+      "observed_order": 2.8989922061583644,
+      "cfl": 0.15
+    },
+    {
+      "case": "smooth_burgers",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 128,
+      "l2": 9.305366758334177e-06,
+      "observed_order": 2.9104661960600198,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 8,
+      "l2": 0.001467731462111814,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 16,
+      "l2": 0.0002178094055362847,
+      "observed_order": 2.7524498755607256,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 32,
+      "l2": 2.919423329658036e-05,
+      "observed_order": 2.8993109259941616,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 8,
+      "l2": 0.04857458973228648,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 16,
+      "l2": 0.002936404854375829,
+      "observed_order": 4.048079013274339,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0001374461397841362,
+      "observed_order": 4.417112598261332,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 8,
+      "l2": 0.001467731462111814,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 16,
+      "l2": 0.0002178094055362847,
+      "observed_order": 2.7524498755607256,
+      "cfl": 0.15
+    },
+    {
+      "case": "straight_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 32,
+      "l2": 2.919423329658036e-05,
+      "observed_order": 2.8993109259941616,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 8,
+      "l2": 0.002452962683543585,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 16,
+      "l2": 0.0003773249325580883,
+      "observed_order": 2.700645949021914,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "dg",
+      "p": 2,
+      "n": 32,
+      "l2": 5.533846826765115e-05,
+      "observed_order": 2.7694528157169085,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 8,
+      "l2": 0.06316081317653978,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 16,
+      "l2": 0.005392628451417686,
+      "observed_order": 3.5499692039458526,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg",
+      "p": 2,
+      "n": 32,
+      "l2": 0.0002609305792465603,
+      "observed_order": 4.369250703538859,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 8,
+      "l2": 0.002455943831707968,
+      "observed_order": null,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 16,
+      "l2": 0.0003788322451964718,
+      "observed_order": 2.696646526623776,
+      "cfl": 0.15
+    },
+    {
+      "case": "curved_advection_2d",
+      "method": "ofdg-kxrcf",
+      "p": 2,
+      "n": 32,
+      "l2": 5.543794220599005e-05,
+      "observed_order": 2.7726135220444994,
+      "cfl": 0.15
+    }
+  ],
+  "extrema": [
+    {
+      "case": "piecewise_advection",
+      "method": "dg",
+      "minimum": -1.0118997237840037,
+      "maximum": 1.0872230835725747,
+      "undershoot": 0.011899723784003724,
+      "overshoot": 0.13616656727742105
+    },
+    {
+      "case": "piecewise_advection",
+      "method": "ofdg",
+      "minimum": -1.0000000418028652,
+      "maximum": 0.9323928074879709,
+      "undershoot": 4.180286516941578e-08,
+      "overshoot": 0
+    },
+    {
+      "case": "piecewise_advection",
+      "method": "ofdg-kxrcf",
+      "minimum": -1.000000057740464,
+      "maximum": 0.9326686266487562,
+      "undershoot": 5.7740463965672006e-08,
+      "overshoot": 0
+    },
+    {
+      "case": "piecewise_advection",
+      "method": "oedg",
+      "minimum": -0.9999999985797533,
+      "maximum": 0.9318746227280842,
+      "undershoot": 0,
+      "overshoot": 0
+    },
+    {
+      "case": "shock_burgers",
+      "method": "dg",
+      "minimum": -1.0414870732621213,
+      "maximum": 1.8165707750980171,
+      "undershoot": 0.5414870732621213,
+      "overshoot": 0.3165707750980171
+    },
+    {
+      "case": "shock_burgers",
+      "method": "ofdg",
+      "minimum": -0.4222380920645178,
+      "maximum": 1.4425153581255192,
+      "undershoot": 0,
+      "overshoot": 0
+    },
+    {
+      "case": "shock_burgers",
+      "method": "ofdg-kxrcf",
+      "minimum": -0.4222594530425325,
+      "maximum": 1.4425931020764204,
+      "undershoot": 0,
+      "overshoot": 0
+    },
+    {
+      "case": "shock_burgers",
+      "method": "oedg",
+      "minimum": -0.4237019473668731,
+      "maximum": 1.4033464920056193,
+      "undershoot": 0,
+      "overshoot": 0
+    }
+  ],
+  "reference_sensitivity": {
+    "lax": {
+      "mean_absolute_density_difference": 0.001007067132330784,
+      "max_density_difference": 0.11971742624184034
+    },
+    "shu_osher": {
+      "mean_absolute_density_difference": 0.0032386434270454375,
+      "max_density_difference": 0.46317438662979993
+    }
+  },
+  "riemann_resolution": 64,
+  "failures": [],
+  "periodic_conservation_max": 3.985700658404312e-14,
+  "elapsed_minutes": 7.345501850859728,
+  "peak_mib": 117.96875,
+  "success_count": 103,
+  "run_count": 103,
+  "temporal_sensitivity": {
+    "dg": 6.051205316704819e-06,
+    "ofdg": 2.9081599415871073e-05,
+    "ofdg-kxrcf": 3.1618215944498894e-06
+  }
+}

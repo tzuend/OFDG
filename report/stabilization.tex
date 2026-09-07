@@ -1,0 +1,10 @@
+\chapter{Oscillation control}
+\label{chap:stabilization}
+The common DG update is now fixed. This chapter explains three separate roles:
+OFDG damps polynomial variation, KXRCF chooses where to apply it, and OEDG
+provides a related comparator with different sensor and cadence choices.
+The shared positivity treatment is described last; it is used by all Euler methods.
+\input{ofdg}
+\input{kxrcf}
+\input{oedg}
+\input{numerical_controls}

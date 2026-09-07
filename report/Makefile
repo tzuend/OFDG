@@ -15,6 +15,7 @@ draft:
 	bibtex ${THESIS}
 	${LATEX} ${THESIS}.tex
 	${LATEX} ${THESIS}.tex
+	${LATEX} ${THESIS}.tex
 	$(MAKE) verify-draft
 
 final:

@@ -56,7 +56,7 @@
 %% Make document internal hyperlinks wherever possible. (TOC, references)
 %% This MUST be loaded before cleveref, which is loaded in 'extrapackages'
 %% above.  We just load it last to be safe.
-\usepackage[colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue]{hyperref}
+\usepackage[hypertexnames=false,colorlinks=true,urlcolor=blue,citecolor=blue,linkcolor=blue]{hyperref}
 %% Alternative without too much coloring.
 %% \usepackage[linkcolor=black,colorlinks=true,citecolor=black,filecolor=black]{hyperref}
 
@@ -89,10 +89,10 @@
 \advisors{Advisors: Dr.\ R. K\"{a}ppeli}
 \department{Seminar for Applied Mathematics, \\
             Department of Mathematics}
-\date{August 2026}
+\date{September 2026}
 \setlength{\emergencystretch}{2em}
 
-%% Draft builds may display the reduced development checkpoint. A final build
+%% Draft builds use the measured preliminary preview. A final build
 %% is enabled only by the guarded report-final target.
 \newif\ifdraftresults
 \ifdefined\FinalResults
@@ -100,6 +100,8 @@
 \else
   \draftresultstrue
 \fi
+
+\input{reportstatus}
 
 \begin{document}
 
@@ -119,18 +121,24 @@
 
 %% TOC with the proper setup, do not change.
 \cleartorecto
+\begingroup
+\setlength{\cftbeforechapterskip}{0.5em}
 \tableofcontents
+\endgroup
 \mainmatter
 
 %% Your real content!
 \input{introduction}
 \input{methods}
+\input{stabilization}
+\input{implementation}
 \input{experiments}
 \input{discussion}
 \input{conclusion}
 
 \appendix
 
+\input{operator_details}
 \input{appendix}
 
 \backmatter

@@ -1,0 +1,313 @@
+diff --git a/Makefile b/Makefile
+index 75f3105..d27899f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -212,22 +212,22 @@ $(RELEASE_TEST_DIR)/test_rk4_cadence: tests/test_rk4_cadence.cpp src/rk4.hpp | $
+ $(RELEASE_TEST_DIR)/test_experiment_rk: tests/test_experiment_rk.cpp src/experiment_rk.hpp | $(RELEASE_TEST_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+ 
+-$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
++$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
+ 
+-$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
++$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
+ 
+-$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
++$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
+ 
+-$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
++$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+ 
+-$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
++$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+ 
+-$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
++$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+ 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+ 
+ report: report-draft
+@@ -261,3 +261,11 @@ test-curved: $(RELEASE_TEST_DIR)/test_curved_geometry $(RELEASE_TEST_DIR)/test_c
+ 	python3 tests/run_bounded.py $(RELEASE_TEST_DIR)/test_curved_euler
+ 	python3 tests/run_bounded.py mpirun -np 2 $(RELEASE_TEST_DIR)/test_curved_euler
+ 	python3 tests/run_bounded.py python3 tests/test_curved_advection.py $(RELEASE_EXAMPLE_DIR)/advection
++
++$(RELEASE_TEST_DIR)/test_preview: tests/test_preview.cpp src/profile_output.hpp examples/euler/euler.hpp | $(RELEASE_TEST_DIR)
++	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
++
++.PHONY: study-preview
++study-preview: release reference-solver
++	python3 scripts/run_preview.py
++	python3 scripts/analyze_preview.py
+diff --git a/examples/advection/example_advection.cpp b/examples/advection/example_advection.cpp
+index c146b95..a633f66 100644
+--- a/examples/advection/example_advection.cpp
++++ b/examples/advection/example_advection.cpp
+@@ -58,10 +58,16 @@ Mesh PeriodicMesh(int dimension, int elements, bool triangular, bool curved)
+       mesh.CreatePeriodicVertexMapping(translations));
+ }
+ 
+-real_t InitialValue(const Vector &x)
++real_t InitialValue(const Vector &x, bool piecewise = false)
+ {
+    if (x.Size() == 1)
+    {
++      if (piecewise) {
++         const real_t coordinate = x(0) - std::floor(x(0));
++         return coordinate >= 0.3 && coordinate <= 0.8
++             ? std::sin(2.0 * M_PI * coordinate)
++             : std::cos(2.0 * M_PI * coordinate) - 0.5;
++      }
+       const real_t wave = std::sin(2.0 * M_PI * x(0));
+       return wave * wave;
+    }
+@@ -192,6 +198,7 @@ int main(int argc, char *argv[])
+    string profile_prefix;
+    bool triangular = false;
+    bool curved = false;
++   bool piecewise = false;
+    bool radau_initialization = false;
+    bool visualization = false;
+    int vis_steps = 50;
+@@ -233,7 +240,10 @@ int main(int argc, char *argv[])
+                   "Use the 1D right Gauss--Radau projection.");
+    args.AddOption(&curved, "-curved", "--curved-mesh", "-straight", "--straight-mesh",
+                   "Use a static cubic deformation of the periodic 2D mesh.");
++   args.AddOption(&piecewise, "-piecewise", "--piecewise-initial",
++                  "-smooth", "--smooth-initial", "Use 2021 Example 1(b) in 1D.");
+    args.ParseCheck();
++   MFEM_VERIFY(!piecewise || dimension == 1, "Piecewise data requires 1D.");
+ 
+    MFEM_VERIFY(dimension == 1 || dimension == 2,
+                "Advection dimension must be 1 or 2.");
+@@ -251,7 +261,7 @@ int main(int argc, char *argv[])
+    ParFiniteElementSpace space(&mesh, &collection);
+    const HYPRE_BigInt global_unknowns = space.GlobalTrueVSize();
+    ParGridFunction solution(&space);
+-   FunctionCoefficient initial(InitialValue);
++   FunctionCoefficient initial([piecewise](const Vector &x) { return InitialValue(x, piecewise); });
+    if (radau_initialization) { ProjectGaussRadau(solution, initial); }
+    else { solution.ProjectCoefficient(initial); }
+    const real_t initial_integral = GlobalScalarIntegral(solution);
+@@ -356,12 +366,12 @@ int main(int argc, char *argv[])
+    }
+    tic_toc.Stop();
+ 
+-   FunctionCoefficient exact([dimension, final_time](const Vector &x)
++   FunctionCoefficient exact([dimension, final_time, piecewise](const Vector &x)
+    {
+       Vector foot(x);
+       foot(0) -= (dimension == 1 ? 1.0 : 0.7) * final_time;
+       if (dimension == 2) { foot(1) -= 0.3 * final_time; }
+-      return InitialValue(foot);
++      return InitialValue(foot, piecewise);
+    });
+    const real_t l1_error = solution.ComputeL1Error(exact);
+    const real_t l2_error = solution.ComputeL2Error(exact);
+diff --git a/examples/euler/euler.cpp b/examples/euler/euler.cpp
+index 28f5474..2cec9f0 100644
+--- a/examples/euler/euler.cpp
++++ b/examples/euler/euler.cpp
+@@ -56,6 +56,7 @@
+ #include <sstream>
+ #include <limits>
+ #include "euler.hpp"
++#include "../../src/profile_output.hpp"
+ 
+ #include "../../src/euler_positivity.hpp"
+ #include "../../src/conservation.hpp"
+@@ -90,11 +91,8 @@ void WriteEulerSamples(const ParGridFunction &solution,
+       ElementTransformation *transformation =
+          scalar_space.GetMesh()->GetElementTransformation(element);
+       const IntegrationRule &nodes = fe->GetNodes();
+-      auto write_point = [&](const IntegrationPoint &ip, const char *sample)
++      auto evaluate = [&](const IntegrationPoint &ip, Vector &conservative)
+       {
+-         Vector point;
+-         transformation->Transform(ip, point);
+-         Vector conservative(dim + 2);
+          for (int component = 0; component < dim + 2; ++component)
+          {
+             GridFunction field(const_cast<ParFiniteElementSpace *>(&scalar_space),
+@@ -102,6 +100,11 @@ void WriteEulerSamples(const ParGridFunction &solution,
+                                   component * scalar_dofs);
+             conservative(component) = field.GetValue(element, ip);
+          }
++      };
++      auto write_state = [&](const IntegrationPoint &ip, const char *sample,
++                             const Vector &conservative) {
++         Vector point;
++         transformation->Transform(ip, point);
+          const real_t density = conservative(0);
+          real_t momentum_squared = 0.0;
+          for (int d = 0; d < dim; ++d)
+@@ -116,11 +119,26 @@ void WriteEulerSamples(const ParGridFunction &solution,
+                 << (dim > 1 ? conservative(2) / density : 0.0) << ','
+                 << pressure << '\n';
+       };
+-      for (int q = 0; q < nodes.GetNPoints(); ++q)
+-      {
+-         write_point(nodes.IntPoint(q), "polynomial");
++      auto write_point = [&](const IntegrationPoint &ip, const char *sample) {
++         Vector conservative(dim + 2);
++         evaluate(ip, conservative);
++         write_state(ip, sample, conservative);
++      };
++      if (dim == 1) {
++         for (int q = 0; q <= 20; ++q) {
++            IntegrationPoint ip;
++            ip.Set1w(q / 20.0, 1.0);
++            write_point(ip, "polynomial");
++         }
++      } else {
++         for (int q = 0; q < nodes.GetNPoints(); ++q) {
++            write_point(nodes.IntPoint(q), "polynomial");
++         }
+       }
+-      write_point(Geometries.GetCenter(fe->GetGeomType()), "center");
++      const auto &center = Geometries.GetCenter(fe->GetGeomType());
++      write_point(center, "center");
++      const auto average = PhysicalCellAverage(*transformation, fe->GetOrder(), dim + 2, evaluate);
++      write_state(center, "cell_average", average);
+    }
+ }
+ 
+@@ -211,6 +229,7 @@ int main(int argc, char *argv[])
+    string method_name;
+    string cadence_name = "auto";
+    bool use_positivity = false;
++   bool outflow_boundary = false;
+    real_t state_scale = 1.0;
+    int maximum_step_retries = 8;
+    string profile_prefix;
+@@ -268,6 +287,8 @@ int main(int argc, char *argv[])
+                   "Multiply the complete initial conservative state.");
+    args.AddOption(&maximum_step_retries, "-retries", "--step-retries",
+                   "Maximum rejected-step halvings for inadmissible means.");
++   args.AddOption(&outflow_boundary, "-outflow", "--outflow-boundary",
++                  "-fixed-boundary", "--fixed-boundary", "Use transmissive exterior states (non-wall problems).");
+    args.AddOption(&profile_prefix, "-profile", "--profile-prefix",
+                   "Write rank-local CSV samples using this file prefix.");
+ 
+@@ -383,7 +404,7 @@ int main(int argc, char *argv[])
+    {
+       boundary_integrator =
+          std::make_unique<EulerBoundaryIntegrator>(
+-            numericalFlux, &u0, problem == 5, IntOrderOffset);
++            numericalFlux, &u0, problem == 5, IntOrderOffset, outflow_boundary);
+    }
+    DGHyperbolicConservationLaws euler(
+       vfes, std::unique_ptr<HyperbolicFormIntegrator>(
+diff --git a/examples/euler/euler.hpp b/examples/euler/euler.hpp
+index a846f06..756a763 100644
+--- a/examples/euler/euler.hpp
++++ b/examples/euler/euler.hpp
+@@ -39,6 +39,7 @@ private:
+    const NumericalFlux &numerical_flux;
+    VectorCoefficient *fixed_state;
+    bool reflecting;
++   bool outflow;
+    int integration_order_offset;
+    int dimension;
+    int equations;
+@@ -48,13 +49,13 @@ public:
+    EulerBoundaryIntegrator(const NumericalFlux &flux,
+                            VectorCoefficient *state,
+                            bool reflecting_wall,
+-                           int order_offset)
+-      : numerical_flux(flux), fixed_state(state), reflecting(reflecting_wall),
++                           int order_offset, bool outflow_boundary = false)
++      : numerical_flux(flux), fixed_state(state), reflecting(reflecting_wall), outflow(outflow_boundary),
+         integration_order_offset(order_offset),
+         dimension(flux.GetFluxFunction().dim),
+         equations(flux.GetFluxFunction().num_equations)
+    {
+-      MFEM_VERIFY(reflecting || fixed_state != nullptr,
++      MFEM_VERIFY(reflecting || outflow || fixed_state != nullptr,
+                   "A fixed Euler boundary needs a state coefficient.");
+    }
+ 
+@@ -107,6 +108,10 @@ public:
+             unit_normal /= unit_normal.Norml2();
+             ofdg::ReflectEulerState(state_in, unit_normal, dimension, state_out);
+          }
++         else if (outflow)
++         {
++            state_out = state_in;
++         }
+          else
+          {
+             fixed_state->Eval(state_out, transformations, point);
+diff --git a/src/profile_output.hpp b/src/profile_output.hpp
+index 9f0bcf4..9c6cca3 100644
+--- a/src/profile_output.hpp
++++ b/src/profile_output.hpp
+@@ -1,12 +1,36 @@
+ #pragma once
+ 
+ #include "mfem.hpp"
++#include "curved_geometry.hpp"
+ 
+ #include <fstream>
+ #include <iomanip>
+ #include <sstream>
+ #include <string>
+ 
++// Integrate in physical coordinates. Euler callers average conservative variables
++// first; primitive variables derived from that mean are not primitive averages.
++template <typename Evaluate>
++inline mfem::Vector PhysicalCellAverage(mfem::ElementTransformation &map,
++                                       int order, int components, Evaluate evaluate)
++{
++    mfem::Vector average(components), value(components);
++    average = 0.0;
++    mfem::real_t volume = 0.0;
++    const auto &rule = ofdg::detail::VolumeRule(order, map);
++    for (int q = 0; q < rule.GetNPoints(); ++q) {
++        const auto &ip = rule.IntPoint(q);
++        map.SetIntPoint(&ip);
++        const auto weight = ip.weight * map.Weight();
++        evaluate(ip, value);
++        average.Add(weight, value);
++        volume += weight;
++    }
++    MFEM_VERIFY(volume > 0.0, "Nonpositive cell volume in profile export.");
++    average /= volume;
++    return average;
++}
++
+ inline void WriteScalarSamples(const mfem::GridFunction &solution,
+                                const std::string &prefix, int rank)
+ {
+@@ -34,9 +58,25 @@ inline void WriteScalarSamples(const mfem::GridFunction &solution,
+                    << point(0) << ',' << (dim > 1 ? point(1) : 0.0)
+                    << ',' << solution.GetValue(element, ip) << '\n';
+         };
+-        for (int q = 0; q < nodes.GetNPoints(); ++q) {
+-            write_point(nodes.IntPoint(q), "polynomial");
++        if (dim == 1) {
++            for (int q = 0; q <= 20; ++q) {
++                mfem::IntegrationPoint ip;
++                ip.Set1w(q / 20.0, 1.0);
++                write_point(ip, "polynomial");
++            }
++        } else {
++            for (int q = 0; q < nodes.GetNPoints(); ++q) {
++                write_point(nodes.IntPoint(q), "polynomial");
++            }
+         }
++        const auto average = PhysicalCellAverage(*transformation, fe->GetOrder(), 1,
++            [&](const mfem::IntegrationPoint &ip, mfem::Vector &value) {
++                value(0) = solution.GetValue(element, ip);
++            });
++        mfem::Vector point;
++        transformation->Transform(mfem::Geometries.GetCenter(fe->GetGeomType()), point);
++        output << rank << ',' << element << ",cell_average," << point(0) << ','
++               << (dim > 1 ? point(1) : 0.0) << ',' << average(0) << '\n';
+         write_point(mfem::Geometries.GetCenter(fe->GetGeomType()), "center");
+     }
+ }

@@ -1,26 +1,67 @@
 \chapter{Discussion}
 \label{chap:discussion}
+\section{What the present evidence supports}
+The implementation and the preview answer different questions. The operator
+checks establish that the represented filtering operation preserves constants
+and component means to roundoff, leaves inactive cells unchanged, and behaves
+consistently across tested coefficient bases and MPI partitions. The curved
+construction extends those checks to static polynomial geometry using physical
+quadrature and projected derivatives. It does not turn successively projected
+derivatives into exact higher derivatives.
 
-\ifdraftresults
-This chapter is intentionally limited to the interpretation framework.  The
-final discussion will be written only after the approved experiment matrix has
-been executed.  It will answer the research questions in the order posed in
-\cref{chap:methods}: the effect of physical wave-speed scaling, the selectivity
-and cost of KXRCF gating, distributed-memory behavior, and the comparative
-accuracy and robustness of RKDG, adapted OFDG--KXRCF, and OEDG.
+The evolution experiments show that this construction can be used in a
+complete solver on modest meshes. For smooth P2 advection, gating reduces the
+additional error of all-cell OFDG and approaches the DG error, including on the
+curved sequence. On scalar shocks, both OFDG configurations suppress large
+sampled excursions. The Shu--Osher wave detail suggests a useful tradeoff:
+selective filtering retains more wave variation while requiring few positivity
+interventions in this configuration. These findings motivate further targeted
+experiments, rather than a universal claim that one method is best.
 
-The discussion will distinguish observations from established theory.  In
-particular, conservation follows from preservation of cell averages, whereas
-convergence, nonoscillatory behavior, and robustness of the modified sensor
-must be supported by the final measurements.  It will also address temporal
-error, reference-grid independence, positivity-limiter intervention, detector
-threshold sensitivity, implementation-specific bases and fluxes, and the
-limited rank count of the local scaling study.  Basis independence will be
-distinguished from geometric generality: the projection construction does not
-prescribe a coefficient basis, whereas the current verified implementation
-still assumes fixed, affine, uniform-order scalar polynomial DG elements.
-\else
-\InputIfFileExists{generated/final/discussion.tex}{}{%
-  \PackageError{thesis}{Approved final discussion is missing}{Generate the
-  final discussion after reviewing the approved results.}}
-\fi
+\section{What still prevents stronger interpretation}
+A global activation count cannot show whether KXRCF chooses the appropriate
+cells. Similar solutions may arise because the detector is selective, because
+all-cell damping is already negligible in smooth regions, or because the test
+is insufficiently discriminating. Spatial evidence is needed to separate these
+explanations.
+\MissingWork{KX-01}{Record spatial indicator values, threshold, and active cells
+alongside a shock and a smooth-wave profile; test a small range of thresholds;
+identify missed shocks and unnecessary smooth-region activation.}
+
+OEDG is a useful comparator, but the present comparison changes both the
+sensor and the cadence. The common Euler positivity treatment can further
+alter the profile. Its event counts are therefore reported as part of the
+algorithm's behaviour rather than attributed to the oscillation filter alone.
+\MissingWork{TIME-01}{Compare post-step and stage-wise OFDG on a targeted scalar
+and Euler case at controlled timesteps before attributing differences with
+OEDG solely to the sensor. Record positivity activity with each comparison.}
+
+The WENO sensitivity in \cref{tab:reference-sensitivity} is small in its
+spatial mean but appreciable in its maximum. Consequently the current reference
+is adequate for qualitative profile context, not a certification of small
+shock errors. The requirement in placeholder REF-01 must be resolved before
+publishing quantitative accuracy rankings based on those curves.
+
+\section{Scope and next experiments}
+The most informative next step is a focused study of detector selectivity and
+Shu--Osher wave preservation, accompanied by reference refinement. A controlled
+curved-mesh sequence with varied deformation would then test how robust the
+present smooth-transport observation is. Larger Euler grids become useful
+when they answer those specific questions and the reference and diagnostic
+choices are settled.
+\MissingWork{GEO-01}{For a claim of robust curved-mesh behaviour beyond the
+current fixtures, vary mesh deformation and geometry order; report geometric
+quality, quadrature sensitivity, and a targeted curved Euler comparison.}
+
+\ScopeLimit{Native rational NURBS faces remain outside the verified MFEM/OFDG
+path. Static polynomial curvilinear meshes are usable and already tested, so
+removing this limitation is not a prerequisite for the planned experiments.
+Moving meshes, variable solution order, pyramids, large 3D shock studies,
+superconvergence, and parallel scaling are outside this preview.}
+
+No general convergence, entropy-stability, or positivity theorem for the
+adapted sensor is proved here. The frozen filtering map's algebraic
+properties do not by themselves prove those properties for the nonlinear,
+time-discrete conservation-law solver. Similarly, laptop wall times and two-rank
+agreement do not establish scaling efficiency. These are explicit limits on
+the claims, not results replaced by speculative text.

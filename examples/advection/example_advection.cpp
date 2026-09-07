@@ -58,10 +58,16 @@ Mesh PeriodicMesh(int dimension, int elements, bool triangular, bool curved)
       mesh.CreatePeriodicVertexMapping(translations));
 }
 
-real_t InitialValue(const Vector &x)
+real_t InitialValue(const Vector &x, bool piecewise = false)
 {
    if (x.Size() == 1)
    {
+      if (piecewise) {
+         const real_t coordinate = x(0) - std::floor(x(0));
+         return coordinate >= 0.3 && coordinate <= 0.8
+             ? std::sin(2.0 * M_PI * coordinate)
+             : std::cos(2.0 * M_PI * coordinate) - 0.5;
+      }
       const real_t wave = std::sin(2.0 * M_PI * x(0));
       return wave * wave;
    }
@@ -192,6 +198,7 @@ int main(int argc, char *argv[])
    string profile_prefix;
    bool triangular = false;
    bool curved = false;
+   bool piecewise = false;
    bool radau_initialization = false;
    bool visualization = false;
    int vis_steps = 50;
@@ -233,7 +240,10 @@ int main(int argc, char *argv[])
                   "Use the 1D right Gauss--Radau projection.");
    args.AddOption(&curved, "-curved", "--curved-mesh", "-straight", "--straight-mesh",
                   "Use a static cubic deformation of the periodic 2D mesh.");
+   args.AddOption(&piecewise, "-piecewise", "--piecewise-initial",
+                  "-smooth", "--smooth-initial", "Use 2021 Example 1(b) in 1D.");
    args.ParseCheck();
+   MFEM_VERIFY(!piecewise || dimension == 1, "Piecewise data requires 1D.");
 
    MFEM_VERIFY(dimension == 1 || dimension == 2,
                "Advection dimension must be 1 or 2.");
@@ -251,7 +261,7 @@ int main(int argc, char *argv[])
    ParFiniteElementSpace space(&mesh, &collection);
    const HYPRE_BigInt global_unknowns = space.GlobalTrueVSize();
    ParGridFunction solution(&space);
-   FunctionCoefficient initial(InitialValue);
+   FunctionCoefficient initial([piecewise](const Vector &x) { return InitialValue(x, piecewise); });
    if (radau_initialization) { ProjectGaussRadau(solution, initial); }
    else { solution.ProjectCoefficient(initial); }
    const real_t initial_integral = GlobalScalarIntegral(solution);
@@ -356,12 +366,12 @@ int main(int argc, char *argv[])
    }
    tic_toc.Stop();
 
-   FunctionCoefficient exact([dimension, final_time](const Vector &x)
+   FunctionCoefficient exact([dimension, final_time, piecewise](const Vector &x)
    {
       Vector foot(x);
       foot(0) -= (dimension == 1 ? 1.0 : 0.7) * final_time;
       if (dimension == 2) { foot(1) -= 0.3 * final_time; }
-      return InitialValue(foot);
+      return InitialValue(foot, piecewise);
    });
    const real_t l1_error = solution.ComputeL1Error(exact);
    const real_t l2_error = solution.ComputeL2Error(exact);

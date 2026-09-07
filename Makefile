@@ -212,28 +212,35 @@ $(RELEASE_TEST_DIR)/test_rk4_cadence: tests/test_rk4_cadence.cpp src/rk4.hpp | $
 $(RELEASE_TEST_DIR)/test_experiment_rk: tests/test_experiment_rk.cpp src/experiment_rk.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
-$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+$(DEBUG_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+$(DEBUG_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
+$(DEBUG_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(DEBUG_FILTER_LIBRARY) | $(DEBUG_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+$(RELEASE_EXAMPLE_DIR)/advection: examples/advection/example_advection.cpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
 
-$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+$(RELEASE_EXAMPLE_DIR)/burgers: examples/burgers/burgers.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
 
-$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
+$(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp src/conservation.hpp src/profile_output.hpp src/glvis_output.hpp src/euler_positivity.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_EXAMPLE_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
 
 report: report-draft
 
-report-draft: figures-draft
+report-draft: report-preview-assets
 	$(MAKE) -C report draft
+	mkdir -p output/pdf
+	cp report/thesis.pdf output/pdf/thesis-revised.pdf
+
+.PHONY: report-preview-assets
+report-preview-assets:
+	python3 scripts/analyze_preview.py --output report/generated/preview --report
+	python3 scripts/export_report_preview.py
 
 report-final:
 	python3 scripts/check_final_report.py
@@ -261,3 +268,14 @@ test-curved: $(RELEASE_TEST_DIR)/test_curved_geometry $(RELEASE_TEST_DIR)/test_c
 	python3 tests/run_bounded.py $(RELEASE_TEST_DIR)/test_curved_euler
 	python3 tests/run_bounded.py mpirun -np 2 $(RELEASE_TEST_DIR)/test_curved_euler
 	python3 tests/run_bounded.py python3 tests/test_curved_advection.py $(RELEASE_EXAMPLE_DIR)/advection
+
+$(RELEASE_TEST_DIR)/test_preview: tests/test_preview.cpp src/profile_output.hpp examples/euler/euler.hpp | $(RELEASE_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+.PHONY: study-preview
+study-preview: release reference-solver
+	python3 scripts/run_preview.py
+	python3 scripts/analyze_preview.py
+
+$(RELEASE_DIR)/benchmarks/filter_performance: benchmarks/filter_performance.cpp examples/euler/euler.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)

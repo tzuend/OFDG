@@ -1,86 +1,121 @@
-\section{Implementation and Parallelization}
+\chapter{Implementation and verification}
 \label{chap:implementation}
+The implementation separates the physical equation, the element geometry, and
+the filtering operation. This separation allows the same projection kernel to
+serve scalar and Euler equations and lets geometry corrections be tested
+without changing the underlying conservation law. MFEM provides meshes, basis
+functions, transformations, and distributed ownership~\cite{AndersonEtAl2021}.
 
-\subsection{Software structure}
+\section{Support boundary}
+\label{sec:support-boundary}
+\begin{center}
+\begin{tabular}{@{}p{.31\textwidth}p{.63\textwidth}@{}}
+\toprule
+Capability & Status and interpretation\\\midrule
+Affine and polynomial curved OFDG/KXRCF & Affine intervals; static full-dimensional triangles,
+quadrilaterals, tetrahedra, hexahedra, and prisms; uniform scalar DG order,
+repeated over conservative components.\\
+Basis and MPI coverage & Multiple coefficient bases and vector orderings;
+serial and two-rank verification, including mixed affine faces.\\
+NURBS-derived geometry & Cubic polynomial projections of disc/ball fixtures
+are verified. This changes the geometry representation.\\
+Exact native NURBS & Unsupported two-sided face operation in the pinned MFEM;
+rejected before constructing the filter.\\
+OEDG & Affine regression coverage is retained. Curved OEDG is not a validated
+paper-faithful extension.\\
+Excluded & Moving meshes, variable solution order, pyramids, and embedded
+surfaces.\\\bottomrule
+\end{tabular}
+\end{center}
 
-The implementation separates physics from geometry.  A \emph{face physics}
-object receives two conservative traces and a unit normal, and returns the two
-nonnegative propagation radii required by OFDG together with the signed
-transport velocity required by KXRCF.  Policies are provided for unit-speed
-compatibility, prescribed advection, Burgers flow, and compressible Euler.  This
-keeps the OFDG and KXRCF loops independent of equation-specific indexing.
+\ScopeLimit{NURBS (non-uniform rational B-splines) represent geometry using
+rational basis functions. The MFEM-only native NURBS reproducer fails in the two-sided face
+transformation/weight path, independently of the OFDG library. This is not a
+lack of NURBS support throughout MFEM. Explicitly projecting a mesh to
+polynomial geometry provides a usable approximation; no conversion is silent.
+Details and the minimal reproducer are in \path{docs/curved-validation.md}.}
 
-The implementation also separates a function-space operation from its
-coefficient representation.  Polynomial-shell projections and first-derivative
-maps are assembled once in the scalar DG basis supplied by MFEM.  Runtime
-filtering then consists of dense operations on the existing local coefficients;
-neither the examples nor another host framework must store their solution in a
-Legendre or otherwise modal basis.
+\input{curvilinear_math}
 
-The example programs reuse MFEM's \texttt{AdvectionFlux},
-\texttt{BurgersFlux}, \texttt{EulerFlux}, \texttt{RusanovFlux},
-\texttt{HyperbolicFormIntegrator}, and explicit ODE solvers.  Adapted OFDG is
-applied once after a complete MFEM step.  Earlier cadence experiments found no
-accuracy improvement from applying it at all four RK4 stages, so the custom
-stage-wise RK4 remains a regression experiment rather than the production OFDG
-path.  A separate small experiment driver implements SSPRK3 and RK4 callbacks
-for paper-faithful stage-wise OEDG and for Euler positivity checks.  Rejected
-callbacks leave both the accepted state and physical time unchanged.
+\section{Reference data and physical element operators}
+\label{sec:curved-construction}
+Reference basis evaluations and derivative graphs are reusable by finite
+element signature. Geometry-dependent mass, projection, derivative, face-weight,
+and normal data belong to each physical curved element or neighbour. Caches
+are immutable: changing geometry, topology, or the solution space requires
+constructing new filter objects. Mutable scratch arrays mean simultaneous
+calls on the same object are unsupported.
 
-The command-line method and cadence interface is common to all drivers.  The
-\texttt{auto} cadence resolves to post-step MFEM integration for DG and OFDG,
-and to stage-wise integration for OEDG.  Compatibility flags map onto the same
-enumeration; they do not create a second implementation path.
+The physical matrices are assembled as derived in
+\cref{eq:curved-weighted-masses,eq:curved-derivative-assembly}. Reference
+projectors are reused only when the constant affine Jacobian weight cancels.
+Curved projectors and derivative matrices belong to the physical element.
 
-All maintained example drivers provide the same optional live-visualization
-interface.  Passing \texttt{-vis} streams the current parallel grid function to
-GLVis, while \texttt{-vs} selects the update interval.  A shared wrapper owns
-the socket protocol and requires a successful connection on every MPI rank;
-otherwise all ranks continue with visualization disabled.  Visualization is
-off by default and is not part of measured study runs.
+Curved quadrature uses order $2k+2\max(0,\mathrm{OrderW})+8$, where MFEM's
+\texttt{OrderW} estimates the transformation-weight order. Positive tensor/Duffy
+rules and symmetric triangular-face sampling avoid cancellation and
+orientation-dependent samples. Physical face measure normalizes jump integrals;
+physical normals are evaluated at those same face points. This is a practical
+quadrature policy, supported by sensitivity checks rather than a universal
+exactness claim for arbitrary geometry.
 
-\subsection{Distributed meshes}
+\section{Physics, time integration, and MPI}
+MPI (Message Passing Interface) distributes the mesh across processes called
+ranks, each owning part of the domain.
+A face-physics interface returns two nonnegative normal radii for damping and
+one signed transport velocity for KXRCF. Adapted OFDG uses the face traces;
+OEDG's state-dependent radii use the adjacent cell means. Their different
+choices are deliberate and recorded in the method contract.
 
-MFEM distinguishes faces whose two elements are owned by one rank from shared
-faces whose second element is a halo neighbor.  Each stabilization call follows
-the same sequence:
-\begin{enumerate}
-  \item compute local element data and reduce global component scales;
-  \item exchange face-neighbor DG coefficients;
-  \item process ordinary interior faces and update both local neighbors;
-  \item process shared faces and update only the locally owned element;
-  \item apply the element-local OFDG decay map.
-\end{enumerate}
-The neighboring rank independently performs the complementary update.  KXRCF
-uses the same ownership rule.  A two-rank test partitions a one-dimensional
-mesh so that its only discontinuity lies on the processor boundary; it checks
-that KXRCF marks the inflow cell, OFDG and OEDG observe the derivative jump,
-and every element mean remains unchanged.  Collective diagnostic reductions
-are called by all ranks before root-only printing.  This ordering is protected
-by the same integration test.
+An ordinary local face updates both adjacent elements. A shared MPI face
+updates only the element owned by that rank after exchanging neighbour
+coefficients; the neighbour rank performs the complementary update. Global
+amplitudes use collective reductions. Local and neighbour geometry follows the
+same construction, so an MPI boundary is not a physical boundary.
 
-\subsection{Verification strategy}
+The common method/cadence interface selects post-step DG/OFDG and stage-wise
+OEDG by default. A small RK callback driver also applies the common Euler
+positivity checks. Rejected candidates leave the accepted state and time
+unchanged. Post-step OFDG is the configuration studied here; it is not justified
+by an unsupported claim that stage filtering never improves accuracy.
 
-The test suite was established before changing the face physics.  It includes
-the following layers:
-\begin{itemize}
-  \item exact frozen OFDG stabilization and decay vectors for a discontinuous
-        one-dimensional state;
-  \item conservation, inactive-mask behavior, uniform-polynomial invariance,
-        and affine triangle and quadrilateral geometries;
-  \item KXRCF zero, constant, one- and two-dimensional jump fingerprints,
-        scale invariance, component pooling, MFEM vector-order invariance, and
-        mixed affine 2D and 3D faces locally and across two ranks;
-  \item analytical Burgers and Euler normal speeds and rejection of negative
-        density or pressure;
-  \item OEDG constants, means, modal attenuation, scale/evolution invariance,
-        cell-mean wave speeds, per-face component pooling, relative constant
-        detection, and mixed 2D and 3D fingerprints;
-  \item positivity invariance, mean preservation, positive evaluation states,
-        nonphysical means, and MPI consistency;
-  \item the MPI partition-boundary regression, stage rejection, RK cadence,
-        reference-solver, rate-calculation, and reduced end-to-end study tests.
-\end{itemize}
-Debug tests use address and undefined-behavior sanitizers.  Release tests are
-compiled separately so that stale debug objects cannot be mistaken for an
-optimized build.
+\section{What verification establishes}
+\begin{center}
+\begin{tabular}{@{}p{.35\textwidth}p{.59\textwidth}@{}}
+\toprule
+Check & Evidence and boundary\\\midrule
+Algebra and conservation & Constants, inactive cells, component means, projection
+identities, frozen affine fingerprints, and coefficient-basis changes.\\
+Curved operators & Independent first-derivative weak projection; higher-derivative
+refinement; quadrature sensitivity; physical face moments.\\
+MPI and geometry & Serial/two-rank agreement and supported curved families;
+limited equivalent-parameterization checks for representable linear states.\\
+Euler admissibility & Mean-preserving positivity, rejected stages, curved smooth
+Euler smoke test. This is not broad shock robustness.\\
+Independent references & WENO smooth-wave and exact Sod checks, followed by
+reference-grid sensitivity for the preview.\\\bottomrule
+\end{tabular}
+\end{center}
+
+The existing curved validation represents $\sin x$ at P4 on a smoothly deformed
+square. Its physical $L^2$ derivative errors are:
+\begin{center}
+\begin{tabular}{rrrr}
+\toprule
+Cells / direction & first derivative & second & third\\\midrule
+2 & $1.375\,10^{-5}$ & $5.498\,10^{-4}$ & $1.384\,10^{-2}$\\
+4 & $8.703\,10^{-7}$ & $6.940\,10^{-5}$ & $3.463\,10^{-3}$\\
+8 & $5.461\,10^{-8}$ & $8.699\,10^{-6}$ & $8.661\,10^{-4}$\\\bottomrule
+\end{tabular}
+\end{center}
+These approach orders four, three, and two. They validate this manufactured
+case, not exactness of projected higher derivatives. The first derivative is
+also compared with an independently assembled weak projection. Increasing the
+quadrature order by eight leaves the tested derivative matrix within tolerance.
+
+The retained local verification record reports passing release, sanitizer, and
+curved checks. It is documented in \path{docs/curved-validation.md}, with logs
+under \path{build/curved-validation/}. Tests shared by OFDG and OEDG cannot make
+their comparison an independent verification of every shared component;
+analytic identities and separately assembled checks provide that additional
+reference. No new solver run was required for the report revision.

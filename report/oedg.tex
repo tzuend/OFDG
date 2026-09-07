@@ -1,10 +1,10 @@
-\section{The 2024 OEDG Comparator}
+\section{The 2024 OEDG comparator}
 \label{chap:oedg}
 
 The numerical comparison requires an implementation of the method published by
 Peng, Sun, and Wu in 2024~\cite{PengEtAl2024} which is independent of the
-project-specific decision to gate OFDG with KXRCF.  This chapter states the
-implemented choices explicitly.  In particular, the 2024 method is not a
+project-specific decision to gate OFDG with KXRCF.  This section states the
+implemented affine choices explicitly; curved OEDG is not validated here.  In particular, the 2024 method is not a
 ``vertex-only'' method: its multidimensional sensor is an interface integral of
 absolute jumps.  Vertex evaluation belongs to the earlier multidimensional
 OFDG construction~\cite{LuEtAl2021,LiuEtAl2022}.
@@ -45,11 +45,11 @@ components,
 \end{equation}
 The damping rate combines all adjacent faces,
 \begin{equation}
-  \delta_K^m = \sum_{e\subset\partial K}
-       \frac{\beta_e}{h_{e,K}}\sigma^m_{e,K},
+  \delta_K^m = \sum_{\substack{e\subset\partial K\\e\in\mathcal F_h^{\rm i}}}
+       \frac{\beta_{K,e}}{h_{e,K}}\sigma^m_{e,K},
   \label{eq:oedg-rate}
 \end{equation}
-where $\beta_e$ is the local normal spectral radius.  Thus advection uses
+where $\beta_{K,e}$ is the one-sided local normal spectral radius. Physical boundary faces are excluded in this implementation; boundary conditions enter the DG residual.  Thus advection uses
 $|\boldsymbol a\cdot\boldsymbol n|$, Burgers uses the corresponding normal
 flux derivative, and Euler uses
 $|\boldsymbol v\cdot\boldsymbol n|+c$.  This is the material correction to the
@@ -58,16 +58,22 @@ are evaluated from the adjacent element means rather than from face traces;
 spatially varying prescribed velocities and normals are still sampled along
 the face.
 
-Multiplying a full conservative state by a positive constant multiplies both
-the jump numerator and $A_i$ by that constant, leaving
-\cref{eq:oedg-face-sensor} unchanged.  Adding a spatially constant state also
-leaves derivative jumps and deviations from the global mean unchanged.  These
-are the scale- and evolution-invariance properties tested directly by the
-unit suite and by the scaled Lax experiment.
+The normalized sensor is unchanged under a nonzero scaling and constant
+shift when the amplitude cutoff is inactive: numerator and denominator scale
+together. This sensor statement must be separated from the complete filter,
+whose state-dependent wave speeds can change. The unit-speed regression checks
+scale/shift equivariance of attenuation in that fixed-speed setting.
+
+Evolution invariance concerns rescaling the flux speed and physical time,
+not adding a constant state. Multiplying the flux and its speeds by $a>0$
+while replacing the damping duration by $\tau/a$ preserves the product of
+rate and duration. The paper develops these properties under its stated
+assumptions~\cite{PengEtAl2024}. The preview supplies no new general invariance
+claim for arbitrary nonlinear state transformations.
 
 \subsection{Exact attenuation without a prescribed coefficient basis}
 
-Let $P^m$ denote the element-local $L^2$ projection into degree at most $m$,
+Let $P^m$ denote the element-local $L^2$ projection into the nested order-$m$ reference family mapped to the element,
 with $P^{-1}=P^0$.  During the OE pseudo-time problem, the coefficients
 \cref{eq:oedg-rate} are frozen at the candidate RK stage.  The published
 derivation may be written using coefficients of a local orthogonal basis, with
@@ -82,11 +88,11 @@ exact attenuation is
     \left(P^j-P^{j-1}\right)u_h,
   \label{eq:oedg-exact-decay}
 \end{equation}
-so the constant subspace is unchanged and every degree-$j$ polynomial shell is
+so the constant subspace is unchanged and every order-$j$ shell is
 scaled by its corresponding exponential.  The implementation assembles the
 projectors in MFEM's supplied coefficient basis and applies
 \cref{eq:oedg-exact-decay} without ever forming Legendre coefficients.  No
-pseudo-time discretization error is introduced, and every element mean is
+pseudo-time discretization error is introduced, and every quadrature-weighted physical element mean is
 preserved to roundoff.
 
 The public \texttt{OEDG2024} type fixes the face quadrature, face-height,
@@ -105,12 +111,8 @@ The published OEDG algorithm applies the OE map after every Runge--Kutta stage.
 Consequently, \texttt{-method oedg -cadence auto} selects the small stage driver.
 For the project OFDG method, \texttt{auto} uses an MFEM solver and one filter
 application after a complete step.  The explicit \texttt{stage} and
-\texttt{step} choices are retained for cadence ablations.  The headline
-comparison therefore consists of:
-\begin{enumerate}
-  \item conventional RKDG;
-  \item adapted OFDG, applied post-step only in KXRCF cells;
-  \item 2024 OEDG, applied after every RK stage.
-\end{enumerate}
-Adapted OFDG without KXRCF is reported as an ablation.  The thesis uses these
-names only for these fixed configurations.
+\texttt{step} choices are retained for cadence ablations.  The preview primarily compares DG, all-cell adapted OFDG, and
+adapted OFDG--KXRCF. OEDG is included on selected affine shock cases. These
+are fixed configurations, so observed differences include cadence as well as
+sensor choices. Curved OEDG is not a validated paper-faithful extension and is
+excluded from the curved comparison.

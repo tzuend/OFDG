@@ -1,87 +1,63 @@
 \chapter{Introduction}
+\label{chap:introduction}
+High-order numerical methods represent smooth solutions accurately with
+relatively few degrees of freedom. Conservation laws also produce shocks,
+where that same high-order representation can oscillate. Discontinuous Galerkin
+(DG) combines finite element approximation inside each mesh cell with numerical
+fluxes between cells. The central practical question here is how to control
+unresolved oscillations while retaining useful smooth variation.
 
-High-order discontinuous Galerkin (DG) methods combine element-local polynomial
-approximations with numerical fluxes at element interfaces.  Their locality is
-attractive for parallel computing, but high-order polynomials can develop
-nonphysical oscillations near discontinuities.  Oscillation-free DG methods
-address this by damping selected nonconstant modes while preserving cell
-averages~\cite{LuEtAl2021,LiuEtAl2022,PengEtAl2024}.
+\section{Aim and contribution}
+This thesis develops a reusable MFEM realization of a specifically defined
+adapted oscillation-free discontinuous Galerkin (OFDG) method. It combines projection damping with face-averaged jump
+sensing and optional KXRCF activation. The implementation operates directly in
+the finite element coefficient basis, including nodal bases, and extends the
+construction to static polynomial curved meshes. Repeated physical derivatives
+on these meshes are approximated by recursive projection, with tests measuring
+their accuracy and geometric consistency.
 
-The goal of this work is not only to reproduce a mathematical construction, but
-to integrate it into MFEM in a form that remains understandable, testable, and
-useful for several conservation laws.  Four practical questions drive the
-implementation:
+The contribution has three connected parts:
 \begin{enumerate}
-  \item Which face propagation speed should scale the OFDG sensor for nonlinear
-        systems such as Euler?
-  \item Can a troubled-cell indicator avoid unnecessary damping in smooth
-        elements?
-  \item How should OFDG and the indicator exchange face data on a distributed
-        mesh?
-  \item How does the adapted method compare with conventional RKDG and the
-        scale-invariant 2024 OEDG method under reproducible accuracy,
-        robustness, and cost measurements?
+ \item a clear definition and maintainable implementation of the adapted filter,
+ including the distinctions from published OFDG and OEDG formulations;
+ \item verification of conservation, basis independence, geometric operators,
+ and serial/two-rank consistency within an explicit support boundary;
+ \item preliminary numerical characterization of damping and KXRCF gating on
+ affordable, physically meaningful examples.
 \end{enumerate}
+The implementation is held in the project repository
+\url{https://github.com/tzuend/OFDG}. The report distinguishes algebraic
+identities, numerical verification, and empirical observations. These support
+different kinds of statements and should not be substituted for one another.
 
-\section{Related work and research gap}
+\section{Related work and focused questions}
+Projection-based oscillation damping was developed for scalar conservation laws
+by Lu, Liu, and Shu~\cite{LuEtAl2021} and extended to systems
+in~\cite{LiuEtAl2022}. Peng, Sun, and Wu introduce oscillation-eliminating DG (OEDG), with
+normalized damping and stage-wise exact attenuation~\cite{PengEtAl2024}.
+KXRCF supplies a separate troubled-cell decision, motivated by accurate DG
+outflow traces~\cite{KrivodonovaEtAl2004}. Detector comparisons show sensitivity
+to variable choice, order, and normalization~\cite{QiuShu2005,FuShu2017}.
 
-The RKDG framework combines element-local DG spatial discretizations with
-strong-stability-preserving explicit Runge--Kutta methods
-\cite{CockburnShu1998,GottliebShu1998}.  Near discontinuities, nonlinear
-limiters commonly use a troubled-cell indicator to avoid modifying smooth
-regions.  KXRCF uses DG interface superconvergence for this purpose
-\cite{KrivodonovaEtAl2004}; systematic comparisons and later alternatives show
-that detector selectivity remains sensitive to normalization, polynomial
-degree, and the chosen indicator variable
-\cite{QiuShu2005,FuShu2017,VuikRyan2014,VuikRyan2016}.
+This project asks: can these mechanisms be realized without imposing a modal
+storage basis; can their essential invariants survive curved geometry and MPI
+partitioning; and what does selective damping change in the measured solutions?
+The final question remains only partly answered. A detector-activity study is
+still needed to explain where gating helps or fails. Performance attribution
+and a general robustness ranking require evidence beyond the current preview.
 
-OFDG instead adds projection-based damping whose strength is inferred from
-interelement jumps~\cite{LuEtAl2021,LiuEtAl2022}.  The 2024 OEDG method recasts
-that damping as exact modal attenuation and introduces scale- and
-evolution-invariant coefficients~\cite{PengEtAl2024}.  The unresolved practical
-question addressed here is how these ingredients behave when implemented in a
-general finite element library, combined with selective KXRCF activation, and
-extended across distributed meshes.  The combined implementation is not one of
-the published methods verbatim; its deviations and empirical validation must
-therefore be stated explicitly.
+\section{How to read this working report}
+\Cref{chap:methods} bridges from familiar finite element ideas to DG traces,
+fluxes, and time stepping. \Cref{chap:stabilization} defines adapted OFDG,
+KXRCF, OEDG, and positivity treatment. \Cref{chap:implementation} describes
+the support boundary and verification. \Cref{chap:experiments} presents the
+measured preview, followed by interpretation in \cref{chap:discussion} and
+conclusions in \cref{chap:conclusion}. Detailed matrix construction and
+reproducibility instructions are in the appendices.
 
-\section{Contributions}
-
-The first contribution is a publicly accessible, reusable MFEM realization of
-adapted OFDG and a fixed 2024 OEDG comparator.  Its polynomial-shell damping is
-assembled through $L^2$ projection matrices in the finite-element basis supplied
-by MFEM.  The represented solution therefore does not need to use modal,
-orthogonal, or Legendre coefficients.  The same construction can be transferred
-to another polynomial DG framework using its standard basis evaluation,
-first-derivative, quadrature, transformation, and degree-of-freedom operations.
-Higher derivatives required by the sensors are generated internally by repeated
-application of first-derivative coefficient operators.
-
-The second contribution is the coupling of adapted OFDG to a multidimensional,
-multicomponent KXRCF activation mask.  An inactive element is copied unchanged
-by the damping step, recovering the unfiltered DG update there and avoiding
-unnecessary smooth-region attenuation.  Whether this selectivity improves
-global error or end-to-end runtime is a question for the final measurements,
-not an assumption of the method.
-
-The software contribution further includes a shared face-physics interface,
-Euler normal spectral radii $|\boldsymbol{v}\cdot\boldsymbol{n}|+c$, cached
-element and face operators, MPI shared-face processing, conservative Euler
-positivity limiting, and reusable MFEM example drivers.  Tests cover frozen
-numerical fingerprints, conservation, vector orderings, multiple polynomial
-bases, affine triangle and quadrilateral geometries, analytical wave speeds,
-scale invariance, admissibility, and a discontinuity located exactly on a
-two-rank partition boundary.  A manifest-driven pipeline stores raw outputs and
-profiles, computes derived metrics, and generates the report figures and tables
-without manual transcription.
-
-\section{Organization}
-
-\Cref{chap:methods} defines RKDG, adapted OFDG, KXRCF, and the 2024 OEDG
-comparator, followed by the common numerical controls, software realization,
-parallelization, and experimental methodology.  \Cref{chap:experiments}
-presents numerical observations, \cref{chap:discussion} interprets their
-scientific meaning and limitations, and \cref{chap:conclusion} summarizes the
-answers and future work.  In the present draft, numerical observations are
-explicitly preliminary because the final experiment matrix has not yet been
-approved.
+\EvidenceBox{EVIDENCE AND COMPLETION STATUS}{A \textbf{preliminary result} is
+an actual measurement with stated limits. A \textbf{PLACEHOLDER} lists specific
+missing evidence for an intended stronger argument. A \textbf{scope limitation}
+is an explicit exclusion, not a promised future result. The register in
+\cref{app:missing-work} collects unresolved work. No mock numerical results or
+filler discussion are used.}

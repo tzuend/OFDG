@@ -39,6 +39,7 @@ private:
    const NumericalFlux &numerical_flux;
    VectorCoefficient *fixed_state;
    bool reflecting;
+   bool outflow;
    int integration_order_offset;
    int dimension;
    int equations;
@@ -48,13 +49,13 @@ public:
    EulerBoundaryIntegrator(const NumericalFlux &flux,
                            VectorCoefficient *state,
                            bool reflecting_wall,
-                           int order_offset)
-      : numerical_flux(flux), fixed_state(state), reflecting(reflecting_wall),
+                           int order_offset, bool outflow_boundary = false)
+      : numerical_flux(flux), fixed_state(state), reflecting(reflecting_wall), outflow(outflow_boundary),
         integration_order_offset(order_offset),
         dimension(flux.GetFluxFunction().dim),
         equations(flux.GetFluxFunction().num_equations)
    {
-      MFEM_VERIFY(reflecting || fixed_state != nullptr,
+      MFEM_VERIFY(reflecting || outflow || fixed_state != nullptr,
                   "A fixed Euler boundary needs a state coefficient.");
    }
 
@@ -106,6 +107,10 @@ public:
             Vector unit_normal(normal);
             unit_normal /= unit_normal.Norml2();
             ofdg::ReflectEulerState(state_in, unit_normal, dimension, state_out);
+         }
+         else if (outflow)
+         {
+            state_out = state_in;
          }
          else
          {

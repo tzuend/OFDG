@@ -56,6 +56,7 @@
 #include <sstream>
 #include <limits>
 #include "euler.hpp"
+#include "../../src/profile_output.hpp"
 
 #include "../../src/euler_positivity.hpp"
 #include "../../src/conservation.hpp"
@@ -90,11 +91,8 @@ void WriteEulerSamples(const ParGridFunction &solution,
       ElementTransformation *transformation =
          scalar_space.GetMesh()->GetElementTransformation(element);
       const IntegrationRule &nodes = fe->GetNodes();
-      auto write_point = [&](const IntegrationPoint &ip, const char *sample)
+      auto evaluate = [&](const IntegrationPoint &ip, Vector &conservative)
       {
-         Vector point;
-         transformation->Transform(ip, point);
-         Vector conservative(dim + 2);
          for (int component = 0; component < dim + 2; ++component)
          {
             GridFunction field(const_cast<ParFiniteElementSpace *>(&scalar_space),
@@ -102,6 +100,11 @@ void WriteEulerSamples(const ParGridFunction &solution,
                                   component * scalar_dofs);
             conservative(component) = field.GetValue(element, ip);
          }
+      };
+      auto write_state = [&](const IntegrationPoint &ip, const char *sample,
+                             const Vector &conservative) {
+         Vector point;
+         transformation->Transform(ip, point);
          const real_t density = conservative(0);
          real_t momentum_squared = 0.0;
          for (int d = 0; d < dim; ++d)
@@ -116,11 +119,26 @@ void WriteEulerSamples(const ParGridFunction &solution,
                 << (dim > 1 ? conservative(2) / density : 0.0) << ','
                 << pressure << '\n';
       };
-      for (int q = 0; q < nodes.GetNPoints(); ++q)
-      {
-         write_point(nodes.IntPoint(q), "polynomial");
+      auto write_point = [&](const IntegrationPoint &ip, const char *sample) {
+         Vector conservative(dim + 2);
+         evaluate(ip, conservative);
+         write_state(ip, sample, conservative);
+      };
+      if (dim == 1) {
+         for (int q = 0; q <= 20; ++q) {
+            IntegrationPoint ip;
+            ip.Set1w(q / 20.0, 1.0);
+            write_point(ip, "polynomial");
+         }
+      } else {
+         for (int q = 0; q < nodes.GetNPoints(); ++q) {
+            write_point(nodes.IntPoint(q), "polynomial");
+         }
       }
-      write_point(Geometries.GetCenter(fe->GetGeomType()), "center");
+      const auto &center = Geometries.GetCenter(fe->GetGeomType());
+      write_point(center, "center");
+      const auto average = PhysicalCellAverage(*transformation, fe->GetOrder(), dim + 2, evaluate);
+      write_state(center, "cell_average", average);
    }
 }
 
@@ -211,6 +229,7 @@ int main(int argc, char *argv[])
    string method_name;
    string cadence_name = "auto";
    bool use_positivity = false;
+   bool outflow_boundary = false;
    real_t state_scale = 1.0;
    int maximum_step_retries = 8;
    string profile_prefix;
@@ -268,6 +287,8 @@ int main(int argc, char *argv[])
                   "Multiply the complete initial conservative state.");
    args.AddOption(&maximum_step_retries, "-retries", "--step-retries",
                   "Maximum rejected-step halvings for inadmissible means.");
+   args.AddOption(&outflow_boundary, "-outflow", "--outflow-boundary",
+                  "-fixed-boundary", "--fixed-boundary", "Use transmissive exterior states (non-wall problems).");
    args.AddOption(&profile_prefix, "-profile", "--profile-prefix",
                   "Write rank-local CSV samples using this file prefix.");
 
@@ -383,7 +404,7 @@ int main(int argc, char *argv[])
    {
       boundary_integrator =
          std::make_unique<EulerBoundaryIntegrator>(
-            numericalFlux, &u0, problem == 5, IntOrderOffset);
+            numericalFlux, &u0, problem == 5, IntOrderOffset, outflow_boundary);
    }
    DGHyperbolicConservationLaws euler(
       vfes, std::unique_ptr<HyperbolicFormIntegrator>(

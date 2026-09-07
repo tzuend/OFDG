@@ -1,4 +1,4 @@
-\section{KXRCF Troubled-Cell Indication}
+\section{KXRCF troubled-cell indication}
 \label{chap:kxrcf}
 
 The KXRCF detector was introduced by Krivodonova, Xin, Remacle,
@@ -28,9 +28,7 @@ KXRCF construction exploits the particularly accurate DG trace on an outflow
 boundary: at an inflow face of $K$, the neighboring trace is an outflow trace
 of the upstream element.  A jump that is too large relative to the expected
 smooth-mesh behavior therefore signals that at least one adjacent polynomial
-does not represent a smooth solution.  This superconvergence-based motivation
-also explains the connection between KXRCF and the superconvergence measurements
-used later in the numerical study~\cite{KrivodonovaEtAl2004,QiuShu2005}.
+does not represent a smooth solution.  This is the original motivation; the present preview does not measure superconvergence~\cite{KrivodonovaEtAl2004,QiuShu2005}.
 
 Let $\boldsymbol v$ denote the transport velocity used solely for the
 inflow/outflow decision.  The inflow part of the element boundary is
@@ -40,14 +38,15 @@ inflow/outflow decision.  The inflow part of the element boundary is
        \boldsymbol v(\boldsymbol x)\cdot\boldsymbol n_K(\boldsymbol x)<0\}.
   \label{eq:kxrcf-inflow}
 \end{equation}
-Faces for which the normal velocity vanishes make no contribution.  This
+If there is no inflow measure, the indicator is zero. In the code, normal transport within $128\epsilon$ times the local speed scale is treated as tangential; $\epsilon$ is machine precision.  This
 directional definition differs from sensors that inspect all faces
 symmetrically: KXRCF deliberately measures information entering $K$.
 
 \subsubsection{Normalized indicator}
 
-Let $k$ be the polynomial degree, $h_K$ an element radius, $S_K$ a scale of
-the solution on $K$, and $|\partial K^-|$ the measure of the inflow boundary.
+Let $k$ be the reference-space order, $h_K$ the detector radius (distinct from
+the OFDG volume-based length), and $S_K$ a scale of
+the solution on $K$. Let $|\partial K^-|$ be the measure of the inflow boundary.
 For a scalar DG solution, the KXRCF indicator used in this work is
 \begin{equation}
  I_K=
@@ -62,6 +61,7 @@ The element is marked troubled when
   \qquad \tau=1 \text{ by default}.
   \label{eq:kxrcf-threshold}
 \end{equation}
+Here $\tau$ denotes the detector threshold, not the damping duration.
 The face measure turns the numerator into an averaged signed jump, $S_K$
 removes the local solution magnitude, and the factor $h_K^{(k+1)/2}$ separates
 the expected smooth and discontinuous regimes.  If the face-averaged jump is
@@ -143,7 +143,7 @@ energy rather than the maximum over every conservative component
 For scalar advection, the prescribed velocity determines inflow.  Burgers'
 equation uses the secant velocity
 \begin{equation}
-  v_n=\tfrac12(u_1+u_2)\,\boldsymbol n,
+  v_n=\tfrac12(u_1+u_2)n\quad\hbox{in one dimension},
 \end{equation}
 and Euler uses the arithmetic mean of the two fluid velocities,
 \begin{equation}
@@ -153,9 +153,8 @@ and Euler uses the arithmetic mean of the two fluid velocities,
 \end{equation}
 The latter is an advective direction, not the Euler spectral radius.  Subsonic
 Euler interfaces contain characteristic fields traveling in both directions,
-so no single scalar velocity represents every characteristic family.  OFDG and
-OEDG therefore use the full one-sided radii
-$|\boldsymbol v_i\cdot\boldsymbol n|+c_i$ for damping strength, whereas
+so no single scalar velocity represents every characteristic family.  The damping methods therefore use the full one-sided radii
+$|\boldsymbol v_i\cdot\boldsymbol n|+c_i$ for damping strength, evaluated from traces for adapted OFDG and element means for OEDG, whereas
 \cref{eq:kxrcf-euler-inflow} is used only to decide which element receives the
 KXRCF inflow contribution.  A characteristic-variable KXRCF detector remains
 outside the present scope.
@@ -176,12 +175,11 @@ damping is applied, but neither its modal form nor its conservation argument.
 
 In one dimension $h_K$ is half the physical element length.  In higher
 dimensions the implementation maps the reference-element center and vertices
-and takes the largest center-to-vertex distance.  This is an exact
-circumradius for the supported symmetric cells and a documented generalized
+and takes the largest sampled distance. Curved cells additionally include physical boundary-quadrature points; the resulting radius is a geometry-dependent sample bound, not an exact curved circumradius.  For affine symmetric cells this is their circumradius and a documented generalized
 radius for other affine MFEM element families.  Volume quadrature supplies
 $S_{K,c}$; face quadrature integrates the signed trace jump and the physical
 inflow measure.  Each element and each side of a face owns its own evaluation
-matrix, so affine meshes may mix finite-element signatures at one polynomial
+matrix, so supported meshes may mix finite-element signatures at one polynomial
 order.  The verified cases combine triangles with quadrilaterals and combine
 tetrahedra, hexahedra, and prisms.
 
@@ -205,18 +203,16 @@ root-only diagnostics are printed.
 The standalone benchmark times complete \texttt{Compute} calls after warm-up.
 No clocks, counters, or phase-specific timing branches are embedded in the
 indicator itself; this keeps the core implementation focused on the numerical
-method. Runtime comparisons are reserved for the approved final study.
+method. The preview does not establish detector runtime savings.
 
 \subsection{Limitations}
 
-The implementation assumes affine, full-dimensional MFEM elements, uniform
-polynomial order, and a fixed mesh during the lifetime of the indicator. Mixed
+The implementation supports affine and static polynomial curvilinear, full-dimensional MFEM elements, with uniform solution order and a fixed mesh during the lifetime of the indicator. Mixed
 geometry support is verified in two and three dimensions, including MPI faces
-whose sides have different finite-element signatures. Other compatible affine
-combinations follow the same path but remain unverified. Its radius generalization,
+whose sides have different finite-element signatures. The supported geometry families and exclusions are listed in \cref{sec:support-boundary}. Its radius generalization,
 component pooling, scale floor, boundary omission, and Euler inflow velocity
 are engineering choices rather than claims from the original KXRCF analysis.
 Moreover, selecting fewer cells does not itself guarantee that the resulting
 OFDG--KXRCF method is nonoscillatory or positivity preserving.  These questions
-must be evaluated empirically and are therefore represented explicitly in the
-proposed experiment matrix.
+are only partly addressed by the preview; detector selectivity remains the
+explicit requirement KX-01 in \cref{chap:discussion}.

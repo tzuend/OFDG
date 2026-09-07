@@ -1,22 +1,25 @@
 \begin{abstract}
-  This thesis studies maintainable oscillation-control mechanisms for
-  discontinuous Galerkin discretizations of hyperbolic conservation laws in
-  MFEM.  It develops an adapted oscillation-free discontinuous Galerkin method
-  with face-local characteristic speeds, restricts that method using the KXRCF
-  troubled-cell detector, and implements the scale- and evolution-invariant
-  2024 OEDG method as a fixed comparator.  Polynomial-shell damping is realized
-  through finite-element projection operators, so the stored solution basis
-  need not be modal, orthogonal, or Legendre-based.  The implementation supports
-  scalar equations and compressible Euler flow on distributed affine meshes and
-  is accompanied by conservative admissibility treatment, an independent WENO5
-  reference solver, and deterministic serial and MPI tests.
+This work studies an adapted oscillation-free discontinuous Galerkin (OFDG)
+implementation in MFEM for hyperbolic conservation laws. The method damps
+nonconstant element content through nested physical $L^2$ projections and can
+be restricted by a KXRCF troubled-cell indicator. Its realization operates in
+the host coefficient basis and supports static polynomial curvilinear geometry.
+Curved derivative sensors use successively projected physical derivatives;
+they are not exact higher derivatives of the mapped solution. The verified
+support boundary and the MFEM limitation for native NURBS faces are explicit.
 
-  The comparative numerical study is intentionally not finalized in this
-  draft.  Its proposed design separates smooth accuracy, discontinuity
-  resolution, detector selectivity, invariance, robustness, computational cost,
-  and parallel scaling.  Final quantitative claims will be inserted only after
-  the experiment matrix has been reviewed and an approved, fully traceable
-  dataset has been generated.  Reduced development calculations are retained
-  solely to verify the reporting workflow and are not treated as thesis
-  evidence.
+A small preliminary study compares DG, all-cell adapted OFDG, and gated OFDG,
+with OEDG on selected affine problems. It includes smooth transport, Burgers
+flow, Lax and Shu--Osher problems, straight/curved advection, and a small
+2D Euler Riemann problem. The 103 solver runs and four independent reference
+solves completed in 7.35 minutes on the laptop. Filtering suppresses the large
+sampled DG excursions in the scalar shock tests. At the finest P2 transport
+grids, gated OFDG has errors close to the unfiltered DG baseline. Wave-detail
+and positivity diagnostics expose differences that whole-domain profiles hide.
+
+These observations characterize the tested configurations rather than establish
+universal superiority or new convergence theory. Visible placeholders identify
+missing detector, reference-accuracy, and cadence evidence needed for stronger
+claims. Large-scale performance and broad Euler robustness remain outside the
+current empirical conclusions.
 \end{abstract}

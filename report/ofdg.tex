@@ -1,817 +1,195 @@
-\section{Adapted Oscillation-Free Discontinuous Galerkin Stabilization}
+\section{Adapted OFDG: damping without changing the cell mean}
 \label{chap:ofdg}
-
-This chapter describes the oscillation-free discontinuous Galerkin (OFDG)
-stabilization used in this work.  The presentation deliberately separates the
-mathematical operator from its realization in MFEM.  The construction combines
-the projection-based damping mechanism introduced for scalar conservation laws
-in~\cite{LuEtAl2021} with the scale normalization, wave-speed scaling, and exact
-damping evolution developed in~\cite{PengEtAl2024}.  The extension of the
-original OFDG method to hyperbolic systems is described in~\cite{LiuEtAl2022}.
-The precise multidimensional sensor implemented here differs from the sensors in
-those papers; the differences are stated explicitly in
-\cref{sec:ofdg-relation-to-literature}.
-
-\subsection{Mathematical formulation}
-\label{sec:ofdg-mathematics}
-
-\subsubsection{Purpose of the stabilization}
-
-Consider a hyperbolic conservation law, or more specifically the transport problem
-\begin{equation}
-  \partial_t u+\nabla\cdot\boldsymbol{f}(u)=0,
-  \qquad\text{or}\qquad
-  \partial_t u+\boldsymbol{a}\cdot\nabla u=0.
-  \label{eq:ofdg-model-problem}
-\end{equation}
-Here $u=u(\boldsymbol{x},t)$ is the transported scalar quantity,
-$\boldsymbol{x}\in\Omega$ is position, $t$ is time,
-$\boldsymbol{f}(u)$ is its physical flux, and $\boldsymbol{a}$ is a prescribed
-transport velocity.  The first equation is the conservative form; the second is
-the special case of linear advection.  A system of conservation laws replaces
-$u$ by a vector of components.  The OFDG construction below is applied to each
-component of that vector.
-
-A discontinuous Galerkin method approximates the solution by a separate polynomial
-on every mesh element.  The polynomials on two neighboring elements are not
-required to agree at their common face.  This is useful because it makes the method
-local and permits discontinuous physical solutions, but a high-order polynomial can
-develop nonphysical over- and undershoots close to a shock or another unresolved
-feature.
-
-OFDG adds damping only to the nonconstant polynomial content of the numerical
-solution.  The amount of damping is determined automatically from jumps between
-neighboring element polynomials.  A smooth, well-resolved solution has small jumps
-and therefore receives little damping.  A discontinuity produces large jumps and
-therefore stronger damping.  The construction has three ingredients:
-\begin{enumerate}
-  \item local $L^2$ projections separate low- and high-order polynomial content;
-  \item jumps of the solution and its physical derivatives measure a lack of
-        smoothness across element faces;
-  \item nonnegative damping rates combine the jump measure, element size, solution
-        scale, and normal transport speed.
-\end{enumerate}
-The following subsections define each ingredient before combining them into the
-stabilization operator.
-
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[
-      node distance=7mm,
-      >={Latex[length=2.2mm]},
-      stage/.style={draw, rounded corners=2pt, fill=blue!6,
-                    align=center, minimum height=13mm, text width=43mm},
-      every node/.style={font=\small}]
-    \node[stage] (traces) {evaluate solution and derivative traces on both sides of each face};
-    \node[stage, right=of traces] (jumps) {average the absolute trace differences over the face};
-    \node[stage, below=of jumps] (rates) {combine jumps with wave speed, mesh size, and solution scale};
-    \node[stage, left=of rates] (damping) {damp the nonconstant polynomial content inside each element};
-    \draw[->, thick] (traces) -- (jumps);
-    \draw[->, thick] (jumps) -- (rates);
-    \draw[->, thick] (rates) -- (damping);
-  \end{tikzpicture}
-  \caption{Conceptual OFDG pipeline.  Information is gathered at element faces,
-  converted into element-local damping rates, and finally applied through local
-  polynomial projections.}
-  \label{fig:ofdg-pipeline}
-\end{figure}
-
-\subsubsection{Discrete setting}
-
-Let $\Omega\subset\R^d$ be partitioned into a mesh $\mathcal{T}_h$, and let
-$\mathcal{F}_h^{\mathrm{i}}$ denote the set of interior faces.  On each element
-$K\in\mathcal{T}_h$, let $V^k(K)$ be the polynomial space of degree $k\geq 1$
-used by the DG discretization.  The discontinuous finite element space is
-\begin{equation}
-  V_h^k
-  = \left\{v\in L^2(\Omega):
-      v|_K\in V^k(K)\quad\text{for every }K\in\mathcal{T}_h\right\}.
-  \label{eq:ofdg-space}
-\end{equation}
-The symbol $d$ is the spatial dimension, $K$ denotes one mesh element, and the
-subscript $h$ indicates that the space is tied to a mesh with a characteristic
-element size $h$.  An interior face is a full side shared by two elements; an
-outer boundary side is not included in $\mathcal{F}_h^{\mathrm{i}}$.  The notation
-$v|_K$ means the restriction of $v$ to $K$.  Because that restriction is chosen
-independently on every element, a function in $V_h^k$ may have two different
-values at an interior face.
-
-For a system with $m$ components, the numerical solution belongs to the
-vector-valued space
-\begin{equation}
-  \boldsymbol{u}_h=(u_{h,1},\ldots,u_{h,m})^\mathsf{T}\in[V_h^k]^m.
-\end{equation}
-The present implementation treats these components independently.  It does not
-perform a characteristic decomposition.
-
-On an element $K$, choose a basis $\{\phi_i\}_{i=1}^{N_k}$ of $V^k(K)$.  A local
-DG polynomial is represented by
-\begin{equation}
-  u_h|_K(\boldsymbol{x})
-  =\sum_{i=1}^{N_k}u_{K,i}\phi_i(\boldsymbol{x}).
-  \label{eq:ofdg-local-expansion}
-\end{equation}
-The numbers $u_{K,i}$ are the local degrees of freedom.  Depending on the basis,
-they may be nodal values or general expansion coefficients.  No assumption is
-made here that $\{\phi_i\}$ is modal, orthogonal, or formed from Legendre
-polynomials.  The word \emph{modal} used later describes the invariant
-polynomial-degree subspaces selected by $L^2$ projections; it does not prescribe
-the coefficient basis in which the DG framework stores $u_h$.  Both the theory
-and its matrix realization below are independent of that storage basis.
-
-For $0\leq r\leq k$, denote by
-$\Pi_K^r:L^2(K)\rightarrow V^r(K)$ the element-local $L^2$ projection,
-\begin{equation}
-  \bigl(\Pi_K^r w-w,v\bigr)_K=0
-  \qquad\text{for every }v\in V^r(K),
-  \label{eq:ofdg-l2-projection}
-\end{equation}
-Here
-$(p,q)_K=\int_Kpq\,\mathrm{d}\boldsymbol{x}$ is the usual elementwise
-$L^2$ inner product.  Equation~\eqref{eq:ofdg-l2-projection} says that the
-projection error is orthogonal to every polynomial of degree at most $r$.
-Equivalently, among all functions in $V^r(K)$, $\Pi_K^r w$ is the one closest to
-$w$ in the root-mean-square sense over $K$.
-
-We adopt the convention $\Pi_K^{-1}=\Pi_K^0$.  The high-pass operators used by
-the stabilization are
-\begin{equation}
-  \mathcal{R}_K^{(l)}=I-\Pi_K^{l-1},
-  \qquad 0\leq l\leq k.
-  \label{eq:ofdg-high-pass}
-\end{equation}
-In particular, $\mathcal{R}_K^{(0)}=\mathcal{R}_K^{(1)}=I-\Pi_K^0$.
-Every $\mathcal{R}_K^{(l)}w$ has zero cell average.
-
-The projection $\Pi_K^r w$ is the best approximation to $w$ in $V^r(K)$ in the
-$L^2(K)$ norm.  It retains polynomial content up to degree $r$ and removes the
-higher-order content.  Consequently,
-$\mathcal{R}_K^{(l)}w=w-\Pi_K^{l-1}w$ contains precisely the part that the
-$l$th damping contribution is allowed to suppress.  The convention
-$\Pi_K^{-1}=\Pi_K^0$ ensures that no damping contribution changes the cell
-average, which is the constant mode carrying the locally conserved quantity.
-
-\subsubsection{Face jumps of physical derivatives}
-
-For the multi-index
-$\boldsymbol{\alpha}=(\alpha_1,\ldots,\alpha_d)\in\N_0^d$, define
-\begin{equation}
-  |\boldsymbol{\alpha}|=\sum_{j=1}^d\alpha_j,
-  \qquad
-  \partial^{\boldsymbol{\alpha}}
-  =\partial_{x_1}^{\alpha_1}\cdots\partial_{x_d}^{\alpha_d}.
-\end{equation}
-The entries of $\boldsymbol{\alpha}$ count how often differentiation is taken in
-each coordinate direction, while $|\boldsymbol{\alpha}|$ is the total derivative
-order.  In two dimensions, for example,
-$\boldsymbol{\alpha}=(1,0)$ represents $\partial_x$,
-$\boldsymbol{\alpha}=(0,1)$ represents $\partial_y$, and
-$\boldsymbol{\alpha}=(1,1)$ represents $\partial_{xy}$.
-
-Let $F=\partial K^-\cap\partial K^+$ be an interior face.  The sign convention
-for the jump is immaterial below because only its absolute value occurs; we set
-\begin{equation}
-  [\![w]\!]_F=w^-|_F-w^+|_F.
-  \label{eq:ofdg-jump-definition}
-\end{equation}
-The superscripts $-$ and $+$ are labels for the two neighboring elements, not
-signs.  Thus $w^-|_F$ means: approach $F$ from inside $K^-$ and evaluate the
-polynomial stored on $K^-$.  The trace $w^+|_F$ is obtained independently from
-$K^+$.  Even though both traces refer to the same physical points on $F$, they
-need not be equal in a DG method.
-
-\begin{figure}[htbp]
-  \centering
-  \begin{tikzpicture}[
-      scale=1.10,
-      >={Latex[length=2.3mm]},
-      every node/.style={font=\small}]
-    \coordinate (a) at (-3.2,-1.8);
-    \coordinate (b) at (0,-1.8);
-    \coordinate (c) at (0,1.8);
-    \coordinate (d) at (3.2,0.1);
-    \fill[blue!5] (a)--(b)--(c)--cycle;
-    \fill[orange!8] (b)--(d)--(c)--cycle;
-    \draw[thick] (a)--(b)--(c)--cycle;
-    \draw[thick] (b)--(d)--(c)--cycle;
-    \draw[very thick, blue!70!black] (b)--(c);
-    \foreach \y in {-1.05,0,1.05}
-      \fill[blue!70!black] (0,\y) circle (1.6pt);
-
-    \node at (-0.9,-0.25) {$K^-$};
-    \node at (1.55,0.25) {$K^+$};
-    \node[blue!70!black, above] at (0,1.82) {shared face $F$};
-
-    \draw[->, thick] (0,-0.42)--(0.82,-0.42);
-    \node[anchor=west] at (0.94,-0.42) {$\boldsymbol{n}_{K^-,F}$};
-    \draw[->, thick] (0,-1.05)--(-0.82,-1.05);
-    \node[anchor=east] at (-0.94,-1.05) {$\boldsymbol{n}_{K^+,F}$};
-
-    \draw[->, very thick, red!70!black] (0.,0.)--(1.,1.);
-    \node[red!70!black, anchor=east] at (2.7,1.)
-      {transport $\boldsymbol{a}$};
-  \end{tikzpicture}
-  \caption{Two triangular DG elements sharing the interior face $F$.  The dots
-  indicate representative face quadrature points.  At each dot the two element
-  polynomials supply separate traces.  Their difference forms the jump.  The
-  outward normals point in opposite directions, but the absolute normal wave
-  speed is the same for a single-valued velocity.}
-  \label{fig:ofdg-two-elements}
-\end{figure}
-
-For component $c$ and total derivative order $l$, the implemented face sensor is
-the sum of normalized mean absolute jumps
-\begin{equation}
-  J_{F,c}^{(l)}
-  =\sum_{|\boldsymbol{\alpha}|=l}
-   \frac{1}{|F|}
-   \int_F
-   \left|[\![\partial^{\boldsymbol{\alpha}}u_{h,c}]\!]_F\right|
-   \,\mathrm{d}s.
-  \label{eq:ofdg-face-jump}
-\end{equation}
-Every symbol in this expression has a direct interpretation:
-\begin{itemize}
-  \item $F$ is the shared face shown in \cref{fig:ofdg-two-elements}, and $|F|$
-        is its length in two dimensions or area in three dimensions;
-  \item $c\in\{1,\ldots,m\}$ selects one physical solution component;
-  \item $l\in\{0,\ldots,k\}$ is the total derivative order;
-  \item the sum includes every coordinate derivative
-        $\partial^{\boldsymbol{\alpha}}$ whose total order is $l$;
-  \item $[\![\partial^{\boldsymbol{\alpha}}u_{h,c}]\!]_F$ is the difference
-        between the two independently evaluated derivative traces; and
-  \item the integral averages the magnitude of that difference over the entire
-        face after division by $|F|$.
-\end{itemize}
-Thus $J_{F,c}^{(0)}$ measures the jump of the DG solution itself, while the
-higher values of $l$ measure all physical partial derivatives of total order $l$.
-For example, in two dimensions the $l=1$ contribution contains the jumps of
-$\partial_xu_h$ and $\partial_yu_h$, while the $l=2$ contribution contains those
-of $\partial_{xx}u_h$, $\partial_{xy}u_h$, and $\partial_{yy}u_h$.  The absolute
-value is applied pointwise before integration, so positive and negative jumps
-cannot cancel.  The sum over all multi-indices ensures that the sensor does not
-select only one coordinate direction.
-
-Dividing by $|F|$ turns the face integral into a face average.  Hence two faces
-with the same typical jump magnitude produce comparable values even if their
-physical measures differ.  In one spatial dimension a face is a point and
-\eqref{eq:ofdg-face-jump} reduces to the ordinary absolute jump.  An earlier
-version accumulated squared jumps and subsequently took a square root.  The
-current definition uses the intended absolute jump directly; it is both simpler
-and cheaper to evaluate.
-
-As a simple scalar example, suppose the traces are constant on $F$ with
-$u_h^-|_F=2$ and $u_h^+|_F=1.25$.  Then
-$J_{F}^{(0)}=|2-1.25|=0.75$, independently of the length of $F$.  If the
-difference varies along the face, the quadrature described later approximates
-its mean absolute value instead.  This distinction matters: averaging the signed
-difference could hide a nonsmooth face when positive and negative differences
-cancel, whereas averaging its absolute value cannot.
-
-Let $\boldsymbol{a}(\boldsymbol{x})$ be the prescribed transport velocity and
-$\boldsymbol{n}_{K,F}$ the outward unit normal of $K$ on $F$.  The normal wave
-speed used on the $K$ side of $F$ is
-\begin{equation}
-  \beta_{K,F}
-  =\max_{\boldsymbol{x}\in F}
-   \left|\boldsymbol{a}(\boldsymbol{x})\cdot\boldsymbol{n}_{K,F}\right|.
-  \label{eq:ofdg-normal-speed}
-\end{equation}
-The dot product extracts the part of the velocity crossing the face.  Tangential
-transport has zero normal component and should not determine the exchange between
-the two neighboring elements.  The absolute value makes the rate independent of
-which side supplies the orientation of the normal.  The maximum chooses a safe
-representative speed when the velocity varies along the face.  In the code this
-maximum is approximated by evaluating the velocity at the face quadrature points.
-When no velocity is supplied, the implementation uses $\beta_{K,F}=1$.
-
-\subsubsection{Global scale and element damping rates}
-
-Following the scale-invariant idea of~\cite{PengEtAl2024}, each component is
-normalized by one global amplitude.  Define the componentwise extrema
-\begin{equation}
-  u_{\min,c}=\min_{K\in\mathcal{T}_h}\min_{\boldsymbol{x}\in K}u_{h,c}(\boldsymbol{x}),
-  \qquad
-  u_{\max,c}=\max_{K\in\mathcal{T}_h}\max_{\boldsymbol{x}\in K}u_{h,c}(\boldsymbol{x}).
-  \label{eq:ofdg-global-extrema}
-\end{equation}
-The global mean and amplitude are
-\begin{align}
-  \overline{u}_{h,c}
-  &=\frac{1}{|\Omega|}\int_\Omega u_{h,c}\,\mathrm{d}\boldsymbol{x},
-  \label{eq:ofdg-global-mean}\\
-  A_c
-  &=\max\left\{
-      \overline{u}_{h,c}-u_{\min,c},
-      u_{\max,c}-\overline{u}_{h,c}
-    \right\}
-   =\left\|u_{h,c}-\overline{u}_{h,c}\right\|_{L^\infty(\Omega)}.
-  \label{eq:ofdg-global-scale}
-\end{align}
-If $A_c=0$, all damping rates for component $c$ are defined to be zero.  For
-$A_c>0$, introduce
-\begin{equation}
-  C_{k,l}=\frac{2l+1}{2(2k-1)l!},
-  \qquad 0\leq l\leq k.
-  \label{eq:ofdg-sensor-constant}
-\end{equation}
-The damping rate accumulated for element $K$, component $c$, and derivative
-order $l$ is
-\begin{equation}
-  \delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-  =C_{k,l}\frac{h_K^{l-1}}{A_c}
-   \sum_{\substack{F\subset\partial K\\F\in\mathcal{F}_h^{\mathrm{i}}}}
-   \beta_{K,F}J_{F,c}^{(l)}.
-  \label{eq:ofdg-damping-rate}
-\end{equation}
-
-For convenient reference, the complete definition is collected below as one
-system:
-\begin{align}
-  \beta_{K,F}
-  &=\max_{\boldsymbol{x}\in F}
-    \left|\boldsymbol{a}(\boldsymbol{x})\cdot
-           \boldsymbol{n}_{K,F}\right|,
-  \notag\\
-  \delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-  &=\frac{2l+1}{2(2k-1)} \frac{h_K^{l-1}}{l!}
-    \sum_{\substack{F\subset\partial K\\F\in\mathcal{F}_h^{\mathrm{i}}}}
-    \beta_{K,F} \frac{\sum_{|\boldsymbol{\alpha}|=l}
-   \frac{1}{|F|}
-   \int_F
-   \left|[\![\partial^{\boldsymbol{\alpha}}u_{h,c}]\!]_F\right|
-   \,\mathrm{d}s}{\left\|u_{h,c}-\overline{u}_{h,c}\right\|_{L^\infty(\Omega)}}.
-  \label{eq:ofdg-damping-rate-expanded}
-\end{align}
-The symbols can be read as follows:
-\begin{itemize}
-  \item $K$ is the element that receives damping, and $\partial K$ is its boundary;
-  \item the face sum runs only over interior faces of $K$, because only those
-        faces possess two DG traces;
-  \item $k$ is the polynomial degree of the DG space and
-        $l\in\{0,\ldots,k\}$ is the derivative order whose jump is being measured;
-  \item $c$ selects one solution component;
-  \item $h_K$ is a characteristic length of element $K$; and
-  \item $\boldsymbol{a}\cdot\boldsymbol{n}_{K,F}$ is the component of the
-        transport velocity that crosses the face.
-\end{itemize}
-
-The factor $h_K^{l-1}$ consists of the
-$h_K^l$ derivative scaling of the sensor and the additional $h_K^{-1}$ rate in
-the damping equation.  Consequently, $\delta_{K,c}^{(l)}$ has the dimensions of
-an inverse time.  Equation~\eqref{eq:ofdg-damping-rate} is the exact coefficient
-computed by the current code; in the implementation it is stored under the name
-\texttt{sigma\_elem}.
-
-The terms in~\eqref{eq:ofdg-damping-rate} have distinct roles.  The face sum
-collects information from every interior neighbor of $K$.  The jump
-$J_{F,c}^{(l)}$ has the physical units of the solution divided by length to the
-power $l$.  Multiplication by $h_K^{l-1}$ and by the speed $\beta_{K,F}$ converts
-it to the units of the solution divided by time.  Division by $A_c$ leaves an
-inverse-time damping rate.  A larger jump, a faster wave, or a smaller element
-therefore increases the rate at which unresolved polynomial content is removed.
-
-For a concrete scalar example, take degree $k=2$, derivative order $l=0$, one
-contributing face, $h_K=0.1$, $A=1$, normal speed $\beta=2$, and mean absolute
-solution jump $J=0.3$.  Since
-$C_{2,0}=1/[2(2\cdot2-1)]=1/6$, the resulting contribution is
-\begin{equation}
-  \delta_K^{(0)}
-  =\frac{1}{6}\frac{0.1^{-1}}{1}(2)(0.3)=1.
-\end{equation}
-If time is measured in seconds, this is a damping rate of one per second.  A
-second interior face would contribute another nonnegative term to the same rate.
-
-The normalization makes the rates invariant under a rescaling and shift of a
-component.  More precisely, away from the zero-amplitude threshold, replacing
-$u_{h,c}$ by $\lambda u_{h,c}+b$, with $\lambda\neq 0$, leaves every
-$\delta_{K,c}^{(l)}$ unchanged.  Multiplying the transport velocity by a positive
-factor multiplies the rates by the same factor, so the product of a damping time
-and a damping rate is unchanged under the corresponding rescaling of physical
-time.
-
-\subsubsection{Projection-based damping operator}
-
-The local damping operator is
-\begin{equation}
-  \mathcal{D}_{K,c}(\boldsymbol{u}_h)u_{h,c}
-  =\sum_{l=0}^k
-   \delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-  \mathcal{R}_K^{(l)}u_{h,c}.
-  \label{eq:ofdg-damping-operator}
-\end{equation}
-Substituting the definition of the high-pass operator gives the same formula in
-a form that exposes exactly what is removed from the element polynomial:
-\begin{equation}
-  \mathcal{D}_{K,c}(\boldsymbol{u}_h)u_{h,c}
-  =\sum_{l=0}^k
-   \delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-   \left(u_{h,c}|_K-\Pi_K^{l-1}(u_{h,c}|_K)\right),
-  \qquad \Pi_K^{-1}:=\Pi_K^0.
-  \label{eq:ofdg-damping-operator-expanded}
-\end{equation}
-For each $l$, the projection reconstructs the part of the element polynomial of
-degree at most $l-1$.  Subtracting it leaves only higher-degree content.  That
-remainder is multiplied by the nonnegative rate associated with derivative
-jumps of order $l$.  Finally, all orders are added.  The operation is entirely
-local once the face-based rates have been computed: no value from a neighboring
-element is needed while applying~\eqref{eq:ofdg-damping-operator-expanded}.
-
-When OFDG is used as a semidiscrete stabilization, the ordinary DG operator is
-augmented by
-\begin{equation}
-  \bigl(\partial_t u_{h,c},v_h\bigr)_K
-  =\mathcal{A}_{K,c}(\boldsymbol{u}_h;v_h)
-   -\bigl(\mathcal{D}_{K,c}(\boldsymbol{u}_h)u_{h,c},v_h\bigr)_K,
-  \label{eq:ofdg-semidiscrete}
-\end{equation}
-where $\mathcal{A}_{K,c}$ denotes the unstabilized DG spatial discretization.
-The function $v_h$ is an arbitrary DG test function, and
-$(p,q)_K=\int_Kpq\,\mathrm{d}\boldsymbol{x}$.  The minus sign in front of the
-OFDG term is essential: because the operator is nonnegative, subtracting it
-removes energy from nonconstant modes instead of amplifying them.
-The implementation returns the coefficient vector of
-$\mathcal{D}_{K,c}u_{h,c}$; the caller subtracts this vector from the DG time
-derivative.
-
-To see which polynomial content is affected, consider one term in
-\eqref{eq:ofdg-damping-operator}.  The $l=0$ and $l=1$ terms both act on
-$u_{h,c}-\Pi_K^0u_{h,c}$, namely everything except the cell average.  For
-$l\geq2$, the $l$th term acts only on content not representable by polynomials of
-degree $l-1$.  Thus a derivative jump of order $l$ is connected to damping of
-polynomial modes of degree at least $l$.  The total operator is nonlinear because
-the rates are recomputed from the current solution, although it is a linear
-combination of projections once those rates have been frozen.
-
-\begin{samepage}
-For example, when $k=3$, the action of the four rates is:
-\begin{center}
-  \begin{tabular}{ccl}
-    \toprule
-    rate & remainder being multiplied & polynomial content affected \\
-    \midrule
-    $\delta_{K,c}^{(0)}$ & $u_{h,c}-\Pi_K^0u_{h,c}$ & degrees $1$, $2$, and $3$ \\
-    $\delta_{K,c}^{(1)}$ & $u_{h,c}-\Pi_K^0u_{h,c}$ & degrees $1$, $2$, and $3$ \\
-    $\delta_{K,c}^{(2)}$ & $u_{h,c}-\Pi_K^1u_{h,c}$ & degrees $2$ and $3$ \\
-    $\delta_{K,c}^{(3)}$ & $u_{h,c}-\Pi_K^2u_{h,c}$ & degree $3$ only \\
-    \bottomrule
-  \end{tabular}
-\end{center}
-The constant, degree-zero part never appears in a remainder and is therefore
-never damped.  This is the algebraic reason that the element average is
-preserved.
-\end{samepage}
-
-The damping term is locally conservative because
-\begin{equation}
-  \int_K\mathcal{R}_K^{(l)}w\,\mathrm{d}\boldsymbol{x}
-  =\int_K\left(w-\Pi_K^{l-1}w\right)\,\mathrm{d}\boldsymbol{x}=0
-  \qquad\text{for all }l.
-  \label{eq:ofdg-local-conservation}
-\end{equation}
-For $l=0$, the already stated convention $\Pi_K^{-1}=\Pi_K^0$ is used.  The
-integral vanishes because an $L^2$ projection onto a space containing constants
-preserves the element integral of the projected function.
-
-It is also dissipative.  Orthogonality of the $L^2$ projection and nonnegativity
-of the rates give
-\begin{equation}
-  \bigl(\mathcal{D}_{K,c}u_{h,c},u_{h,c}\bigr)_K
-  =\sum_{l=0}^k\delta_{K,c}^{(l)}
-   \left\|u_{h,c}-\Pi_K^{l-1}u_{h,c}\right\|_{L^2(K)}^2
-  \geq 0.
-  \label{eq:ofdg-dissipation}
-\end{equation}
-These two identities are direct consequences of the implemented projection
-operator and do not depend on the particular face sensor.
-
-\subsubsection{Exact decay by polynomial-degree shells}
-\label{sec:ofdg-exact-decay}
-
-The same damping operator can be applied in a separate pseudo-time step.  Freeze
-the rates at an input state $\boldsymbol{u}_h$ and solve, independently on each
-element and for each component,
-\begin{equation}
-  \frac{\partial w_{K,c}}{\partial s}
-  +\sum_{l=0}^k\delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-   \mathcal{R}_K^{(l)}w_{K,c}=0,
-  \qquad
-  w_{K,c}(0)=u_{h,c}|_K.
-  \label{eq:ofdg-decay-equation}
-\end{equation}
-Define the mutually orthogonal polynomial shells
-\begin{equation}
-  \mathcal{Q}_K^{(0)}=\Pi_K^0,
-  \qquad
-  \mathcal{Q}_K^{(j)}=\Pi_K^j-\Pi_K^{j-1},
-  \quad 1\leq j\leq k,
-  \label{eq:ofdg-modal-shells}
-\end{equation}
-and their cumulative damping rates
-\begin{equation}
-  \Lambda_{K,c}^{(j)}
-  =\sum_{l=0}^j\delta_{K,c}^{(l)},
-  \qquad 1\leq j\leq k.
-  \label{eq:ofdg-cumulative-rate}
-\end{equation}
-Since a mode in the $j$th shell is contained in
-$\mathcal{R}_K^{(l)}$ precisely when $l\leq j$, the exact solution at pseudo-time
-$\tau$ is
-\begin{equation}
-  w_{K,c}(\tau)
-  =\Pi_K^0u_{h,c}
-   +\sum_{j=1}^k
-    \exp\left(-\tau\Lambda_{K,c}^{(j)}\right)
-    \mathcal{Q}_K^{(j)}u_{h,c}.
-  \label{eq:ofdg-exact-decay}
-\end{equation}
-Eliminating the abbreviations $\Lambda_{K,c}^{(j)}$ and
-$\mathcal{Q}_K^{(j)}$ gives the directly usable form
-\begin{equation}
-  w_{K,c}(\tau)
-  =\Pi_K^0u_{h,c}
-   +\sum_{j=1}^k
-    \exp\left(
-      -\tau\sum_{l=0}^j\delta_{K,c}^{(l)}(\boldsymbol{u}_h)
-    \right)
-    \left(\Pi_K^j-\Pi_K^{j-1}\right)u_{h,c}.
-  \label{eq:ofdg-exact-decay-expanded}
-\end{equation}
-Here $j$ labels a polynomial shell, $\tau\geq0$ is the duration of the damping
-step, and the inner sum is the total rate acting on that shell.  The exponential
-factor lies between zero and one: it equals one if the accumulated rate is zero
-and approaches zero when the rate or damping time becomes large.  The first term
-$\Pi_K^0u_{h,c}$ is the cell-average mode and has no exponential factor, so it is
-copied unchanged.
-
-Thus the cell average is unchanged, whereas increasingly high polynomial shells
-are multiplied by nonnegative decay factors.  This is the modal-filter
-interpretation emphasized in~\cite{PengEtAl2024}.  It is a statement about the
-orthogonal decomposition of the polynomial space, not about the basis used to
-store the coefficients: every projector and shell in
-\cref{eq:ofdg-exact-decay} is applied directly in the host basis.  The exact map
-avoids a time-step restriction caused solely by stiffness of the frozen damping
-equation.
-
-The coefficient-space stabilization and the exact decay are two representations
-of the same operator.  Indeed,
-\begin{equation}
-  \sum_{l=0}^k\delta_{K,c}^{(l)}\mathcal{R}_K^{(l)}
-  =\sum_{j=1}^k\Lambda_{K,c}^{(j)}\mathcal{Q}_K^{(j)}.
-  \label{eq:ofdg-operator-shell-equivalence}
-\end{equation}
-The first form is used by \texttt{ComputeStabilization}; the exponential of the
-second form is used by \texttt{CompDecay}.
-
-\subsection{Implementation decisions and details}
-\label{sec:ofdg-implementation}
-
-\subsubsection{Scope and geometric assumptions}
-
-The implementation is a small compiled MFEM library.  It assumes that the
-finite element space is nonempty and discontinuous, that $k\geq 1$, and that
-all elements have the same order and dimension.  Geometry and local degree-of-
-freedom counts may differ.  Element maps may be affine or static polynomial curvilinear, and the mesh
-must remain unchanged during the lifetime of the OFDG object.  These conditions
-are preconditions rather than properties checked at run time.
-The public header exposes the OFDG constructors, stabilization, and decay only.
-KXRCF is an independent optional method and is included explicitly when the
-activation mask is required.
-
-Different elements need not have the same Jacobian.  They may have different
-sizes, reference geometries, and local coefficient counts, and may be
-translated, rotated, or affinely skewed.  An immutable repository constructs
-the required projection and derivative operators once per finite-element
-signature.  Non-affine elements additionally own physical projection and
-projected-derivative matrices assembled with geometry-dependent quadrature.
-Native NURBS geometry is rejected: the pinned MFEM implementation does not
-support the two-sided NURBS face transformations required here.  Projecting such
-a mesh to polynomial nodes changes the rational geometry approximately and is
-therefore a distinct supported case.
-
-More explicitly, MFEM describes a physical element by a map from a standard
-reference element.  The affine assumption means that this map has the form
-\begin{equation}
-  \boldsymbol{x}=T_K(\boldsymbol{\xi})
-  =\boldsymbol{b}_K+J_K\boldsymbol{\xi},
-  \label{eq:ofdg-affine-map}
-\end{equation}
-where $\boldsymbol{\xi}$ is a reference coordinate, $\boldsymbol{b}_K$ is a
-translation, and the matrix $J_K$ is constant within $K$.  The matrix may differ
-from one element to another.  Its scaling, rotation, and shear describe the size,
-orientation, and skew of the physical element.  The affine path therefore uses a constant Jacobian on each individual element,
-not one globally identical Jacobian.  For curved maps the volume is integrated
-and the damping length is $h_K=(|K|/|\widehat K|)^{1/d}$, agreeing with the
-existing affine determinant scale.
-
-\subsubsection{Projection matrices}
-
-Let $\{\phi_i\}_{i=1}^{N_k}$ be the local degree-$k$ basis and
-$\{\psi_a^{(r)}\}_{a=1}^{N_r}$ the degree-$r$ basis.  The code assembles
-\begin{align}
-  (M_k)_{ij}&=(\phi_i,\phi_j)_K,
-  & (M_r)_{ab}&=(\psi_a^{(r)},\psi_b^{(r)})_K,\\
-  (B_r)_{ai}&=(\psi_a^{(r)},\phi_i)_K.
-\end{align}
-The matrix representation of $I-\Pi_K^r$ in the degree-$k$ coefficient basis is
-\begin{equation}
-  Q_r=M_k-B_r^\mathsf{T}M_r^{-1}B_r,
-  \qquad
-  S_r=M_k^{-1}Q_r
-     =I-M_k^{-1}B_r^\mathsf{T}M_r^{-1}B_r.
-  \label{eq:ofdg-projection-matrices}
-\end{equation}
-Thus applying $S_r$ to a degree-$k$ coefficient vector directly returns the
-coefficients of the remainder $w-\Pi_K^r w$.  The matrices $M_k$ and $M_r$ are
-the degree-$k$ and degree-$r$ mass matrices, respectively; $B_r$ couples the two
-bases; and $I$ is the $N_k\times N_k$ identity matrix.  The code stores $S_r$
-for $0\leq r\leq k$.
-
-Crucially, this construction never converts the solution to Legendre or other
-orthogonal modal coefficients.  It represents the same projection operator in
-whatever supported scalar polynomial DG basis the host framework supplies.
-Consequently, a nodal basis, a modal basis, or another polynomial coefficient
-basis produces the same function-space operation up to quadrature and roundoff.
-This basis-agnostic realization is what makes the implementation portable: a
-second framework need not add a special OFDG solution basis, provided it can
-form the corresponding polynomial-space projections.
-
-On an affine element, all three mass
-and coupling matrices contain the same constant physical Jacobian factor, which
-cancels in $S_r$.  Therefore affine projection matrices are reused per finite-element signature.
-For curved elements every mass and coupling matrix includes the physical
-Jacobian weight at each quadrature point.  The lower-order spaces are mapped
-reference polynomial spaces; their physical $L^2$ projectors remain nested.
-
-\subsubsection{Coefficient-to-coefficient derivatives}
-
-The repeated derivatives required by~\eqref{eq:ofdg-face-jump} are represented as
-polynomial coefficients rather than only as values at quadrature points.  At the
-finite element interpolation points $\{\boldsymbol{\xi}_q\}_{q=1}^{N_k}$, define
-\begin{equation}
-  V_{qi}=\phi_i(\boldsymbol{\xi}_q),
-  \qquad
-  G_{qi}^{(r)}
-  =\frac{\partial\phi_i}{\partial\xi_r}(\boldsymbol{\xi}_q).
-\end{equation}
-If $\boldsymbol{u}$ is a coefficient vector, $G^{(r)}\boldsymbol{u}$ contains
-reference-derivative values at the interpolation points.  The coefficient vector
-of that derivative is therefore
-\begin{equation}
-  \boldsymbol{u}_{\xi_r}=D_{\xi_r}\boldsymbol{u},
-  \qquad
-  D_{\xi_r}=V^{-1}G^{(r)}.
-  \label{eq:ofdg-reference-derivative-matrix}
-\end{equation}
-This Vandermonde construction is kept explicit in the code.  For the affine map
-$\boldsymbol{x}=T_K(\boldsymbol{\xi})$, the physical derivative matrices are
-\begin{equation}
-  D_{x_j}^{K}
-  =\sum_{r=1}^d(J_K^{-1})_{rj}D_{\xi_r}.
-  \label{eq:ofdg-physical-derivative-matrix}
-\end{equation}
-The inverse Jacobian $J_K^{-1}$ is read once at the reference-element centre and
-one set of matrices $\{D_{x_j}^{K}\}_{j=1}^d$ is stored for every element.
-
-For non-affine maps, the code instead assembles
-\begin{equation}
-  M_K D_{K,j}=G_{K,j},\qquad
-  (G_{K,j})_{ab}=\int_K\phi_a\,\partial_{x_j}\phi_b\,dx.
-\end{equation}
-Repeated application represents successively projected physical derivatives,
-not exact higher derivatives of the mapped function.  The derivative graph
-fixes the application order; projected mixed derivatives need not commute.
-Positive, overintegrated quadrature is used for curved elements.  Triangular
-face rules include all barycentric permutations to make the sampling invariant
-under MPI face orientation.
-
-Only first reference derivatives of the supplied finite-element basis are
-requested from MFEM.  Repeated application of the resulting coefficient
-operators generates every higher derivative needed by OFDG.  In framework
-terms, the construction requires scalar polynomial DG basis values and first
-derivatives, quadrature, nested lower-order polynomial spaces or equivalent
-projection operators, element and face transformations, and local
-degree-of-freedom access.  It therefore avoids a modal-basis requirement, but it
-does not claim support for arbitrary nonpolynomial, $H(\mathrm{div})$,
-$H(\mathrm{curl})$, or mixed finite-element spaces.
-
-All multi-indices with total degree at most $k$ are organized in a directed
-acyclic graph.  Each nonzero multi-index selects one parent of degree one less and
-one physical derivative direction.  Walking this graph evaluates every required
-derivative once.  The number of stored derivative states per element and component
-is
-\begin{equation}
-  \sum_{l=0}^k\binom{l+d-1}{d-1}=\binom{k+d}{d}.
-\end{equation}
-
-\subsubsection{Face quadrature and cached evaluation}
-
-MFEM remains the sole source of mesh connectivity.  The setup loops over MFEM
-face numbers and obtains the two adjacent elements from MFEM's face-transformation
-data.  Boundary faces are skipped.  For each
-interior affine face, a quadrature rule of order $2k+1$ is selected.  Curved
-faces use an overintegrated rule that also depends on the geometry order.  The following data are cached directly at the MFEM face index:
-\begin{equation}
-  (E_F^-)_{qi}=\phi_i(\boldsymbol{\xi}_{F,q}^-),
-  \qquad
-  (E_F^+)_{qi}=\phi_i(\boldsymbol{\xi}_{F,q}^+),
-  \qquad
-  \widehat{\omega}_q=\frac{\omega_q J_F(\xi_q)}{\sum_p\omega_p J_F(\xi_p)}.
-  \label{eq:ofdg-face-evaluation-matrices}
-\end{equation}
-Here $J_F$ is the physical face Jacobian.  For affine faces it is constant and cancels between the
-integral and $|F|$ in~\eqref{eq:ofdg-face-jump}; hence the normalized reference
-weights $\widehat{\omega}_q$ are sufficient.  All derivative traces and all
-components on one side of a face are evaluated together in one dense matrix
-multiplication.  There is no face-pattern matching or deduplication.
-
-If $\boldsymbol{u}_{\boldsymbol{\alpha}}^-$ and
-$\boldsymbol{u}_{\boldsymbol{\alpha}}^+$ are the coefficient vectors of the
-same physical derivative on the two neighboring elements, the actual quadrature
-calculation is
-\begin{equation}
-  J_{F,c}^{(l)}
-  \approx\sum_{|\boldsymbol{\alpha}|=l}\sum_{q=1}^{N_{q,F}}
-  \widehat{\omega}_q
-  \left|
-    \bigl(E_F^-\boldsymbol{u}_{\boldsymbol{\alpha}}^-\bigr)_q
-    -\bigl(E_F^+\boldsymbol{u}_{\boldsymbol{\alpha}}^+\bigr)_q
-  \right|.
-  \label{eq:ofdg-discrete-face-jump}
-\end{equation}
-The implementation therefore performs one subtraction and one absolute value for
-each derivative, component, and quadrature point.  No squared-jump accumulator or
-final square root is required.
-
-\subsubsection{Runtime sequence and storage policy}
-
-For every input state, the implementation performs the following operations:
-\begin{enumerate}
-  \item evaluate the global mean and scale~\eqref{eq:ofdg-global-scale} at volume
-        quadrature points;
-  \item rebuild and store all derivative coefficient states on every element;
-  \item loop over MFEM interior faces, evaluate the normal wave speeds and the
-        mean absolute jump measures~\eqref{eq:ofdg-face-jump}, and accumulate the rates
-        \eqref{eq:ofdg-damping-rate} on both neighboring elements;
-  \item apply either the coefficient-space damping operator
-        \eqref{eq:ofdg-damping-operator} or the exact decay map
-        \eqref{eq:ofdg-exact-decay}.
-\end{enumerate}
-The volume mean is integrated with a rule of order $2k+1$.  The extrema used for
-$A_c$ are the minimum and maximum over the same quadrature values.  In floating
-point arithmetic, the implementation sets the rates of component $c$ to zero when
-$A_c\leq 10^{-14}$.
-
-There is no bounded or dynamic derivative cache.  Every element owns permanent
-storage for its derivative coefficients, and all of it is rebuilt once for the
-current state.  Likewise, each interior face owns its two evaluation matrices and
-normalized quadrature weights.  Ignoring small container overheads, the principal
-storage costs are
-\begin{align}
-  &\mathcal{O}\left(
-    |\mathcal{T}_h|\,dN_k^2
-    \right)
-  &&\text{for physical derivative operators},\\
-  &\mathcal{O}\left(
-    |\mathcal{T}_h|\,mN_k\binom{k+d}{d}
-    \right)
-  &&\text{for derivative coefficient states},\\
-  &\mathcal{O}\left(
-    \sum_{F\in\mathcal{F}_h^{\mathrm{i}}}N_{q,F}(2N_k+1)
-    \right)
-  &&\text{for face evaluation data}.
-\end{align}
-This policy uses more predictable memory than an evicting cache and removes cache
-lookups and replacement decisions from the face loop.
-
-An optional active-element mask can restrict stabilization or decay to selected
-elements.  A face is omitted only when neither neighbor is active, so an active
-element still receives contributions from every adjacent interior face. Runtime
-scratch arrays are owned by the OFDG object. Because this scratch state is
-mutable and reused, concurrent calls on the same object are unsupported.
-
-\subsubsection{Relation to the published formulations}
+The DG state from \cref{chap:methods} may contain unresolved oscillations.
+Adapted OFDG reduces nonconstant content within each element while preserving
+its mean. Three ingredients determine the operation: nested projections separate
+orders of variation, interelement jumps measure roughness, and wave-speed-scaled
+rates determine how strongly each part is damped.
+
+\subsection{Relation to the published methods}
 \label{sec:ofdg-relation-to-literature}
+The name \emph{adapted OFDG} is used throughout this report for the specific
+hybrid construction implemented here. Projection damping originates in
+\cite{LuEtAl2021,LiuEtAl2022}; global scale normalization and exponential decay
+are motivated by \cite{PengEtAl2024}. The earlier multidimensional OFDG
+sensors evaluate vertex jumps, and the system formulation uses characteristic
+variables. Here we average absolute jumps over faces and form separate rates
+for physical conservative components. KXRCF gating is optional.
 
-The original multidimensional OFDG sensors in~\cite{LuEtAl2021,LiuEtAl2022}
-measure derivative jumps at element vertices.  The system formulation
-in~\cite{LiuEtAl2022} additionally transforms jumps to characteristic variables
-and takes a maximum over characteristic components.  The current implementation
-instead uses the face-averaged absolute-jump measure~\eqref{eq:ofdg-face-jump}
-and constructs a
-separate rate for each physical component.  Its global amplitude normalization,
-normal wave-speed factor, and exact decay map are motivated by the later OEDG
-formulation~\cite{PengEtAl2024}.
+These choices define an implementation variant, not a literal reproduction of
+one paper. The conservation and damping identities below follow from projection
+algebra. Published convergence theorems for different sensors are not a proof
+for this variant, particularly on curved elements with projected derivatives.
 
-Consequently, the implementation should be regarded as the specific hybrid OFDG
-and OEDG damping variant defined by \cref{eq:ofdg-face-jump},
-\cref{eq:ofdg-damping-rate}, and \cref{eq:ofdg-damping-operator}, not as a literal
-reproduction of one published algorithm.  Conservation and dissipation follow
-directly from \cref{eq:ofdg-local-conservation} and
-\cref{eq:ofdg-dissipation}; convergence results proved for the published
-vertex-based or characteristic-variable sensors do not, by themselves, constitute
-a proof for this modified sensor.
+\subsection{Projections and a small example}
+\label{sec:ofdg-mathematics}
+For the nested mapped spaces from \cref{eq:ofdg-space}, let $\Pi_K^r$ be the
+physical $L^2$ projection into $V^r(K)$:
+\begin{equation}
+ (\Pi_K^r w-w,v)_K=0\quad\hbox{for every }v\in V^r(K),
+ \qquad (p,q)_K=\int_K pq\,dx.
+ \label{eq:ofdg-l2-projection}
+\end{equation}
+This is the closest approximation in the integral squared-error norm.
+Because constants belong to every space, the projection preserves the element
+integral. In particular $\Pi_K^0w=|K|^{-1}\int_Kw\,dx$ is the constant cell mean.
 
-The KXRCF troubled-cell indicator supplies the optional active-element set used
-by this mask interface.  Its definition, normalization, and system coupling are
-given in \cref{chap:kxrcf}.
+For example, on $[-1,1]$ write
+\begin{equation}
+ w(x)=a_0+a_1x+a_2(x^2-1/3).
+\end{equation}
+The last two terms have zero mean. Reducing their coefficients changes the
+slope and curvature but leaves $a_0$ unchanged. This orthogonal example is an
+explanation, not a required storage basis: the code assembles projections in
+MFEM's existing scalar finite element basis.
+
+Define the remainders and shells
+\begin{align}
+ \mathcal R_K^{(l)}&=I-\Pi_K^{l-1},\quad \Pi_K^{-1}:=\Pi_K^0,
+ \label{eq:ofdg-high-pass}\\
+ \mathcal Q_K^{(0)}&=\Pi_K^0,\qquad
+ \mathcal Q_K^{(j)}=\Pi_K^j-\Pi_K^{j-1},\quad 1\leq j\leq k.
+ \label{eq:ofdg-modal-shells}
+\end{align}
+A shell contains the variation added when increasing the reference-space order
+from $j-1$ to $j$. These shells are mutually orthogonal in the physical inner
+product. On tensor-product or curved elements, ``shell $j$'' means this nested
+space difference; it does not mean total physical polynomial degree $j$.
+
+\subsection{Which derivatives enter the sensor?}
+\label{sec:projected-derivatives}
+The derivative notation must reflect the geometry. Define
+\begin{equation}
+ \mathscr D_{K,j}v=\Pi_K^k(\partial_{x_j}v).
+ \label{eq:projected-first-derivative}
+\end{equation}
+A multi-index $\alpha=(\alpha_1,\ldots,\alpha_d)$ counts differentiations in
+each coordinate; $|\alpha|$ is their total. Set $\mathscr D_K^0=I$ and form
+$\mathscr D_K^\alpha$ by successive applications of \cref{eq:projected-first-derivative}
+in the code's fixed derivative-graph order. For example, a mixed second
+operation is $\mathscr D_{K,x}\mathscr D_{K,y}v$.
+
+On affine elements whose reference family is closed under differentiation,
+these operators recover the exact polynomial derivatives up to numerical
+precision. On a curved element they approximate \emph{successively projected}
+physical derivatives. They are not exact higher derivatives of the mapped
+function, and the projected mixed derivatives need not commute. This
+qualification applies to every curved sensor formula below.
+
+For an interior face $F=\partial K^-\cap\partial K^+$, define
+\begin{equation}
+ [\![w]\!]_F=w^-|_F-w^+|_F,
+ \qquad
+ J_{F,c}^{(l)}=\sum_{|\alpha|=l}\frac1{|F|}\int_F
+ \left|[\![\mathscr D^\alpha u_{h,c}]\!]_F\right|\,ds.
+ \label{eq:ofdg-face-jump}
+\end{equation}
+Each trace uses its own element's derivative operator. $c$ identifies a
+conservative component; $l=0$ measures solution jumps. Face measure $|F|$ is
+length in 2D or area in 3D; a 1D point face uses the ordinary absolute jump.
+Taking the absolute value before integration prevents cancellation. For
+constant traces 2 and 1.25, $J_F^{(0)}=0.75$ regardless of face size.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm,>=Latex,
+ box/.style={draw,rounded corners,fill=blue!4,text width=43mm,align=center,minimum height=12mm}]
+ \node[box](traces){solution and projected derivative traces};
+ \node[box,right=of traces](jumps){face-averaged absolute jumps};
+ \node[box,below=of jumps](rates){rates from jumps, amplitude, size, and speed};
+ \node[box,left=of rates](decay){local shell attenuation; mean unchanged};
+ \draw[->](traces)--(jumps);\draw[->](jumps)--(rates);\draw[->](rates)--(decay);
+\end{tikzpicture}
+\caption{Adapted OFDG separates face-based sensing from element-local damping.
+KXRCF, when enabled, selects which elements receive the final operation.}
+\label{fig:ofdg-pipeline}
+\end{figure}
+
+\subsection{Damping rates and physical scales}
+Let $\overline u_c=|\Omega|^{-1}\int_\Omega u_{h,c}\,dx$ and define the ideal
+component amplitude
+\begin{equation}
+ A_c=\|u_{h,c}-\overline u_c\|_{L^\infty(\Omega)}.
+ \label{eq:ofdg-global-scale}
+\end{equation}
+The code approximates this amplitude from volume-quadrature samples and an
+integrated mean; it does not optimize the continuous polynomial maximum.
+Adapted OFDG sets its component rates to zero when the sampled amplitude is
+at most $10^{-14}$. This absolute cutoff limits exact rescaling invariance
+near vanishing amplitudes.
+
+The one-sided speed $\beta_{K,F}$ is the largest sampled normal radius on
+face $F$ using the state on side $K$. Prescribed advection uses
+$|\boldsymbol a\cdot\boldsymbol n_K|$; Euler uses
+$|\boldsymbol v_K\cdot\boldsymbol n_K|+c_K$ evaluated from face traces.
+The other element can have a different radius. Normals are evaluated at the
+same physical face quadrature points. Unit speed is a compatibility policy,
+not the physical-speed setting used in this preview.
+
+With the length $h_K=(|K|/|\widehat K|)^{1/d}$, the rates are
+\begin{equation}
+ \delta_{K,c}^{(l)}=
+ \frac{2l+1}{2(2k-1)l!}\frac{h_K^{l-1}}{A_c}
+ \sum_{\substack{F\subset\partial K\\F\in\mathcal F_h^{\rm i}}}
+ \beta_{K,F}J_{F,c}^{(l)},\qquad 0\leq l\leq k,
+ \label{eq:ofdg-damping-rate}
+\end{equation}
+where the sum is over interior faces of $K$ only. Physical boundary conditions
+belong to the DG flux operator. Face and volume integrals in the implementation
+use quadrature, including geometry-dependent weights on curved cells.
+
+The rate has inverse-time units: the derivative jump contributes $u/$length$^l$,
+$h_K^{l-1}$ contributes length$^{l-1}$, speed contributes length/time, and
+$A_c$ divides out the state scale. At fixed geometry and amplitude, larger speeds or jumps strengthen
+attenuation; the factor $h_K^{l-1}$ sets the length scaling for each derivative order. For $k=2$, $l=0$, $h_K=0.1$, $A=1$,
+$\beta=2$, and one jump $J=0.3$, the contribution is
+$(1/6)(0.1^{-1})(2)(0.3)=1$ per unit time.
+
+With fixed prescribed speeds and away from the cutoff, the jump/amplitude
+ratio is unchanged under $u_c\mapsto\lambda u_c+b$, $\lambda\ne0$.
+Arbitrary component scaling or shifting of Euler or Burgers states can change
+the physical speeds, so the complete nonlinear filtering map does not inherit
+that statement unconditionally.
+
+\subsection{Conservation, dissipation, and exact frozen decay}
+The damping operator is
+\begin{equation}
+ \mathcal D_{K,c}u_{h,c}=\sum_{l=0}^k\delta_{K,c}^{(l)}
+          \mathcal R_K^{(l)}u_{h,c}.
+ \label{eq:ofdg-damping-operator}
+\end{equation}
+Every remainder has zero integral. For ideal physical projections,
+\begin{align}
+ \int_K\mathcal D_{K,c}u_{h,c}\,dx&=0,
+ \label{eq:ofdg-local-conservation}\\
+ (\mathcal D_{K,c}u_{h,c},u_{h,c})_K
+ &=\sum_{l=0}^k\delta_{K,c}^{(l)}
+       \|\mathcal R_K^{(l)}u_{h,c}\|_{L^2(K)}^2\geq0.
+ \label{eq:ofdg-dissipation}
+\end{align}
+Thus subtracting $\mathcal D u$ removes nonconstant squared-norm content
+without changing the cell mean. These are damping-step identities, not a
+positivity or entropy-stability proof for the full nonlinear time update.
+The numerical realization preserves its quadrature-weighted physical cell
+means to roundoff; agreement with exact integrals also depends on quadrature.
+
+Freeze the rates at the candidate state and solve
+$\partial_s w+\mathcal D w=0$ for a pseudo-time interval $\tau$. Nested
+projections give the explicit solution
+\begin{equation}
+ w(\tau)=\Pi_K^0u_{h,c}+\sum_{j=1}^k
+  \exp\!\left(-\tau\sum_{l=0}^j\delta_{K,c}^{(l)}\right)
+  (\Pi_K^j-\Pi_K^{j-1})u_{h,c}.
+ \label{eq:ofdg-exact-decay}
+\end{equation}
+The mean is copied and each higher shell is multiplied by a factor between
+zero and one. For order three, rates $l=0$ and $l=1$ affect all nonconstant
+shells; rate $l=2$ affects shells two and three; rate $l=3$ affects shell three.
+``Exact'' refers to this frozen damping equation. The rates are recomputed
+from the evolving solution, and operator splitting remains part of the method.
+
+The public stabilization routine returns coefficients of $\mathcal D u$ for
+a caller that wants a semidiscrete term. The preview uses the exponential
+\texttt{CompDecay} map after a full RK4 step, with $\tau$ equal to the step
+size. Basis-independent matrix construction is given in
+\cref{sec:ofdg-implementation}.

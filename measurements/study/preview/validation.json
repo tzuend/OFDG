@@ -1,0 +1,28 @@
+{
+  "solver_runs": 103,
+  "reference_runs": 4,
+  "all_completed": true,
+  "pdf_pages": 6,
+  "all_pdf_pages_visually_inspected": true,
+  "shock_closeups": [
+    "piecewise advection",
+    "Burgers",
+    "Lax",
+    "Shu-Osher",
+    "2D Riemann density cut"
+  ],
+  "focused_tests": "passed: analytic curved mean, outflow flux and fixed compatibility, polynomial export, piecewise data, processor caps, timeout/memory termination, serial/two-rank curved means",
+  "existing_study_tests": "passed; see raw/study-regression.log",
+  "resume_without_new_solver_runs": "passed",
+  "presentation_review_scores": [
+    7.0,
+    8.6
+  ],
+  "presentation_review_rounds": 2,
+  "presentation_threshold": 8.5,
+  "presentation_stop_condition_met": true,
+  "matched_density_cut_y": 0.74,
+  "polynomial_cut_checks": "analytic tensor polynomial and saved-node reproduction passed",
+  "final_pdf_sha256": "b3989315168eec993daef51b1cf5b3034f646fc1ec0aac8e28ca334afa528ed3",
+  "presentation_review_log": "docs/supervisor-preview-review.md"
+}

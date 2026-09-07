@@ -1,97 +1,54 @@
-\chapter{Reproducibility and Study Design}
-\label{app:reproducibility}
-
-From the repository root, the draft workflow is
-\begin{quote}
-\begin{verbatim}
-make test
-make test-study
-make study-quick
-make figures-draft
-make report-draft
-\end{verbatim}
-\end{quote}
-The first command builds sanitizer-enabled serial tests and runs the two-rank
-partition test.  The second validates analysis code and the independent WENO
-solver.  The reduced study exists to exercise the complete data path; its
-outputs are not final numerical evidence.
-
-The proposed full design is inspected without running solvers using
-\begin{quote}
-\texttt{make study-plan}.
-\end{quote}
-This produces an expanded CSV and an estimated runtime summary.  Because the
-full manifest is marked \texttt{draft}, \texttt{make study-full} exits before
-building or launching a solver.  Execution becomes possible only after the
-matrix has been reviewed and its manifest status is changed to
-\texttt{approved}.
-
-Raw logs, rank-local sampled profiles, and the long-form CSV are written below
-\texttt{measurements/study/<profile>}.  Draft report assets are mirrored under
-\texttt{report/generated/draft}; approved final assets use the separate
-\texttt{report/generated/final} directory.  Each numerical row records its
-exact command, source revision, compiler, MFEM revision, host, and UTC
-timestamp.  Numerical failures remain rows with their exit code, diagnostic,
-and detected failure time.
-
-Live GLVis output can be enabled for the advection, Burgers, and Euler drivers
-with \texttt{-vis}; \texttt{-vs} selects the timestep interval between updates.
-Euler can additionally write rank-local MFEM solution files with
-\texttt{-save}.  These paths are intended for interactive verification only;
-every thesis plot is generated headlessly from recorded CSV or profile data.
-
-\section{Proposed experiment matrix}
+\chapter{Evidence, reproducibility, and missing work}
 \label{app:study-design}
+\section{Rebuilding this report without new simulations}
+From the repository root, run
+\begin{quote}\texttt{make report-draft}\end{quote}
+This regenerates report-specific figures and tables from the retained preview
+results, then compiles the thesis. It does not launch solvers or replace the
+supervisor brief. A Python installation with NumPy and Matplotlib and a LaTeX
+installation with BibTeX are required. The editable report sources live under
+\path{report/}; the compiled document is \path{report/thesis.pdf}.
 
-The machine-readable manifest is the source of truth.  The following compact
-view records why each family is proposed and where it is intended to appear.
-Every row remains unapproved in this draft.
+\begin{center}\small
+\begin{tabular}{@{}p{.36\textwidth}p{.58\textwidth}@{}}\toprule
+Evidence & Repository location\\\midrule
+Approved preview configuration & \path{experiments/preview_manifest.json}\\
+Commands, metrics, provenance & \path{measurements/study/preview/results.json}\\
+Rank-local polynomial/mean data & \path{measurements/study/preview/profiles/}\\
+Independent WENO references & \path{measurements/study/preview/references/}\\
+Full error/refinement values & \path{measurements/study/preview/convergence.csv}\\
+Preview controls and checks & \path{docs/supervisor-preview.md}\\
+Curved validation and reproducer & \path{docs/curved-validation.md}\\
+Report-specific derived assets & \path{report/generated/preview/}\\\bottomrule
+\end{tabular}\end{center}
 
-\begingroup
-\footnotesize
-\setlength{\tabcolsep}{3pt}
-\begin{longtable}{@{}>{\raggedright\arraybackslash}p{.18\textwidth}
-  >{\raggedright\arraybackslash}p{.33\textwidth}
-  >{\raggedright\arraybackslash}p{.29\textwidth}
-  >{\centering\arraybackslash}p{.12\textwidth}@{}}
-\toprule
-Family & Scientific question & Intended artifact & Status\\
-\midrule
-\endhead
-1D advection & Optimal $P^1$--$P^3$ convergence and Gauss--Radau
-superconvergence & Separate method tables and degree-specific curves & proposed\\
-Smooth Burgers & Accuracy for a nonlinear scalar flux before shock formation &
-Three method tables & proposed\\
-Smooth Euler wave & Accuracy for a hyperbolic system and density-error behavior &
-Three method tables & proposed\\
-2D advection & Dimensional extension on Cartesian meshes & Degree-specific
-curves and tables & proposed\\
-Triangular advection & Sensitivity to a non-tensor affine element family &
-Supplementary convergence tables & proposed\\
-Euler density wave & Two-dimensional system convergence & Density tables &
-proposed\\
-Transported vortex & Smooth Euler accuracy and wave-speed ablation & Contours,
-error table, unit-speed ablation & proposed\\
-Post-shock Burgers & Resolution after shock formation & Profile and reference
-metrics & proposed\\
-Scaled Lax & Scale invariance, wave-speed behavior, and reference error &
-Normalized panels and profile & proposed\\
-Blast wave & Unassisted failure and common-limiter robustness & Profile and
-robustness table & proposed\\
-Shu--Osher & Shock--entropy resolution & Profile with matched zoom & proposed\\
-2D Riemann & Resolution at equal mesh and equal DOFs & Separate contour and
-line-cut figures & proposed\\
-KXRCF ablation & Threshold sensitivity and selective damping &
-Indicator/profile plot and activation table & proposed\\
-Cadence ablation & Post-step versus stage-wise adapted OFDG & Error/runtime
-table & proposed\\
-Strong scaling & Fixed-work scaling on one, two, and four ranks & Speedup and
-efficiency panels & proposed\\
-\bottomrule
-\end{longtable}
-\endgroup
+The retained result metadata records commands, source fingerprints, environment,
+and run outcomes. The report export records input hashes for tracing its tables
+and figures to this dataset. The numerical executable is not rebuilt for an
+editorial revision; the current working tree may contain later documentation
+changes. Reproducing numerical measurements requires the corresponding recorded
+source and configuration, not merely the newest checkout.
 
-The dry-run expansion additionally records the exact domain, initial and
-boundary data, final time, degrees, meshes, CFL rule, time integrator, methods,
-metrics, reference check, estimated cost, priority, and intended report artifact
-for every concrete row.
+The historical full-study manifest remains a draft proposal outside this
+report's completed matrix. Its large cases, repetitions, and scaling rows are
+not an implied checklist required to interpret the preview. The separate final
+publication target remains guarded; unresolved placeholder boxes also stop a
+final-mode LaTeX build.
+
+\section{Prioritized missing-work register}
+\label{app:missing-work}
+These entries identify evidence needed for stronger claims. They are not mock
+results, and their presence does not invalidate the narrower observations
+already reported.
+\begin{center}\small
+\begin{tabular}{@{}p{.16\textwidth}p{.57\textwidth}p{.18\textwidth}@{}}\toprule
+ID & Evidence needed / claim affected & Location\\\midrule
+REF-01 & Resolved Euler reference; shock-error rankings & p.~\pageref{missing:REF-01}\\
+KX-01 & Spatial detection and thresholds; selectivity mechanism & p.~\pageref{missing:KX-01}\\
+TIME-01 & Controlled cadence; sensor-only comparison & p.~\pageref{missing:TIME-01}\\
+GEO-01 & Geometry variation; broader curved robustness & p.~\pageref{missing:GEO-01}\\\bottomrule
+\end{tabular}\end{center}
+REF-01 and KX-01 are the first priorities for interpreting shock and wave
+comparisons. TIME-01 is needed for claims attributing OFDG/OEDG differences
+specifically to their sensors. GEO-01 expands geometric evidence; native
+NURBS implementation is not required for it.
