@@ -8,7 +8,10 @@
 namespace ofdg
 {
 
-/** KXRCF troubled-cell indicator for scalar fields and systems. */
+/** KXRCF troubled-cell indicator for scalar fields and systems.
+ * Supports static polynomial curved geometry. Reconstruct after mesh changes.
+ * Native NURBS geometry is rejected; see docs/curved-validation.md.
+ */
 class KXRCFIndicator
 {
 public:

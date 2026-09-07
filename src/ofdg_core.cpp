@@ -1,4 +1,5 @@
 #include "ofdg_core.hpp"
+#include "curved_geometry.hpp"
 
 #include "mfem.hpp"
 #include "face_physics.hpp"
@@ -26,14 +27,18 @@ class OFDGProjection {
 private:
     const mfem::FiniteElement *finite_element;
     const int btype;
+    mfem::ElementTransformation *transformation;
+    int quadrature_order;
 
     int dim;
     int order;
     mfem::Geometry::Type geom;
 
 public:
-    OFDGProjection(const mfem::FiniteElement &finite_element_, int btype_)
-        : finite_element(&finite_element_), btype(btype_)
+    OFDGProjection(const mfem::FiniteElement &finite_element_, int btype_,
+                   mfem::ElementTransformation *transformation_ = nullptr)
+        : finite_element(&finite_element_), btype(btype_), transformation(transformation_),
+          quadrature_order(transformation_ ? CurvedQuadratureOrder(finite_element_.GetOrder(), *transformation_) : 2 * finite_element_.GetOrder() + 1)
     {
         dim = finite_element->GetDim();
         order = finite_element->GetOrder();
@@ -44,9 +49,11 @@ public:
     {
         mfem::DG_FECollection fec_k(k, dim, btype);
 
-        const mfem::FiniteElement *fe_k = fec_k.FiniteElementForGeometry(geom);
+        const mfem::FiniteElement *fe_k =
+            k == order ? finite_element : fec_k.FiniteElementForGeometry(geom);
 
-        const mfem::IntegrationRule &ir = mfem::IntRules.Get(fe_k->GetGeomType(), 2 * fe_k->GetOrder() + 1);
+        const mfem::IntegrationRule &ir = transformation ?
+            CurvedRule(geom, quadrature_order) : mfem::IntRules.Get(geom, quadrature_order);
 
         mfem::DenseMatrix M_k(fe_k->GetDof());
         M_k = 0.0;
@@ -58,7 +65,9 @@ public:
 
             fe_k->CalcShape(ip, shape_k);
 
-            mfem::AddMult_a_VVt(ip.weight, shape_k, M_k);
+            if (transformation) { transformation->SetIntPoint(&ip); }
+            const double weight = ip.weight * (transformation ? transformation->Weight() : 1.0);
+            mfem::AddMult_a_VVt(weight, shape_k, M_k);
         }
 
         return M_k;
@@ -69,12 +78,13 @@ public:
         mfem::DG_FECollection fec_k(k, dim, btype);
         mfem::DG_FECollection fec_l(l, dim, btype);
 
-        const mfem::FiniteElement *fe_k = fec_k.FiniteElementForGeometry(geom);
+        const mfem::FiniteElement *fe_k =
+            k == order ? finite_element : fec_k.FiniteElementForGeometry(geom);
 
         const mfem::FiniteElement *fe_l = fec_l.FiniteElementForGeometry(geom);
 
         const mfem::IntegrationRule &ir =
-            mfem::IntRules.Get(fe_k->GetGeomType(), 2 * std::max(fe_k->GetOrder(), fe_l->GetOrder()) + 1);
+            (transformation ? CurvedRule(fe_k->GetGeomType(), quadrature_order) : mfem::IntRules.Get(fe_k->GetGeomType(), quadrature_order));
 
         mfem::DenseMatrix B(fe_l->GetDof(), fe_k->GetDof());
         B = 0.0;
@@ -88,7 +98,9 @@ public:
             fe_k->CalcShape(ip, shape_k);
             fe_l->CalcShape(ip, shape_l);
 
-            mfem::AddMult_a_VWt(ip.weight, shape_l, shape_k, B);
+            if (transformation) { transformation->SetIntPoint(&ip); }
+            const double weight = ip.weight * (transformation ? transformation->Weight() : 1.0);
+            mfem::AddMult_a_VWt(weight, shape_l, shape_k, B);
         }
 
         return B;
@@ -209,7 +221,7 @@ public:
     }
 };
 
-/** Operators for one affine finite-element signature. */
+/** Shared reference operators and element-specific curved operators. */
 
 struct OFDGDerivativeNode {
     int degree = 0;
@@ -226,17 +238,19 @@ private:
     int ndof;
     mfem::Geometry::Type geom;
 
-    OFDGProjection projection;
+    const OFDGOperators *reference;
 
     std::vector<mfem::DenseMatrix> S_l;
     std::vector<mfem::DenseMatrix> reference_derivatives;
     std::vector<OFDGDerivativeNode> derivative_nodes;
 
+    std::vector<mfem::DenseMatrix> projected_derivatives;
+    int quadrature_order;
     mfem::Vector sensor_common;
 
     mfem::DenseMatrix volume_evaluation;
-    mfem::Vector volume_reference_weights;
-    double reference_volume = 0.0;
+    mfem::Vector volume_weights;
+    double integration_volume = 0.0;
 
     static void GenerateMultiIndices(int dim, int pos, int remaining, std::vector<int> &alpha,
                                      std::vector<std::vector<int>> &out)
@@ -268,7 +282,7 @@ private:
         return key;
     }
 
-    void BuildProjectionOperators()
+    void BuildProjectionOperators(const OFDGProjection &projection)
     {
         mfem::DenseMatrix M_k = projection.AssembleMk(order);
         mfem::DenseMatrix M_k_inv = M_k;
@@ -349,20 +363,21 @@ private:
         }
     }
 
-    void BuildVolumeEvaluation()
+    void BuildVolumeEvaluation(mfem::ElementTransformation *transformation)
     {
         const mfem::FiniteElement *fe = finite_element;
 
-        const mfem::IntegrationRule &ir = mfem::IntRules.Get(geom, 2 * order + 1);
+        const mfem::IntegrationRule &ir = transformation ?
+            CurvedRule(geom, quadrature_order) : mfem::IntRules.Get(geom, quadrature_order);
 
         const int nq = ir.GetNPoints();
 
         volume_evaluation.SetSize(nq, ndof);
-        volume_reference_weights.SetSize(nq);
+        volume_weights.SetSize(nq);
 
         mfem::Vector shape(ndof);
 
-        reference_volume = 0.0;
+        integration_volume = 0.0;
 
         for (int q = 0; q < nq; ++q) {
             const mfem::IntegrationPoint &ip = ir.IntPoint(q);
@@ -373,23 +388,38 @@ private:
                 volume_evaluation(q, i) = shape(i);
             }
 
-            volume_reference_weights(q) = ip.weight;
-            reference_volume += ip.weight;
+            if (transformation) { transformation->SetIntPoint(&ip); }
+            const double weight = ip.weight * (transformation ? transformation->Weight() : 1.0);
+            volume_weights(q) = weight;
+            integration_volume += weight;
         }
     }
 
 public:
-    OFDGOperators(const mfem::FiniteElement &finite_element_, int btype)
+    OFDGOperators(const mfem::FiniteElement &finite_element_, int btype,
+                  mfem::ElementTransformation *transformation = nullptr,
+                  const OFDGOperators *reference_ = nullptr)
         : finite_element(&finite_element_), dim(finite_element_.GetDim()),
           order(finite_element_.GetOrder()), ndof(finite_element_.GetDof()),
-          geom(finite_element_.GetGeomType()), projection(finite_element_, btype)
+          geom(finite_element_.GetGeomType()), reference(reference_),
+          quadrature_order(transformation ? CurvedQuadratureOrder(order, *transformation) : 2 * order + 1)
     {
-        BuildProjectionOperators();
-        BuildReferenceDerivatives();
-        BuildDerivativeDAG();
-        BuildSensorConstants();
-        BuildVolumeEvaluation();
+        OFDGProjection projection(finite_element_, btype, transformation);
+        BuildProjectionOperators(projection);
+        if (!reference) {
+            BuildReferenceDerivatives();
+            BuildDerivativeDAG();
+            BuildSensorConstants();
+        }
+        BuildVolumeEvaluation(transformation);
+        if (transformation) { projected_derivatives = ProjectedPhysicalDerivatives(
+            *finite_element, *transformation, quadrature_order); }
     }
+
+    bool Curved() const { return !projected_derivatives.empty(); }
+    int QuadratureOrder() const { return quadrature_order; }
+    const std::vector<mfem::DenseMatrix> &ProjectedDerivatives() const
+    { return projected_derivatives; }
 
     int Dim() const
     {
@@ -413,7 +443,7 @@ public:
 
     int DerivativeCount() const
     {
-        return static_cast<int>(derivative_nodes.size());
+        return static_cast<int>(DerivativeNodes().size());
     }
 
     const mfem::DenseMatrix &S(int l) const
@@ -423,17 +453,17 @@ public:
 
     const std::vector<mfem::DenseMatrix> &ReferenceDerivatives() const
     {
-        return reference_derivatives;
+        return reference ? reference->ReferenceDerivatives() : reference_derivatives;
     }
 
     const std::vector<OFDGDerivativeNode> &DerivativeNodes() const
     {
-        return derivative_nodes;
+        return reference ? reference->DerivativeNodes() : derivative_nodes;
     }
 
     double SensorCommon(int l) const
     {
-        return sensor_common(l);
+        return reference ? reference->SensorCommon(l) : sensor_common(l);
     }
 
     const mfem::DenseMatrix &VolumeEvaluation() const
@@ -441,14 +471,14 @@ public:
         return volume_evaluation;
     }
 
-    const mfem::Vector &VolumeReferenceWeights() const
+    const mfem::Vector &VolumeWeights() const
     {
-        return volume_reference_weights;
+        return volume_weights;
     }
 
-    double ReferenceVolume() const
+    double IntegrationVolume() const
     {
-        return reference_volume;
+        return integration_volume;
     }
 
 };
@@ -485,6 +515,7 @@ class OFDGOperatorRepository
 {
 private:
     int basis_type;
+    std::unordered_map<int, std::unique_ptr<OFDGOperators>> curved_entries;
     std::unordered_map<OFDGElementSignature,
                        std::unique_ptr<OFDGOperators>,
                        OFDGElementSignatureHash> entries;
@@ -504,8 +535,19 @@ public:
     {
     }
 
-    const OFDGOperators &Get(const mfem::FiniteElement &finite_element)
+    const OFDGOperators &Get(const mfem::FiniteElement &finite_element,
+                             mfem::ElementTransformation *transformation = nullptr,
+                             int element_id = -1)
     {
+        if (transformation && !IsAffine(*transformation)) {
+            auto &entry = curved_entries[element_id];
+            if (!entry) {
+                const auto &reference = Get(finite_element);
+                entry = std::make_unique<OFDGOperators>(
+                    finite_element, basis_type, transformation, &reference);
+            }
+            return *entry;
+        }
         const OFDGElementSignature signature = Signature(finite_element);
 
         auto entry = entries.find(signature);
@@ -517,14 +559,16 @@ public:
         return *entry->second;
     }
 
-    const OFDGOperators &Find(const mfem::FiniteElement &finite_element) const
+    const OFDGOperators &Find(const mfem::FiniteElement &finite_element, int element_id) const
     {
+        auto curved = curved_entries.find(element_id);
+        if (curved != curved_entries.end()) { return *curved->second; }
         return *entries.find(Signature(finite_element))->second;
     }
 };
 
-// Geometry is immutable after construction. Affine J^{-1} and det(J) may
-// differ between elements, including elements of different signatures.
+// Geometry is immutable after construction. Affine maps use constant metrics;
+// curved maps store physically weighted integration data in their operators.
 
 class OFDGMeshData {
 public:
@@ -559,7 +603,7 @@ private:
         for (int e = 0; e < ne; ++e) {
             ElementData &element = elements[e];
             const mfem::FiniteElement &finite_element = *fes->GetFE(e);
-            element.operators = &repository.Get(finite_element);
+            element.operators = &repository.Get(finite_element, fes->GetMesh()->GetElementTransformation(e), e);
             const OFDGOperators &operators = *element.operators;
             const int dim = operators.Dim();
             const int order = operators.Order();
@@ -589,9 +633,12 @@ private:
                 }
             }
 
-            element.jacobian_weight = T->Weight();
+            element.jacobian_weight = operators.Curved() ? 1.0 : T->Weight();
 
-            element.volume = operators.ReferenceVolume() * element.jacobian_weight;
+            element.volume = operators.IntegrationVolume() * element.jacobian_weight;
+            if (operators.Curved()) {
+                element.h = std::pow(element.volume / mfem::Geometry::Volume[operators.Geometry()], 1.0 / dim);
+            }
 
             element.sensor_prefactors.resize(order + 1);
             double h_power = 1.0 / element.h;
@@ -739,6 +786,18 @@ private:
                              bool first,
                              const OFDGOperators &operators) const
     {
+        if (operators.Curved()) {
+            const auto &rule = CurvedRule(transformations->GetGeometryType(),
+                FaceQuadratureOrder(operators.Order(), *transformations));
+            double area = 0.0;
+            for (int q = 0; q < rule.GetNPoints(); ++q) {
+                transformations->Face->SetIntPoint(&rule.IntPoint(q));
+                area += rule.IntPoint(q).weight * transformations->Face->Weight();
+            }
+            return operators.IntegrationVolume() / area *
+                mfem::Geometry::Volume[transformations->GetGeometryType()] /
+                mfem::Geometry::Volume[operators.Geometry()];
+        }
         const mfem::IntegrationPoint &face_center_reference =
             mfem::Geometries.GetCenter(transformations->GetGeometryType());
         transformations->Face->SetIntPoint(&face_center_reference);
@@ -794,7 +853,7 @@ private:
             // faces retain a proper face rule until a published 3D OEDG rule
             // is available.
             const int order = std::max(operators1.Order(), operators2.Order());
-            rule = &mfem::IntRules.Get(Tr->GetGeometryType(), 2 * order + 1);
+            rule = &detail::FaceRule(order, *Tr);
         }
         const mfem::IntegrationRule &ir = *rule;
 
@@ -807,11 +866,7 @@ private:
         mfem::Vector shape1(operators1.NDof());
         mfem::Vector shape2(operators2.NDof());
 
-        double weight_sum = 0.0;
-
-        for (int q = 0; q < nq; ++q) {
-            weight_sum += ir.IntPoint(q).weight;
-        }
+        normalized_weights = NormalizedPhysicalFaceWeights(*Tr, ir);
 
         for (int q = 0; q < nq; ++q) {
             const mfem::IntegrationPoint &ip = ir.IntPoint(q);
@@ -832,13 +887,6 @@ private:
                 evaluation2(q, i) = shape2(i);
             }
 
-            // For affine faces:
-            //
-            //     (1 / |f|) int_f jump^2 dS
-            //
-            // has the constant physical face Jacobian in numerator and
-            // denominator, so it cancels.
-            normalized_weights(q) = ip.weight / weight_sum;
         }
     }
 
@@ -984,8 +1032,8 @@ struct OFDGDerivativeState {
     }
 };
 
-// D_xj = sum_r (J^{-1})_{rj} D_xi_r. Each element state is rebuilt once per
-// solution and then reused by its adjacent faces.
+// Affine derivatives use the constant inverse Jacobian; curved derivatives
+// use cached L2 projections. Each state is rebuilt once per solution.
 
 class OFDGDerivativeProvider {
 public:
@@ -1006,6 +1054,7 @@ private:
     {
         const OFDGOperators &operators =
             *mesh_data.Element(element).operators;
+        if (operators.Curved()) { return; }
         const int dim = operators.Dim();
         const int ndof = operators.NDof();
         const auto &D_ref = operators.ReferenceDerivatives();
@@ -1044,7 +1093,8 @@ private:
         }
 
         const auto &nodes = operators.DerivativeNodes();
-        const auto &D = physical_derivatives[element];
+        const auto &D = operators.Curved() ? operators.ProjectedDerivatives() :
+                        physical_derivatives[element];
 
         for (int node = 1; node < static_cast<int>(nodes.size()); ++node) {
             const OFDGDerivativeNode &info = nodes[node];
@@ -1061,28 +1111,29 @@ private:
     {
         state.root_vector = local_state;
 
-        transformation.SetIntPoint(&mfem::Geometries.GetCenter(operators.Geometry()));
-        const mfem::DenseMatrix &inverse_jacobian = transformation.InverseJacobian();
-        const auto &reference_derivatives = operators.ReferenceDerivatives();
-        const int dim = operators.Dim();
-        const int ndof = operators.NDof();
-        std::vector<mfem::DenseMatrix> physical_derivatives(dim);
-
-        for (int direction = 0; direction < dim; ++direction) {
-            physical_derivatives[direction].SetSize(ndof);
-            physical_derivatives[direction] = 0.0;
-            for (int reference_direction = 0;
-                 reference_direction < dim; ++reference_direction) {
-                physical_derivatives[direction].Add(
-                    inverse_jacobian(reference_direction, direction),
-                    reference_derivatives[reference_direction]);
+        std::vector<mfem::DenseMatrix> affine_derivatives;
+        if (!operators.Curved()) {
+            transformation.SetIntPoint(&mfem::Geometries.GetCenter(operators.Geometry()));
+            const mfem::DenseMatrix &inverse_jacobian = transformation.InverseJacobian();
+            const auto &reference_derivatives = operators.ReferenceDerivatives();
+            const int dim = operators.Dim();
+            affine_derivatives.resize(dim);
+            for (int direction = 0; direction < dim; ++direction) {
+                affine_derivatives[direction].SetSize(operators.NDof());
+                affine_derivatives[direction] = 0.0;
+                for (int reference_direction = 0; reference_direction < dim; ++reference_direction) {
+                    affine_derivatives[direction].Add(
+                        inverse_jacobian(reference_direction, direction),
+                        reference_derivatives[reference_direction]);
+                }
             }
         }
-
+        const auto &derivatives = operators.Curved() ? operators.ProjectedDerivatives() :
+                                  affine_derivatives;
         const auto &nodes = operators.DerivativeNodes();
         for (int node = 1; node < static_cast<int>(nodes.size()); ++node) {
             const OFDGDerivativeNode &info = nodes[node];
-            mfem::Mult(physical_derivatives[info.physical_direction],
+            mfem::Mult(derivatives[info.physical_direction],
                  state.coefficient_views[info.parent],
                  state.coefficient_views[node]);
         }
@@ -1179,8 +1230,8 @@ private:
             const auto &element = mesh_data.Element(e);
             const detail::OFDGOperators &operators = *element.operators;
             const mfem::DenseMatrix &E = operators.VolumeEvaluation();
-            const mfem::Vector &reference_weights =
-                operators.VolumeReferenceWeights();
+            const mfem::Vector &integration_weights =
+                operators.VolumeWeights();
             const int nq = E.Height();
 
             mesh_data.GatherElement(x, e, volume.element_data,
@@ -1191,7 +1242,7 @@ private:
             total_volume += element.volume;
 
             for (int q = 0; q < nq; ++q) {
-                const double physical_weight = reference_weights(q) * element.jacobian_weight;
+                const double physical_weight = integration_weights(q) * element.jacobian_weight;
 
                 for (int c = 0; c < ncomp; ++c) {
                     const double value = volume.values(q, c);
@@ -1243,16 +1294,17 @@ private:
     {
         mean.SetSize(ncomp);
         mean = 0.0;
-        const mfem::Vector &weights = operators.VolumeReferenceWeights();
-        const mfem::IntegrationRule &rule = mfem::IntRules.Get(
-            operators.Geometry(), 2 * operators.Order() + 1);
+        const mfem::Vector &weights = operators.VolumeWeights();
+        const mfem::IntegrationRule &rule = operators.Curved() ? detail::CurvedRule(
+            operators.Geometry(), operators.QuadratureOrder()) : mfem::IntRules.Get(
+            operators.Geometry(), operators.QuadratureOrder());
         for (int q = 0; q < rule.GetNPoints(); ++q) {
             const mfem::IntegrationPoint &point = rule.IntPoint(q);
             for (int c = 0; c < ncomp; ++c) {
                 mean(c) += weights(q) * state.GetValue(element, point, c + 1);
             }
         }
-        mean /= operators.ReferenceVolume();
+        mean /= operators.IntegrationVolume();
     }
 #endif
 
@@ -1300,7 +1352,7 @@ public:
         const mfem::FiniteElementSpace *fes_, int btype_,
         std::shared_ptr<const FacePhysics> face_physics_,
         detail::OFDGSensorOptions sensor_options_)
-        : fes(fes_),
+        : fes(detail::RequireSupportedGeometry(fes_)),
           face_physics(std::move(face_physics_)),
           sensor_options(sensor_options_), operator_repository(btype_),
           dim(fes_->GetFE(0)->GetDim()), order(fes_->GetFE(0)->GetOrder()),
@@ -1316,7 +1368,8 @@ public:
             for (int neighbor = 0;
                  neighbor < parallel_mesh->GetNFaceNeighborElements();
                  ++neighbor) {
-                operator_repository.Get(*parallel_space->GetFaceNbrFE(neighbor));
+                operator_repository.Get(*parallel_space->GetFaceNbrFE(neighbor),
+                    parallel_mesh->GetFaceNbrElementTransformation(neighbor), fes->GetNE() + neighbor);
             }
         }
 #endif
@@ -1349,7 +1402,7 @@ private:
         beta_1 = 0.0;
         beta_2 = 0.0;
 
-        const mfem::IntegrationRule &ir = mfem::IntRules.Get(Tr->GetGeometryType(), 2 * order + 1);
+        const mfem::IntegrationRule &ir = detail::FaceRule(order, *Tr);
 
         for (int q = 0; q < ir.GetNPoints(); ++q) {
             const mfem::IntegrationPoint &ip = ir.IntPoint(q);
@@ -1497,7 +1550,7 @@ private:
             const detail::OFDGOperators &local_operators =
                 *mesh_data.Element(local_element).operators;
             const detail::OFDGOperators &neighbor_operators =
-                operator_repository.Find(neighbor_finite_element);
+                operator_repository.Find(neighbor_finite_element, fes->GetNE() + neighbor_element);
             detail::OFDGDerivativeState neighbor_derivatives(
                 neighbor_operators.NDof(), ncomp,
                 neighbor_operators.DerivativeCount());

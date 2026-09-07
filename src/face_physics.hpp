@@ -6,10 +6,23 @@
 #include <cmath>
 #include <memory>
 #include <string>
+#include <limits>
 
 namespace ofdg
 {
 
+
+namespace detail
+{
+// A tangential flow must not switch KXRCF's inflow area because of roundoff
+// in curved normals. Scale the test by speed, preserving velocity scaling.
+inline mfem::real_t ResolvedNormalTransport(mfem::real_t transport,
+                                           mfem::real_t speed_scale)
+{
+   return std::abs(transport) <= 128 * std::numeric_limits<mfem::real_t>::epsilon() * speed_scale
+      ? 0.0 : transport;
+}
+} // namespace detail
 
 /** Face-local propagation information used by OFDG and KXRCF.
  *
@@ -93,7 +106,9 @@ public:
 
       return {std::abs(normal1),
               state2.Size() > 0 ? std::abs(normal2) : 0.0,
-              state2.Size() > 0 ? 0.5 * (normal1 + normal2) : normal1};
+              detail::ResolvedNormalTransport(
+                 state2.Size() > 0 ? 0.5 * (normal1 + normal2) : normal1,
+                 state2.Size() > 0 ? 0.5 * (velocity1.Norml2() + velocity2.Norml2()) : velocity1.Norml2())};
    }
 };
 
@@ -113,14 +128,16 @@ public:
 
       if (state2.Size() == 0)
       {
-         return {std::abs(speed1), 0.0, speed1};
+         return {std::abs(speed1), 0.0, detail::ResolvedNormalTransport(
+            speed1, std::abs(state1(0)) * std::sqrt(unit_normal.Size()))};
       }
 
       MFEM_VERIFY(state2.Size() == 1,
                   "Burgers face physics expects one state component.");
       const mfem::real_t speed2 = state2(0) * direction;
       return {std::abs(speed1), std::abs(speed2),
-              0.5 * (speed1 + speed2)};
+              detail::ResolvedNormalTransport(0.5 * (speed1 + speed2),
+                 0.5 * (std::abs(state1(0)) + std::abs(state2(0))) * std::sqrt(unit_normal.Size()))};
    }
 };
 
@@ -225,7 +242,7 @@ public:
       if (state2.Size() == 0)
       {
          return {std::abs(normal1) + primitive1.sound_speed,
-                 0.0, normal1};
+                 0.0, detail::ResolvedNormalTransport(normal1, primitive1.velocity.Norml2())};
       }
 
       MFEM_VERIFY(DecodeEulerState(state2, dim, gamma, primitive2, &reason),
@@ -235,7 +252,8 @@ public:
 
       return {std::abs(normal1) + primitive1.sound_speed,
               std::abs(normal2) + primitive2.sound_speed,
-              0.5 * (normal1 + normal2)};
+              detail::ResolvedNormalTransport(0.5 * (normal1 + normal2),
+                 0.5 * (primitive1.velocity.Norml2() + primitive2.velocity.Norml2()))};
    }
 };
 

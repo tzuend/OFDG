@@ -6,12 +6,14 @@ OFDG, OEDG, and KXRCF now use the finite element and actual DOF count from each
 side of every face. Their affine path has no geometry allow-list. Verification
 covers mixed triangle--quadrilateral meshes and MFEM's mixed
 tetrahedron--hexahedron--prism mesh, including unequal-signature MPI faces.
-The remaining production geometry task is static curvilinear mappings.
+Static polynomial curvilinear mappings are implemented for OFDG and KXRCF.
+Exact native NURBS support remains blocked in the pinned MFEM two-sided face
+path; see [curved-validation.md](curved-validation.md).
 
 The completed mixed-element refactor remains separate from curved-map changes
 and preserves the public `ofdg::` interfaces and homogeneous fingerprints.
 
-For curvilinear elements, repeated physical derivatives will be defined through
+For curvilinear elements, repeated physical derivatives are defined through
 recursive element-local (L^2) projection of first physical derivatives. This
 is the selected portable extension:
 
@@ -98,6 +100,13 @@ approximating
 with a boundary rule chosen from the geometry order; affine convex elements
 therefore reproduce the current vertex result.
 
+Reference derivative matrices, derivative DAGs, and sensor constants remain
+shared per finite-element signature. Physical projectors, volume evaluation,
+and projected derivative matrices are cached separately per curved element,
+including MPI neighbors. Positive Duffy quadrature avoids high-order simplex
+cancellation; triangular rules are symmetrized over all barycentric permutations
+so MPI face orientation does not change the integration samples.
+
 Caches remain immutable. Mesh topology, nodal geometry, polynomial order, or
 finite-element-space sequence changes invalidate every cache and require
 reconstruction. Arbitrary Lagrangian–Eulerian mesh motion is explicitly out of
@@ -115,7 +124,7 @@ scope for the first curved implementation.
 - Normalize curved face jumps with physical face measure and verify equal and
   opposite two-sided traces for a continuous manufactured state.
 - Retain the verified mixed local and MPI cases for all three filters.
-- Repeat the relevant filter and positivity checks on MFEM NURBS meshes.
+- Repeat the relevant filter and positivity checks on explicitly projected MFEM NURBS meshes; record the native NURBS face limitation separately.
 - Document that filters must be reconstructed after mesh or nodal-coordinate
   changes.
 

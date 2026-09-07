@@ -27,7 +27,7 @@ using namespace std;
 namespace
 {
 
-Mesh PeriodicMesh(int dimension, int elements, bool triangular)
+Mesh PeriodicMesh(int dimension, int elements, bool triangular, bool curved)
 {
    if (dimension == 1)
    {
@@ -42,6 +42,15 @@ Mesh PeriodicMesh(int dimension, int elements, bool triangular)
                                       triangular ? Element::TRIANGLE
                                                  : Element::QUADRILATERAL,
                                       true, 1.0, 1.0);
+   if (curved) {
+      mesh.SetCurvature(3);
+      mesh.Transform([](const Vector &x, Vector &y) {
+         y = x;
+         const real_t displacement = 0.04 * std::sin(2*M_PI*x(0)) * std::sin(2*M_PI*x(1));
+         y(0) += displacement;
+         y(1) += displacement;
+      });
+   }
    Vector x_translation({1.0, 0.0});
    Vector y_translation({0.0, 1.0});
    std::vector<Vector> translations = {x_translation, y_translation};
@@ -182,6 +191,7 @@ int main(int argc, char *argv[])
    string cadence_name = "auto";
    string profile_prefix;
    bool triangular = false;
+   bool curved = false;
    bool radau_initialization = false;
    bool visualization = false;
    int vis_steps = 50;
@@ -221,6 +231,8 @@ int main(int argc, char *argv[])
                   "--gauss-radau-initialization", "-l2-init",
                   "--l2-initialization",
                   "Use the 1D right Gauss--Radau projection.");
+   args.AddOption(&curved, "-curved", "--curved-mesh", "-straight", "--straight-mesh",
+                  "Use a static cubic deformation of the periodic 2D mesh.");
    args.ParseCheck();
 
    MFEM_VERIFY(dimension == 1 || dimension == 2,
@@ -232,7 +244,8 @@ int main(int argc, char *argv[])
 
    MFEM_VERIFY(!radau_initialization || dimension == 1,
                "Gauss--Radau initialization is a 1D experiment.");
-   Mesh serial_mesh = PeriodicMesh(dimension, elements, triangular);
+   MFEM_VERIFY(!curved || dimension == 2, "The curved fixture is two-dimensional.");
+   Mesh serial_mesh = PeriodicMesh(dimension, elements, triangular, curved);
    ParMesh mesh(MPI_COMM_WORLD, serial_mesh);
    DG_FECollection collection(order, dimension);
    ParFiniteElementSpace space(&mesh, &collection);

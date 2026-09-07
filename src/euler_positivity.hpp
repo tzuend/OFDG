@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mfem.hpp"
+#include "curved_geometry.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -35,9 +36,18 @@ private:
     double density_floor;
     double pressure_floor;
     std::vector<std::vector<int>> local_faces;
+    std::vector<int> quadrature_orders;
 #ifdef MFEM_USE_MPI
     std::vector<std::vector<int>> shared_faces;
 #endif
+
+    const mfem::IntegrationRule &EvaluationRule(
+        int element, mfem::Geometry::Type geometry) const
+    {
+        const int quadrature = quadrature_orders[element];
+        return quadrature == 2 * order + 1 ? mfem::IntRules.Get(geometry, quadrature) :
+            ofdg::detail::CurvedRule(geometry, quadrature);
+    }
 
     static double Pressure(const mfem::Vector &state, int dimension,
                            double heat_capacity_ratio)
@@ -59,7 +69,7 @@ private:
     {
         const mfem::FiniteElement *fe = fes->GetFE(element);
         const mfem::IntegrationRule &volume_rule =
-            mfem::IntRules.Get(fe->GetGeomType(), 2 * order + 1);
+            EvaluationRule(element, fe->GetGeomType());
         for (int q = 0; q < volume_rule.GetNPoints(); ++q) {
             function(volume_rule.IntPoint(q));
         }
@@ -69,8 +79,7 @@ private:
             mfem::FaceElementTransformations *transformations =
                 mesh->GetFaceElementTransformations(face);
             if (!transformations) { continue; }
-            const mfem::IntegrationRule &face_rule = mfem::IntRules.Get(
-                transformations->GetGeometryType(), 2 * order + 1);
+            const mfem::IntegrationRule &face_rule = EvaluationRule(element, transformations->GetGeometryType());
             for (int q = 0; q < face_rule.GetNPoints(); ++q) {
                 transformations->SetAllIntPoints(&face_rule.IntPoint(q));
                 if (transformations->Elem1No == element) {
@@ -85,8 +94,7 @@ private:
             for (int face : shared_faces[element]) {
                 mfem::FaceElementTransformations *transformations =
                     parallel_mesh->GetSharedFaceTransformations(face, false);
-                const mfem::IntegrationRule &face_rule = mfem::IntRules.Get(
-                    transformations->GetGeometryType(), 2 * order + 1);
+                const mfem::IntegrationRule &face_rule = EvaluationRule(element, transformations->GetGeometryType());
                 for (int q = 0; q < face_rule.GetNPoints(); ++q) {
                     transformations->SetAllIntPoints(&face_rule.IntPoint(q));
                     function(transformations->GetElement1IntPoint());
@@ -101,7 +109,7 @@ public:
                            double heat_capacity_ratio,
                            double density_tolerance = 1e-12,
                            double pressure_tolerance = 1e-12)
-        : fes(space), dim(space->GetMesh()->Dimension()),
+        : fes(ofdg::detail::RequireSupportedGeometry(space)), dim(space->GetMesh()->Dimension()),
           ncomp(space->GetVDim()), order(space->GetFE(0)->GetOrder()),
           gamma(heat_capacity_ratio), density_floor(density_tolerance),
           pressure_floor(pressure_tolerance)
@@ -112,6 +120,12 @@ public:
         MFEM_VERIFY(gamma > 1.0, "Euler positivity limiter requires gamma > 1.");
 
         mfem::Mesh *mesh = fes->GetMesh();
+        quadrature_orders.resize(fes->GetNE());
+        for (int e = 0; e < fes->GetNE(); ++e) {
+            auto *map = mesh->GetElementTransformation(e);
+            quadrature_orders[e] = ofdg::detail::IsAffine(*map) ? 2 * order + 1 :
+                ofdg::detail::CurvedQuadratureOrder(order, *map);
+        }
         local_faces.resize(fes->GetNE());
         for (int face = 0; face < mesh->GetNumFaces(); ++face) {
             mfem::FaceElementTransformations *transformations =
@@ -173,7 +187,7 @@ public:
             mfem::ElementTransformation *transformation =
                 fes->GetMesh()->GetElementTransformation(element);
             const mfem::IntegrationRule &mean_rule =
-                mfem::IntRules.Get(fe->GetGeomType(), 2 * order + 1);
+                EvaluationRule(element, fe->GetGeomType());
             shape.SetSize(ndof);
             for (int q = 0; q < mean_rule.GetNPoints(); ++q) {
                 const mfem::IntegrationPoint &ip = mean_rule.IntPoint(q);

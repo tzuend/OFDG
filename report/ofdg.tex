@@ -571,7 +571,7 @@ second form is used by \texttt{CompDecay}.
 The implementation is a small compiled MFEM library.  It assumes that the
 finite element space is nonempty and discontinuous, that $k\geq 1$, and that
 all elements have the same order and dimension.  Geometry and local degree-of-
-freedom counts may differ.  All element maps are assumed affine, and the mesh
+freedom counts may differ.  Element maps may be affine or static polynomial curvilinear, and the mesh
 must remain unchanged during the lifetime of the OFDG object.  These conditions
 are preconditions rather than properties checked at run time.
 The public header exposes the OFDG constructors, stabilization, and decay only.
@@ -582,9 +582,12 @@ Different elements need not have the same Jacobian.  They may have different
 sizes, reference geometries, and local coefficient counts, and may be
 translated, rotated, or affinely skewed.  An immutable repository constructs
 the required projection and derivative operators once per finite-element
-signature.  General bilinear
-quadrilaterals and curved elements are outside the present scope because their
-inverse Jacobians vary within an element.
+signature.  Non-affine elements additionally own physical projection and
+projected-derivative matrices assembled with geometry-dependent quadrature.
+Native NURBS geometry is rejected: the pinned MFEM implementation does not
+support the two-sided NURBS face transformations required here.  Projecting such
+a mesh to polynomial nodes changes the rational geometry approximately and is
+therefore a distinct supported case.
 
 More explicitly, MFEM describes a physical element by a map from a standard
 reference element.  The affine assumption means that this map has the form
@@ -596,10 +599,10 @@ reference element.  The affine assumption means that this map has the form
 where $\boldsymbol{\xi}$ is a reference coordinate, $\boldsymbol{b}_K$ is a
 translation, and the matrix $J_K$ is constant within $K$.  The matrix may differ
 from one element to another.  Its scaling, rotation, and shear describe the size,
-orientation, and skew of the physical element.  What the implementation requires
-is therefore a constant Jacobian on each individual element, not one globally
-identical Jacobian for the whole mesh.  The characteristic length $h_K$ in the
-damping rate is obtained from MFEM's element-size routine for that element.
+orientation, and skew of the physical element.  The affine path therefore uses a constant Jacobian on each individual element,
+not one globally identical Jacobian.  For curved maps the volume is integrated
+and the damping length is $h_K=(|K|/|\widehat K|)^{1/d}$, agreeing with the
+existing affine determinant scale.
 
 \subsubsection{Projection matrices}
 
@@ -635,8 +638,10 @@ form the corresponding polynomial-space projections.
 
 On an affine element, all three mass
 and coupling matrices contain the same constant physical Jacobian factor, which
-cancels in $S_r$.  Therefore the projection matrices are assembled on the first
-element and reused on every element even when the element Jacobians differ.
+cancels in $S_r$.  Therefore affine projection matrices are reused per finite-element signature.
+For curved elements every mass and coupling matrix includes the physical
+Jacobian weight at each quadrature point.  The lower-order spaces are mapped
+reference polynomial spaces; their physical $L^2$ projectors remain nested.
 
 \subsubsection{Coefficient-to-coefficient derivatives}
 
@@ -668,6 +673,18 @@ $\boldsymbol{x}=T_K(\boldsymbol{\xi})$, the physical derivative matrices are
 The inverse Jacobian $J_K^{-1}$ is read once at the reference-element centre and
 one set of matrices $\{D_{x_j}^{K}\}_{j=1}^d$ is stored for every element.
 
+For non-affine maps, the code instead assembles
+\begin{equation}
+  M_K D_{K,j}=G_{K,j},\qquad
+  (G_{K,j})_{ab}=\int_K\phi_a\,\partial_{x_j}\phi_b\,dx.
+\end{equation}
+Repeated application represents successively projected physical derivatives,
+not exact higher derivatives of the mapped function.  The derivative graph
+fixes the application order; projected mixed derivatives need not commute.
+Positive, overintegrated quadrature is used for curved elements.  Triangular
+face rules include all barycentric permutations to make the sampling invariant
+under MPI face orientation.
+
 Only first reference derivatives of the supplied finite-element basis are
 requested from MFEM.  Repeated application of the resulting coefficient
 operators generates every higher derivative needed by OFDG.  In framework
@@ -692,17 +709,17 @@ is
 MFEM remains the sole source of mesh connectivity.  The setup loops over MFEM
 face numbers and obtains the two adjacent elements from MFEM's face-transformation
 data.  Boundary faces are skipped.  For each
-interior face, a quadrature rule of order $2k+1$ is selected for the MFEM face
-geometry.  The following data are cached directly at the MFEM face index:
+interior affine face, a quadrature rule of order $2k+1$ is selected.  Curved
+faces use an overintegrated rule that also depends on the geometry order.  The following data are cached directly at the MFEM face index:
 \begin{equation}
   (E_F^-)_{qi}=\phi_i(\boldsymbol{\xi}_{F,q}^-),
   \qquad
   (E_F^+)_{qi}=\phi_i(\boldsymbol{\xi}_{F,q}^+),
   \qquad
-  \widehat{\omega}_q=\frac{\omega_q}{\sum_p\omega_p}.
+  \widehat{\omega}_q=\frac{\omega_q J_F(\xi_q)}{\sum_p\omega_p J_F(\xi_p)}.
   \label{eq:ofdg-face-evaluation-matrices}
 \end{equation}
-For affine faces the physical face Jacobian is constant and cancels between the
+Here $J_F$ is the physical face Jacobian.  For affine faces it is constant and cancels between the
 integral and $|F|$ in~\eqref{eq:ofdg-face-jump}; hence the normalized reference
 weights $\widehat{\omega}_q$ are sufficient.  All derivative traces and all
 components on one side of a face are evaluated together in one dense matrix

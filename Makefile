@@ -23,7 +23,7 @@ DEBUG_FLAGS := -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined
 RELEASE_FLAGS := -O3 -DNDEBUG
 SANITIZER_LIBS := -fsanitize=address,undefined
 
-TEST_NAMES := test_ofdg_geometry test_mixed_geometry test_kxrcf \
+TEST_NAMES := test_curved_geometry test_ofdg_geometry test_mixed_geometry test_kxrcf \
 	test_ofdg_regression test_oedg_2024 \
 	test_euler_positivity test_face_physics test_rk4_cadence test_experiment_rk
 DEBUG_TESTS := $(addprefix $(DEBUG_TEST_DIR)/,$(TEST_NAMES))
@@ -33,7 +33,7 @@ DEBUG_EXAMPLES := $(addprefix $(DEBUG_EXAMPLE_DIR)/,$(EXAMPLE_NAMES))
 RELEASE_EXAMPLES := $(addprefix $(RELEASE_EXAMPLE_DIR)/,$(EXAMPLE_NAMES))
 FILTER_HEADERS := src/ofdg.hpp src/kxrcf.hpp src/oedg_2024.hpp \
 	src/face_physics.hpp src/study_filter.hpp src/study_method.hpp
-FILTER_CORE_HEADERS := src/ofdg_core.hpp src/ofdg.hpp src/oedg_2024.hpp \
+FILTER_CORE_HEADERS := src/curved_geometry.hpp src/ofdg_core.hpp src/ofdg.hpp src/oedg_2024.hpp \
 	src/kxrcf.hpp src/face_physics.hpp
 DEBUG_FILTER_OBJECTS := $(DEBUG_DIR)/src/ofdg_core.o $(DEBUG_DIR)/src/ofdg.o \
 	$(DEBUG_DIR)/src/oedg_2024.o $(DEBUG_DIR)/src/kxrcf.o
@@ -170,7 +170,7 @@ $(DEBUG_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp $(DEBUG_F
 $(DEBUG_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp $(DEBUG_FILTER_LIBRARY) | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
 
-$(DEBUG_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp | $(DEBUG_TEST_DIR)
+$(DEBUG_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp src/curved_geometry.hpp | $(DEBUG_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(MFEM_LIBS) $(SANITIZER_LIBS)
 
 $(DEBUG_TEST_DIR)/test_face_physics: tests/test_face_physics.cpp src/face_physics.hpp | $(DEBUG_TEST_DIR)
@@ -200,7 +200,7 @@ $(RELEASE_TEST_DIR)/test_ofdg_regression: tests/test_ofdg_regression.cpp $(RELEA
 $(RELEASE_TEST_DIR)/test_oedg_2024: tests/test_oedg_2024.cpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
 
-$(RELEASE_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp | $(RELEASE_TEST_DIR)
+$(RELEASE_TEST_DIR)/test_euler_positivity: tests/test_euler_positivity.cpp src/euler_positivity.hpp src/curved_geometry.hpp | $(RELEASE_TEST_DIR)
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
 
 $(RELEASE_TEST_DIR)/test_face_physics: tests/test_face_physics.cpp src/face_physics.hpp | $(RELEASE_TEST_DIR)
@@ -241,3 +241,23 @@ report-final:
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+$(RELEASE_TEST_DIR)/test_curved_geometry: tests/test_curved_geometry.cpp $(FILTER_CORE_HEADERS) src/euler_positivity.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+$(DEBUG_TEST_DIR)/test_curved_geometry: tests/test_curved_geometry.cpp $(FILTER_CORE_HEADERS) src/euler_positivity.hpp $(DEBUG_FILTER_LIBRARY) | $(DEBUG_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(DEBUG_FLAGS) $< -o $@ $(DEBUG_FILTER_LIBRARY) $(MFEM_LIBS) $(SANITIZER_LIBS)
+
+$(RELEASE_TEST_DIR)/probe_native_nurbs: tests/probe_native_nurbs.cpp | $(RELEASE_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_TEST_DIR)/test_curved_euler: tests/test_curved_euler.cpp examples/euler/euler.hpp $(FILTER_CORE_HEADERS) src/euler_positivity.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+.PHONY: test-curved
+test-curved: $(RELEASE_TEST_DIR)/test_curved_geometry $(RELEASE_TEST_DIR)/test_curved_euler $(RELEASE_EXAMPLE_DIR)/advection
+	python3 tests/run_bounded.py $(RELEASE_TEST_DIR)/test_curved_geometry
+	python3 tests/run_bounded.py mpirun -np 2 $(RELEASE_TEST_DIR)/test_curved_geometry
+	python3 tests/run_bounded.py $(RELEASE_TEST_DIR)/test_curved_euler
+	python3 tests/run_bounded.py mpirun -np 2 $(RELEASE_TEST_DIR)/test_curved_euler
+	python3 tests/run_bounded.py python3 tests/test_curved_advection.py $(RELEASE_EXAMPLE_DIR)/advection

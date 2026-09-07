@@ -8,7 +8,12 @@
 namespace ofdg
 {
 
-/** Oscillation-free DG stabilization and exact polynomial-shell decay. */
+/** Oscillation-free DG stabilization and exact polynomial-shell decay.
+ * Static polynomial curved maps use physical L2 projections and successively
+ * projected physical derivatives (not exact higher mapped derivatives).
+ * Reconstruct after any mesh, geometry, or space change. Native NURBS geometry
+ * throws std::invalid_argument because the pinned MFEM lacks two-sided faces.
+ */
 class OFDG
 {
 public:

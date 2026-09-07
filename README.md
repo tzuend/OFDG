@@ -48,7 +48,7 @@ make test-study
 make release reference-solver
 ```
 
-The suite covers frozen OFDG fingerprints, homogeneous affine element
+The suite includes curved geometry invariants and covers frozen OFDG fingerprints, homogeneous affine element
 families, and mixed affine triangle--quadrilateral and
 tetrahedron--hexahedron--prism meshes with unequal local DOF counts. The same
 serial and MPI fixtures exercise OFDG, OEDG, KXRCF, and OFDG--KXRCF. Further
@@ -61,10 +61,14 @@ maintained example drivers, so a mismatched collective fails in CI instead of
 hanging indefinitely.
 
 All three filters construct element and face data from the finite element on
-each side. Their affine implementation is therefore not restricted to a fixed
-geometry signature. Variable order, curvilinear mappings, pyramid elements,
-and moving meshes remain outside the verified implementation. These conditions
-are documented preconditions, not fail-fast runtime checks. The exact boundary
+each side. OFDG and KXRCF also support static polynomial curvilinear mappings in 2D and
+3D. Curved higher derivatives are successively L2-projected physical derivatives.
+Variable order, pyramid elements, and moving meshes remain outside verification.
+Native NURBS geometry is explicitly rejected because the pinned MFEM cannot
+provide the required two-sided face transformations. `mesh.SetCurvature(3)` before
+constructing the DG space is an explicit polynomial approximation of NURBS
+geometry, not exact rational support. Other unsupported conditions remain
+preconditions. The exact boundary
 between mathematical portability and verified support is recorded in
 `docs/support-matrix.md`.
 
@@ -234,7 +238,7 @@ Important implementation files are:
 
 - `src/ofdg.hpp`, `src/kxrcf.hpp`, and `src/oedg_2024.hpp`: short public
   interfaces for the three filters;
-- `src/ofdg_core.cpp`: shared affine operator repository, face handling, MPI
+- `src/ofdg_core.cpp`: shared reference and curved element operator repository, face handling, MPI
   halos, and exact polynomial-shell attenuation;
 - `src/oedg_2024.cpp`: fixed 2024 OEDG choices (interface L1 jumps,
   trapezoidal 2D faces, face heights, component pooling, and scale invariance);
@@ -244,9 +248,14 @@ Important implementation files are:
   metrics, tables, and figures;
 - `tests/`: deterministic serial, MPI, and study-level validation.
 
-`DEPENDENCIES.md` pins the reproducible build baseline. The next geometry
-extension is specified in `docs/geometry-design.md`. The next production
-geometry task is static curvilinear mappings.
+`DEPENDENCIES.md` pins the reproducible build baseline. The geometry design is recorded in `docs/geometry-design.md`.
+See `docs/curved-validation.md` for the bounded checks and exact native NURBS
+failure reproducer. Run `make test-curved` for curved geometry and evolution
+validation. A small reproducible example is:
+
+```sh
+build/release/examples/advection -d 2 -n 8 -o 2 -curved -tf 0.05 -method ofdg-kxrcf
+```
 
 The full local study is intentionally smaller than the published $1280^2$
 suite. Double-Mach reflection, the Mach-2000 jet, and the largest grids are HPC

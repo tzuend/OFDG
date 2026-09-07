@@ -1,4 +1,5 @@
 #include "kxrcf.hpp"
+#include "curved_geometry.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -130,7 +131,7 @@ public:
                   std::shared_ptr<const FacePhysics> face_physics_,
                   mfem::real_t threshold_ = 1.0,
                   mfem::real_t relative_scale_floor_ = 1e-14)
-      : fes(fes_),
+      : fes(detail::RequireSupportedGeometry(fes_)),
         face_physics(std::move(face_physics_)),
         dim(0),
         ncomp(0),
@@ -242,7 +243,7 @@ void KXRCFCore::BuildElementCache()
       fes->GetElementVDofs(e, cache.vdofs);
 
       const mfem::IntegrationRule &rule =
-         mfem::IntRules.Get(fe->GetGeomType(), 2 * fe->GetOrder() + 2);
+         detail::VolumeRule(fe->GetOrder(), *transformation, 2);
       cache.evaluation.SetSize(rule.GetNPoints(), fe->GetDof());
       cache.physical_weights.SetSize(rule.GetNPoints());
       cache.volume = 0.0;
@@ -290,10 +291,8 @@ void KXRCFCore::BuildLocalFaceCache()
 
       const mfem::FiniteElement *element1 = fes->GetFE(cache.element1);
       const mfem::FiniteElement *element2 = fes->GetFE(cache.element2);
-      const int integration_order = dim == 1 ? 0 :
-         2 * std::max(element1->GetOrder(), element2->GetOrder()) + 2;
-      cache.rule = &mfem::IntRules.Get(transformations->FaceGeom,
-                                 integration_order);
+      cache.rule = &detail::FaceRule(
+         std::max(element1->GetOrder(), element2->GetOrder()), *transformations, 2);
       const int point_count = cache.rule->GetNPoints();
       cache.evaluation1.SetSize(point_count, element1->GetDof());
       cache.evaluation2.SetSize(point_count, element2->GetDof());
@@ -465,6 +464,25 @@ mfem::real_t KXRCFCore::ComputeElementRadius(
                   std::sqrt(distance2));
    }
 
+   if (!detail::IsAffine(*Tr))
+   {
+      // Include vertices above and sample every physical boundary face.
+      const int geometry_order = detail::CurvedQuadratureOrder(0, *Tr);
+      mfem::Array<int> faces, orientations;
+      if (dim == 2) { mesh->GetElementEdges(e, faces, orientations); }
+      else { mesh->GetElementFaces(e, faces, orientations); }
+      for (int f : faces)
+      {
+         auto *face = mesh->GetFaceTransformation(f);
+         const auto &rule = mfem::IntRules.Get(face->GetGeometryType(), geometry_order);
+         for (int q = 0; q < rule.GetNPoints(); ++q)
+         {
+            face->Transform(rule.IntPoint(q), point);
+            point -= center;
+            radius = std::max(radius, point.Norml2());
+         }
+      }
+   }
    return radius;
 }
 
@@ -491,10 +509,8 @@ void KXRCFCore::AccumulateFace(
    state2.SetSize(ncomp);
    normal.SetSize(dim);
 
-   const int integration_order = dim == 1 ? 0 :
-      2 * std::max(element1.GetOrder(), element2.GetOrder()) + 2;
-   const mfem::IntegrationRule &rule =
-      mfem::IntRules.Get(transformations.FaceGeom, integration_order);
+   const mfem::IntegrationRule &rule = detail::FaceRule(
+      std::max(element1.GetOrder(), element2.GetOrder()), transformations, 2);
 
    for (int q = 0; q < rule.GetNPoints(); ++q)
    {

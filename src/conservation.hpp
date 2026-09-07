@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mfem.hpp"
+#include "curved_geometry.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,8 +17,7 @@ inline mfem::real_t GlobalScalarIntegral(const mfem::GridFunction &field)
         const mfem::FiniteElement *fe = space->GetFE(element);
         mfem::ElementTransformation *transformation =
             mesh->GetElementTransformation(element);
-        const mfem::IntegrationRule &rule = mfem::IntRules.Get(
-            fe->GetGeomType(), 2 * fe->GetOrder() + 1);
+        const mfem::IntegrationRule &rule = ofdg::detail::VolumeRule(fe->GetOrder(), *transformation);
         for (int q = 0; q < rule.GetNPoints(); ++q) {
             const mfem::IntegrationPoint &point = rule.IntPoint(q);
             transformation->SetIntPoint(&point);

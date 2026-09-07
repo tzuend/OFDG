@@ -135,6 +135,24 @@ void TestEulerReflection()
            "reflecting wall changed tangential momentum");
 }
 
+void TestTangentialTransport(FaceElementTransformations &transformations)
+{
+   Vector state(1); state = 1.0;
+   for (real_t scale : {1e-20, 1.0, 1e20})
+   {
+      VectorConstantCoefficient velocity(Vector({scale, scale}));
+      AdvectionFacePhysics physics(&velocity);
+      Vector normal({1.0, -1.0 + 1e-15});
+      normal /= normal.Norml2();
+      Require(physics.Evaluate(state, state, normal, transformations).normal_transport == 0.0,
+              "tangential roundoff was classified as inflow");
+      normal(1) += 1e-8;
+      normal /= normal.Norml2();
+      Require(physics.Evaluate(state, state, normal, transformations).normal_transport > 0.0,
+              "resolved small normal transport was discarded");
+   }
+}
+
 } // namespace
 
 int main()
@@ -145,6 +163,7 @@ int main()
                                         true, 1.0, 1.0);
       FaceElementTransformations &transformations = InteriorFace(mesh);
       TestBurgersSpeeds(transformations);
+      TestTangentialTransport(transformations);
       TestEulerSpeeds(transformations);
       TestEulerStateValidation();
       TestEulerReflection();
