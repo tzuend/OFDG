@@ -1,63 +1,72 @@
 \chapter{Introduction}
 \label{chap:introduction}
-High-order numerical methods represent smooth solutions accurately with
-relatively few degrees of freedom. Conservation laws also produce shocks,
-where that same high-order representation can oscillate. Discontinuous Galerkin
-(DG) combines finite element approximation inside each mesh cell with numerical
-fluxes between cells. The central practical question here is how to control
-unresolved oscillations while retaining useful smooth variation.
+\section{Motivation}
+Hyperbolic conservation laws describe the transport of quantities such as mass,
+momentum, and energy. Their solutions can contain both smooth structures and
+sharp fronts. Even smooth initial data can develop a discontinuity, so a
+numerical method must accommodate qualitatively different behaviour within the
+same calculation.
 
-\section{Aim and contribution}
-This thesis develops a reusable MFEM realization of a specifically defined
-adapted oscillation-free discontinuous Galerkin (OFDG) method. It combines projection damping with face-averaged jump
-sensing and optional KXRCF activation. The implementation operates directly in
-the finite element coefficient basis, including nodal bases, and extends the
-construction to static polynomial curved meshes. Repeated physical derivatives
-on these meshes are approximated by recursive projection, with tests measuring
-their accuracy and geometric consistency.
+Discontinuous Galerkin (DG) methods combine finite element approximation within
+each mesh element with numerical fluxes between elements. Independent local
+polynomial representations allow high-order approximation without imposing
+continuity across interfaces~\cite{HesthavenWarburton2008}. Near an unresolved
+front, however, a polynomial approximation can develop overshoots and
+undershoots. Damping these oscillations indiscriminately can also remove
+smooth features that a high-order method is intended to resolve.
 
-The contribution has three connected parts:
+Projection-based damping offers a way to separate these concerns. The cell
+mean can be retained while nonconstant parts of the approximation are
+attenuated. The scalar OFDG formulation of Lu, Liu, and Shu~\cite{LuEtAl2021}
+and its extension to hyperbolic systems~\cite{LiuEtAl2022} provide the starting
+point. The OEDG formulation of Peng, Sun, and Wu~\cite{PengEtAl2024} further
+motivates normalized sensing and exact integration of a frozen damping step.
+A separate troubled-cell indicator can restrict the operation to selected
+cells. The central issue is then how to define the damping, its sensor, and
+its geometric realization consistently.
+
+\section{Aim and research questions}
+This thesis concerns a basis-independent realization of an adapted OFDG method
+in the finite element library MFEM. Here, basis independence means that a
+change in coefficient representation does not change the filtered finite
+element function. The formulation combines physical projections,
+face-averaged derivative jumps, and optional KXRCF gating. It is an adaptation
+of the cited methods rather than a literal reproduction of a single paper.
+
+The work is guided by three questions:
 \begin{enumerate}
- \item a clear definition and maintainable implementation of the adapted filter,
- including the distinctions from published OFDG and OEDG formulations;
- \item verification of conservation, basis independence, geometric operators,
- and serial/two-rank consistency within an explicit support boundary;
- \item preliminary numerical characterization of damping and KXRCF gating on
- affordable, physically meaningful examples.
+\item How can projection damping be expressed in the host finite element basis
+while preserving component-wise cell averages?
+\item How should projection, derivative sensing, and geometric normalization
+be constructed when element maps are curved?
+\item How do damping and selective activation affect accuracy and resolution
+of smooth and discontinuous solutions?
 \end{enumerate}
-The implementation is held in the project repository
-\url{https://github.com/tzuend/OFDG}. The report distinguishes algebraic
-identities, numerical verification, and empirical observations. These support
-different kinds of statements and should not be substituted for one another.
+The first two questions determine the mathematical construction and its
+implementation. The third requires an agreed set of numerical experiments;
+its answer is deliberately left open in this draft.
 
-\section{Related work and focused questions}
-Projection-based oscillation damping was developed for scalar conservation laws
-by Lu, Liu, and Shu~\cite{LuEtAl2021} and extended to systems
-in~\cite{LiuEtAl2022}. Peng, Sun, and Wu introduce oscillation-eliminating DG (OEDG), with
-normalized damping and stage-wise exact attenuation~\cite{PengEtAl2024}.
-KXRCF supplies a separate troubled-cell decision, motivated by accurate DG
-outflow traces~\cite{KrivodonovaEtAl2004}. Detector comparisons show sensitivity
-to variable choice, order, and normalization~\cite{QiuShu2005,FuShu2017}.
+\section{Scope and approach}
+The construction uses a fixed mesh and a uniform solution order. It includes
+scalar conservation laws and conservative systems, with compressible Euler
+providing the system formulation. Static polynomial curved element maps are
+considered; moving meshes and variable solution order are outside the scope.
+On curved elements, differentiation generally leaves the mapped approximation
+space. The method therefore projects first physical derivatives back into that
+space and applies these projected operators recursively. The distinction
+between this construction and exact higher differentiation is central to the
+curvilinear extension.
 
-This project asks: can these mechanisms be realized without imposing a modal
-storage basis; can their essential invariants survive curved geometry and MPI
-partitioning; and what does selective damping change in the measured solutions?
-The final question remains only partly answered. A detector-activity study is
-still needed to explain where gating helps or fails. Performance attribution
-and a general robustness ranking require evidence beyond the current preview.
+The thesis separates three kinds of statements: identities derived from
+projection algebra, implementation choices defining the actual method, and
+empirical conclusions requiring numerical evidence. In particular, cell-mean
+preservation by the filter does not by itself establish positivity, full-scheme
+stability, or accuracy near a shock. Published analyses are used under their
+stated assumptions, not transferred automatically to the adapted method.
 
-\section{How to read this working report}
-\Cref{chap:methods} bridges from familiar finite element ideas to DG traces,
-fluxes, and time stepping. \Cref{chap:stabilization} defines adapted OFDG,
-KXRCF, OEDG, and positivity treatment. \Cref{chap:implementation} describes
-the support boundary and verification. \Cref{chap:experiments} presents the
-measured preview, followed by interpretation in \cref{chap:discussion} and
-conclusions in \cref{chap:conclusion}. Detailed matrix construction and
-reproducibility instructions are in the appendices.
-
-\EvidenceBox{EVIDENCE AND COMPLETION STATUS}{A \textbf{preliminary result} is
-an actual measurement with stated limits. A \textbf{PLACEHOLDER} lists specific
-missing evidence for an intended stronger argument. A \textbf{scope limitation}
-is an explicit exclusion, not a promised future result. The register in
-\cref{app:missing-work} collects unresolved work. No mock numerical results or
-filler discussion are used.}
+\Cref{chap:background} introduces DG for a reader familiar with finite elements.
+\Cref{chap:methods} develops the stabilization methods, curvilinear extension,
+and their coefficient-space realization, followed by implementation
+assumptions, storage costs, and verification criteria. Results, Discussion, and Conclusion remain explicitly
+incomplete pending agreement on the numerical experiments. Exploratory results
+are retained in the separate preliminary brief.

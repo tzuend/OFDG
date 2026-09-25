@@ -328,6 +328,61 @@ void TestMixedTriangleQuadrilateralMesh()
    }
 }
 
+// Cached geometry must not freeze flow physics or depend on MFEM's shared
+// transformation scratch, which other operators overwrite between calls.
+void TestCachedGeometryWithChangingVelocity()
+{
+   Mesh mesh = Mesh::MakeCartesian2D(3, 3, Element::QUADRILATERAL, true);
+   mesh.SetCurvature(3);
+   mesh.Transform([](const Vector &x, Vector &y)
+   {
+      y = x;
+      y(0) += 0.03 * std::sin(3.0 * x(0)) * std::sin(3.0 * x(1));
+   });
+   L2_FECollection fec(2, 2);
+   FiniteElementSpace space(&mesh, &fec);
+   GridFunction state(&space);
+   FunctionCoefficient initial([](const Vector &x)
+   {
+      return x(0) < 0.5 ? 1.0 : 2.0;
+   });
+   state.ProjectCoefficient(initial);
+   real_t direction = 1.0;
+   VectorFunctionCoefficient velocity(2, [&direction](const Vector &x, Vector &v)
+   {
+      v.SetSize(2);
+      v(0) = direction * (1.0 + x(1));
+      v(1) = 0.2 * direction * x(0);
+   });
+   KXRCFIndicator reused(&space, &velocity);
+   Vector positive_values;
+   for (real_t sign : {1.0, -1.0})
+   {
+      direction = sign;
+      for (int f = 0; f < mesh.GetNumFaces(); ++f)
+      {
+         mesh.GetFaceElementTransformations(f);
+      }
+      Array<bool> active, expected_active;
+      Vector values, expected;
+      reused.Compute(state, active, &values);
+      KXRCFIndicator fresh(&space, &velocity);
+      fresh.Compute(state, expected_active, &expected);
+      for (int e = 0; e < space.GetNE(); ++e)
+      {
+         Require(active[e] == expected_active[e] && Near(values(e), expected(e)),
+                 "cached face geometry changed the indicator after a flow update");
+      }
+      if (sign > 0.0) { positive_values = values; }
+      else
+      {
+         values -= positive_values;
+         Require(values.Normlinf() > 1e-8,
+                 "changing velocity did not change the inflow indicator");
+      }
+   }
+}
+
 } // namespace
 
 int main()
@@ -340,6 +395,7 @@ int main()
       TestMultiplicativeScalingAndPooling();
       TestVectorOrderingInvariance();
       TestMixedTriangleQuadrilateralMesh();
+      TestCachedGeometryWithChangingVelocity();
    }
    catch (const std::exception &error)
    {

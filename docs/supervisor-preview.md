@@ -1,8 +1,10 @@
 # Supervisor numerical preview
 
 The approved laptop preview is separate from `quick`, `full`, and thesis assets.
-Its configuration is `experiments/preview_manifest.json`. The six-page brief is
-`output/pdf/supervisor-preview.pdf`; measured data live in
+Its configuration is `experiments/preview_manifest.json`. The brief is `output/pdf/supervisor-preview.pdf`: six original PDE pages,
+with a two-page isolated derivative-permutation addendum when that dataset is
+available. Its reproduction and findings are in `docs/derivative-permutations.md`.
+The original PDE data live in
 `measurements/study/preview/`.
 
 ## Reproduce or resume
@@ -108,3 +110,27 @@ on both grids. Coordinates that differ only by floating-point roundoff are
 clustered before interpolation; cells remain separate at interfaces. An analytic
 tensor-polynomial check and node-reproduction checks run during analysis.
 Text fonts are embedded (Arial on this Mac, or DejaVu Sans on Linux).
+
+## Direct mapped-derivative comparison
+
+The current brief has 14 pages. Pages 12-14 now compare direct differentiation of the original mapped DG function with the preserved recursive projection. See `docs/direct-derivatives.md` for configurations, mathematics, controls and reproduction. The physical-polynomial reconstruction comparison was removed from the brief (not moved into its appendix); its data and the previous PDF remain archived separately.
+
+## Embedded spherical surface
+
+The current PDF has 16 pages. Pages 15-16 add an isolated conforming surface-FEM screened-Poisson example adapted from the pinned MFEM Example 7. It includes actual sphere renderings, convergence and geometry checks; see `docs/sphere-surface.md`. This demonstrates a PDE solve on a surface mesh and is not presented as OFDG surface support.
+
+## Surface DG/OFDG prototype
+
+The current brief has 17 pages. Pages 15-17 replace the FEM-only sphere section with a first-order surface-DG/OFDG rotation test, including a discontinuous cap, initial/final views, edge zooms and explicit mathematical/support boundaries. See `docs/sphere-ofdg.md`. The FEM study and its previous PDF remain separate and preserved. No production OFDG code changed.
+
+## 3D volume showcase
+
+The brief now includes two pages of genuine three-dimensional periodic volume transport using unchanged production OFDG. See `docs/volume-showcase.md` and `measurements/volume-showcase/`. Higher-order surface OFDG remains out of scope.
+
+## Finite element geometry derivative experiment
+
+Pages 20–22 append the three-method polynomial geometry comparison and a fifth-to-tenth-order stress test. Both existing methods and the previous 19 pages are preserved. See `docs/fe-mapping-derivatives.md` and `measurements/fe-mapping-derivatives/`. Main checks pass; higher-order results explicitly expose loss of accuracy on small elements.
+
+## Reused affine derivative machinery
+
+Pages 23–25 append the five-method comparison: existing recursive projection, analytic direct differentiation, FE-geometry inverse series, and native reference-matrix reuse with/without centering. They include fifth/tenth-order limits, relative and element-scaled errors, and independent stored-function evaluation/representation errors. The previous 22 pages and production sources remain unchanged. See `docs/reused-derivatives.md` and `measurements/reused-derivatives/`. Fifth-order accuracy improves substantially in these stress cases; the 1e-7 evaluation target is not uniformly met, and fine-element tenth-order results remain unreliable.

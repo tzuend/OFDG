@@ -92,7 +92,7 @@
 \date{September 2026}
 \setlength{\emergencystretch}{2em}
 
-%% Draft builds use the measured preliminary preview. A final build
+%% Draft builds retain explicit placeholders for undecided chapters. A final build
 %% is enabled only by the guarded report-final target.
 \newif\ifdraftresults
 \ifdefined\FinalResults
@@ -129,16 +129,14 @@
 
 %% Your real content!
 \input{introduction}
+\input{background}
 \input{methods}
-\input{stabilization}
-\input{implementation}
 \input{experiments}
 \input{discussion}
 \input{conclusion}
 
+% Essential production details remain in Methods; isolated extensions follow.
 \appendix
-
-\input{operator_details}
 \input{appendix}
 
 \backmatter

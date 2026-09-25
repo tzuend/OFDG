@@ -1,0 +1,121 @@
+\chapter{Implementation and verification}
+\label{chap:implementation}
+The implementation separates the physical equation, the element geometry, and
+the filtering operation. This separation allows the same projection kernel to
+serve scalar and Euler equations and lets geometry corrections be tested
+without changing the underlying conservation law. MFEM provides meshes, basis
+functions, transformations, and distributed ownership~\cite{AndersonEtAl2021}.
+
+\section{Support boundary}
+\label{sec:support-boundary}
+\begin{center}
+\begin{tabular}{@{}p{.31\textwidth}p{.63\textwidth}@{}}
+\toprule
+Capability & Status and interpretation\\\midrule
+Affine and polynomial curved OFDG/KXRCF & Affine intervals; static full-dimensional triangles,
+quadrilaterals, tetrahedra, hexahedra, and prisms; uniform scalar DG order,
+repeated over conservative components.\\
+Basis and MPI coverage & Multiple coefficient bases and vector orderings;
+serial and two-rank verification, including mixed affine faces.\\
+NURBS-derived geometry & Cubic polynomial projections of disc/ball fixtures
+are verified. This changes the geometry representation.\\
+Exact native NURBS & Unsupported two-sided face operation in the pinned MFEM;
+rejected before constructing the filter.\\
+OEDG & Affine regression coverage is retained. Curved OEDG is not a validated
+paper-faithful extension.\\
+Excluded & Moving meshes, variable solution order, pyramids, and embedded
+surfaces.\\\bottomrule
+\end{tabular}
+\end{center}
+
+\ScopeLimit{NURBS (non-uniform rational B-splines) represent geometry using
+rational basis functions. The MFEM-only native NURBS reproducer fails in the two-sided face
+transformation/weight path, independently of the OFDG library. This is not a
+lack of NURBS support throughout MFEM. Explicitly projecting a mesh to
+polynomial geometry provides a usable approximation; no conversion is silent.
+Details and the minimal reproducer are in \path{docs/curved-validation.md}.}
+
+\input{curvilinear_math}
+
+\section{Reference data and physical element operators}
+\label{sec:curved-construction}
+Reference basis evaluations and derivative graphs are reusable by finite
+element signature. Geometry-dependent mass, projection, derivative, face-weight,
+and normal data belong to each physical curved element or neighbour. Caches
+are immutable: changing geometry, topology, or the solution space requires
+constructing new filter objects. Mutable scratch arrays mean simultaneous
+calls on the same object are unsupported.
+
+The physical matrices are assembled as derived in
+\cref{eq:curved-weighted-masses,eq:curved-derivative-assembly}. Reference
+projectors are reused only when the constant affine Jacobian weight cancels.
+Curved projectors and derivative matrices belong to the physical element.
+
+Curved quadrature uses order $2k+2\max(0,\mathrm{OrderW})+8$, where MFEM's
+\texttt{OrderW} estimates the transformation-weight order. Positive tensor/Duffy
+rules and symmetric triangular-face sampling avoid cancellation and
+orientation-dependent samples. Physical face measure normalizes jump integrals;
+physical normals are evaluated at those same face points. This is a practical
+quadrature policy, supported by sensitivity checks rather than a universal
+exactness claim for arbitrary geometry.
+
+\section{Physics, time integration, and MPI}
+MPI (Message Passing Interface) distributes the mesh across processes called
+ranks, each owning part of the domain.
+A face-physics interface returns two nonnegative normal radii for damping and
+one signed transport velocity for KXRCF. Adapted OFDG uses the face traces;
+OEDG's state-dependent radii use the adjacent cell means. Their different
+choices are deliberate and recorded in the method contract.
+
+An ordinary local face updates both adjacent elements. A shared MPI face
+updates only the element owned by that rank after exchanging neighbour
+coefficients; the neighbour rank performs the complementary update. Global
+amplitudes use collective reductions. Local and neighbour geometry follows the
+same construction, so an MPI boundary is not a physical boundary.
+
+The common method/cadence interface selects post-step DG/OFDG and stage-wise
+OEDG by default. A small RK callback driver also applies the common Euler
+positivity checks. Rejected candidates leave the accepted state and time
+unchanged. Post-step OFDG is the configuration studied here; it is not justified
+by an unsupported claim that stage filtering never improves accuracy.
+
+\section{What verification establishes}
+\begin{center}
+\begin{tabular}{@{}p{.35\textwidth}p{.59\textwidth}@{}}
+\toprule
+Check & Evidence and boundary\\\midrule
+Algebra and conservation & Constants, inactive cells, component means, projection
+identities, frozen affine fingerprints, and coefficient-basis changes.\\
+Curved operators & Independent first-derivative weak projection; higher-derivative
+refinement; quadrature sensitivity; physical face moments.\\
+MPI and geometry & Serial/two-rank agreement and supported curved families;
+limited equivalent-parameterization checks for representable linear states.\\
+Euler admissibility & Mean-preserving positivity, rejected stages, curved smooth
+Euler smoke test. This is not broad shock robustness.\\
+Independent references & WENO smooth-wave and exact Sod checks, followed by
+reference-grid sensitivity for the preview.\\\bottomrule
+\end{tabular}
+\end{center}
+
+The existing curved validation represents $\sin x$ at P4 on a smoothly deformed
+square. Its physical $L^2$ derivative errors are:
+\begin{center}
+\begin{tabular}{rrrr}
+\toprule
+Cells / direction & first derivative & second & third\\\midrule
+2 & $1.375\,10^{-5}$ & $5.498\,10^{-4}$ & $1.384\,10^{-2}$\\
+4 & $8.703\,10^{-7}$ & $6.940\,10^{-5}$ & $3.463\,10^{-3}$\\
+8 & $5.461\,10^{-8}$ & $8.699\,10^{-6}$ & $8.661\,10^{-4}$\\\bottomrule
+\end{tabular}
+\end{center}
+These approach orders four, three, and two. They validate this manufactured
+case, not exactness of projected higher derivatives. The first derivative is
+also compared with an independently assembled weak projection. Increasing the
+quadrature order by eight leaves the tested derivative matrix within tolerance.
+
+The retained local verification record reports passing release, sanitizer, and
+curved checks. It is documented in \path{docs/curved-validation.md}, with logs
+under \path{build/curved-validation/}. Tests shared by OFDG and OEDG cannot make
+their comparison an independent verification of every shared component;
+analytic identities and separately assembled checks provide that additional
+reference. No new solver run was required for the report revision.

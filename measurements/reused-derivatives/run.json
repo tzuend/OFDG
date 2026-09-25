@@ -1,0 +1,1212 @@
+{
+  "description": "Reused affine reference matrices and chain rule, with and without centering",
+  "source_sha256": {
+    "benchmarks/reused_derivatives.hpp": "fc16ad31888b4af1aa17344f6f6d7d8c55c8fc21ea814269787e190fc1d5a8a7",
+    "benchmarks/reused_mapping_2d.cpp": "1c97b4042583557d0d90861b9ab8d223c084d593a792588ae3a111a1e4c15bc3",
+    "benchmarks/reused_mapping_3d.cpp": "1a6d9d1953fd18b63f7ea43dfe557d41c994714f9db0a7405de379c9f543a497",
+    "benchmarks/reused_high_order.cpp": "3a6e0f688412117550705b7dda3eb79d0cd219e24a89e26276df64822229bdc5",
+    "benchmarks/fe_mapping_jets.hpp": "1ebcd40dd8228ce781bdc3f99f546d20b6831b481b63aff8c574bc4834ee33ad",
+    "benchmarks/fe_mapping_high_order.hpp": "e1f1505710cd845f5e8d9d813ec1bcad30cc92c58c95281392c9a2d4237d91e1",
+    "benchmarks/direct_derivatives.cpp": "aa53ba9eaaa29e4735928aaf99ae0ef75f3b34bcdf62f1d82282ee86ac605b7b",
+    "scripts/run_reused_derivatives.py": "33ca423fd665295262410c8ca74fd77599991c48ac3e8a923526e825418f28b2",
+    "scripts/run_fe_mapping_derivatives.py": "91db22fcf17aa457f9faf92547793e95f08c1451870daa50e92e91abcd7fcdd3",
+    "src/ofdg_core.cpp": "7d82641f77feb4f4295b7143cae59a2c1af31ad0c17ad2f588735b09fafdd8aa",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "build/release/libofdg.a": "c5247f2bf35104a7201f9dc5ea276f00d65967fbf6c9193c2985c550df699490",
+    "build/release/benchmarks/reused_mapping_2d": "0e13db326b32bc2482fe4557df37e36190865eb30ba5add45ffffd88cb99eaa6",
+    "build/release/benchmarks/reused_mapping_3d": "4e883ab5b03d02911aed8818dcecafd294bfa808b8b3fa3ea755a503572561b0",
+    "build/release/benchmarks/reused_high_order": "ca2ba33c42e71376d82c74189b65f84a9bb68f9954a24a48f204162fe32aa4df"
+  },
+  "checks": [
+    {
+      "case": "2d-quad-4-2-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3566063749967725,
+      "peak_mib": 18.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3511794590012869,
+      "peak_mib": 19.09375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35130320899770595,
+      "peak_mib": 19.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.7472567500008154,
+      "peak_mib": 18.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.216170040999714,
+      "peak_mib": 19.46875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.566876584001875,
+      "peak_mib": 19.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.348068790997786,
+      "peak_mib": 18.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.8288204159980523,
+      "peak_mib": 19.359375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.3543874590031919,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.933267166998121,
+      "peak_mib": 20.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.34965399999782676,
+      "peak_mib": 19.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.0492365419995622,
+      "peak_mib": 21.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.6333150420032325,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 6.199682374994154,
+      "peak_mib": 20.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.0999649579971447,
+      "peak_mib": 19.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 7.94897570899775,
+      "peak_mib": 21.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.3393277499999385,
+      "peak_mib": 19.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 9.110400083998684,
+      "peak_mib": 22.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.24209566700301366,
+      "peak_mib": 18.296875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.8137374170037219,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3593902499997057,
+      "peak_mib": 18.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.048417417005112,
+      "peak_mib": 20.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35874554100155365,
+      "peak_mib": 19.171875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.1658725000015693,
+      "peak_mib": 22.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.6405322499995236,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.301485832998878,
+      "peak_mib": 20.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.114456874995085,
+      "peak_mib": 19.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 8.164176874997793,
+      "peak_mib": 22.34375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.44916366700636,
+      "peak_mib": 19.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 9.335018833000504,
+      "peak_mib": 23.359375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gl-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3496018330042716,
+      "peak_mib": 18.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-bernstein-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3519702920020791,
+      "peak_mib": 18.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gl-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.34710466699471,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-bernstein-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.35068258300452726,
+      "peak_mib": 18.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gl-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.1065500839977176,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-bernstein-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.100438209003187,
+      "peak_mib": 19.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gl-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.107472541007155,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-bernstein-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.9931128329990315,
+      "peak_mib": 19.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gll-coupled-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 0.3541203749991837,
+      "peak_mib": 18.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gll-separable-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 0.46407570800511166,
+      "peak_mib": 18.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gll-coupled-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 2.80452520900144,
+      "peak_mib": 19.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gll-separable-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 2.797701916999358,
+      "peak_mib": 19.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.4-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.056894832996477,
+      "peak_mib": 20.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.3-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.9420239999963087,
+      "peak_mib": 20.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.4-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 8.066093417000957,
+      "peak_mib": 22.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.3-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 7.933992042002501,
+      "peak_mib": 21.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-16-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 3.6156665419985075,
+      "peak_mib": 29.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-16-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "quad",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 3.499100583001564,
+      "peak_mib": 27.84375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-16-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 32.44571554099821,
+      "peak_mib": 33.984375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-16-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_2d",
+        "tri",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 31.49802387499949,
+      "peak_mib": 31.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-2-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "2",
+        "2",
+        "0",
+        "0"
+      ],
+      "seconds": 3.613333708002756,
+      "peak_mib": 19.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-3-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "2",
+        "3",
+        "0",
+        "0"
+      ],
+      "seconds": 5.240958290996787,
+      "peak_mib": 20.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-2-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "4",
+        "2",
+        "0",
+        "0"
+      ],
+      "seconds": 27.930121833996964,
+      "peak_mib": 24.0,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "4",
+        "3",
+        "0",
+        "0"
+      ],
+      "seconds": 41.246260416999576,
+      "peak_mib": 28.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-2-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "2",
+        "2",
+        "1",
+        "0"
+      ],
+      "seconds": 3.6164717499996186,
+      "peak_mib": 19.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-3-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "2",
+        "3",
+        "1",
+        "0"
+      ],
+      "seconds": 5.248453125001106,
+      "peak_mib": 20.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-2-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "4",
+        "2",
+        "1",
+        "0"
+      ],
+      "seconds": 27.835917374999553,
+      "peak_mib": 23.890625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "4",
+        "3",
+        "1",
+        "0"
+      ],
+      "seconds": 42.03612079100276,
+      "peak_mib": 28.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-1-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_mapping_3d",
+        "4",
+        "3",
+        "1",
+        "8"
+      ],
+      "seconds": 69.03217587499967,
+      "peak_mib": 28.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-2-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "2",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-2-0-10.txt"
+      ],
+      "seconds": 0.3640877080033533,
+      "peak_mib": 0.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-8-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "8",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-8-0-10.txt"
+      ],
+      "seconds": 0.12294887499592733,
+      "peak_mib": 0.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-32-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "32",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-32-0-10.txt"
+      ],
+      "seconds": 0.12217258400050923,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-2-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "2",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-2-1-10.txt"
+      ],
+      "seconds": 0.12210012499417644,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-8-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "8",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-8-1-10.txt"
+      ],
+      "seconds": 0.12217604200122878,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-32-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "32",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-32-1-10.txt"
+      ],
+      "seconds": 0.12219179199746577,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-2-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "2",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-2-0-10.txt"
+      ],
+      "seconds": 0.3577014580005198,
+      "peak_mib": 31.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-8-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "8",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-8-0-10.txt"
+      ],
+      "seconds": 0.35759949999919627,
+      "peak_mib": 31.75,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-32-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "32",
+        "0",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-32-0-10.txt"
+      ],
+      "seconds": 0.3550082500005374,
+      "peak_mib": 31.296875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-2-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "2",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-2-1-10.txt"
+      ],
+      "seconds": 0.35903187499934575,
+      "peak_mib": 31.953125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-8-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "8",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-8-1-10.txt"
+      ],
+      "seconds": 0.35166812499664957,
+      "peak_mib": 31.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-32-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "32",
+        "1",
+        "10",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-32-1-10.txt"
+      ],
+      "seconds": 0.35567391700169537,
+      "peak_mib": 30.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-2-8-1-5",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "2",
+        "8",
+        "1",
+        "5",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-2-8-1-5.txt"
+      ],
+      "seconds": 0.12080062500172062,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "high-3-8-1-5",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/reused_high_order",
+        "3",
+        "8",
+        "1",
+        "5",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/reused-derivatives/fixtures/high-3-8-1-5.txt"
+      ],
+      "seconds": 0.24077766700065695,
+      "peak_mib": 21.078125,
+      "returncode": 0,
+      "failure": null
+    }
+  ],
+  "compute_seconds": 409.236204629,
+  "peak_mib": 33.984375,
+  "ranks": 1,
+  "threads_per_rank": 1
+}

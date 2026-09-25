@@ -1,0 +1,562 @@
+{
+  "description": "Isolated P1/Q1 DG vs surface-OFDG adaptation; exact radially lifted sphere; quarter rotation",
+  "logical_processors": 8,
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "planned_cases": 32,
+  "source_sha256": {
+    "benchmarks/sphere_ofdg.cpp": "61515ef4868e71a015a7a8da53cb84a485f8584fbd50f334a2eb91799cd95c2b",
+    "build/release/benchmarks/sphere_ofdg": "b4a3dcf6e2902d7672b1ec9f7d47ab536041070992bbfca5f2d17dbf136f10de",
+    "/Users/timozund/Documents/master_thesis/mfem/examples/ex7.cpp": "0e99f4c41ddaed7c8a041f73aff105634a6656c1feaf536363172a4b19037731",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066"
+  },
+  "compute_seconds": 49.261686952086166,
+  "retained_attempt": "measurements/sphere-ofdg-initial-quadrature: signed triangle quadrature produced invalid squared-error integration; first attempt charged",
+  "peak_mib": 389.53125,
+  "checks": [
+    {
+      "case": "tri-l1-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "1",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.41227441700175405,
+      "peak_mib": 30.265625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l1-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "1",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14333049999549985,
+      "peak_mib": 23.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.2855575408320874,
+      "peak_mib": 66.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.6360662090592086,
+      "peak_mib": 66.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-ofdg/visualization/tri-dg-problem0"
+      ],
+      "seconds": 1.2068162909708917,
+      "peak_mib": 209.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-ofdg/visualization/tri-ofdg-problem0"
+      ],
+      "seconds": 4.379178582923487,
+      "peak_mib": 209.09375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "1",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.07141524995677173,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "1",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.07211020798422396,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "2",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14696420799009502,
+      "peak_mib": 23.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "2",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14458120800554752,
+      "peak_mib": 23.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-dg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "3",
+        "dg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.2203298748936504,
+      "peak_mib": 41.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-ofdg-problem0-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "3",
+        "ofdg",
+        "0",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.6376438750885427,
+      "peak_mib": 41.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l1-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "1",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.21124045900069177,
+      "peak_mib": 30.828125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l1-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "1",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.2217402090318501,
+      "peak_mib": 30.984375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.4927293751388788,
+      "peak_mib": 67.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.8458104589954019,
+      "peak_mib": 67.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-ofdg/visualization/tri-dg-problem1"
+      ],
+      "seconds": 2.0241459999233484,
+      "peak_mib": 209.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-ofdg/visualization/tri-ofdg-problem1"
+      ],
+      "seconds": 5.16922887484543,
+      "peak_mib": 209.203125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "1",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.13611666695214808,
+      "peak_mib": 19.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "1",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14246320794336498,
+      "peak_mib": 19.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "2",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14419054193422198,
+      "peak_mib": 23.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "2",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.21700504189357162,
+      "peak_mib": 23.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-dg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "3",
+        "dg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.2871060830075294,
+      "peak_mib": 41.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-ofdg-problem1-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "3",
+        "ofdg",
+        "1",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.7037076249253005,
+      "peak_mib": 41.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-ofdg-problem2-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "ofdg",
+        "2",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.5856359170284122,
+      "peak_mib": 66.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-ofdg-problem2-cfl0.12-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "quad",
+        "2",
+        "ofdg",
+        "2",
+        "0.12",
+        "20",
+        "-"
+      ],
+      "seconds": 0.14147712499834597,
+      "peak_mib": 23.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-dg-problem0-cfl0.06-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "dg",
+        "0",
+        "0.06",
+        "20",
+        "-"
+      ],
+      "seconds": 0.9719574169721454,
+      "peak_mib": 209.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-ofdg-problem0-cfl0.06-q20",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "ofdg",
+        "0",
+        "0.06",
+        "20",
+        "-"
+      ],
+      "seconds": 7.099227625178173,
+      "peak_mib": 209.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-dg-problem0-cfl0.12-q26",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "dg",
+        "0",
+        "0.12",
+        "26",
+        "-"
+      ],
+      "seconds": 0.43369262502528727,
+      "peak_mib": 93.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-ofdg-problem0-cfl0.12-q26",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "2",
+        "ofdg",
+        "0",
+        "0.12",
+        "26",
+        "-"
+      ],
+      "seconds": 0.9230645829811692,
+      "peak_mib": 93.515625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-dg-problem1-cfl0.12-q30",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "dg",
+        "1",
+        "0.12",
+        "30",
+        "-"
+      ],
+      "seconds": 2.42459929198958,
+      "peak_mib": 386.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-ofdg-problem1-cfl0.12-q30",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_ofdg",
+        "tri",
+        "3",
+        "ofdg",
+        "1",
+        "0.12",
+        "30",
+        "-"
+      ],
+      "seconds": 8.291678000008687,
+      "peak_mib": 389.53125,
+      "returncode": 0,
+      "failure": null
+    }
+  ]
+}

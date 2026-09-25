@@ -5,8 +5,42 @@ constant within an element, and differentiation stays inside the represented
 polynomial space. A curved map removes both simplifications. Our extension
 keeps the physical projection idea of OFDG, but assembles its operators for
 each curved element and projects each derivative back into the solution space.
-This section derives that construction; Appendix~\ref{sec:ofdg-implementation}
-describes its coefficient storage and evaluation.
+This section extends the coefficient construction in
+\cref{sec:ofdg-projection-coefficients,sec:ofdg-coefficient-derivatives,sec:ofdg-face-evaluation}
+to nonconstant geometric transformations.
+An alternative that differentiates the original mapped function without
+intermediate projection is derived in \cref{sec:appendix-direct}. That isolated
+experiment does not replace the recursive method described here.
+
+\subsection{What is represented, and what is differentiated?}
+The input to the derivative calculation is the DG function on one element,
+not the unknown exact solution of the conservation law. Its coefficient
+vector $U=(U_1,\ldots,U_{N_k})^{\mathsf T}$ represents
+\begin{equation}
+ u_h(x)=\sum_{b=1}^{N_k}U_b\phi_b(x),\qquad
+ \widehat u_h(\xi)=u_h(T_K(\xi))
+                 =\sum_{b=1}^{N_k}U_b\widehat\phi_b(\xi).
+ \label{eq:curved-stored-function}
+\end{equation}
+The coefficients are the same in these two expressions. The physical basis
+is obtained by composing the reference basis with $T_K^{-1}$, so geometry
+changes the function's dependence on physical position without changing the
+meaning of the coefficient expansion. In particular, a polynomial in $\xi$
+need not be a polynomial in $x$.
+
+All differentiations below are taken inside one element. We do not take a
+distributional derivative across the discontinuities of the DG solution.
+The separate element derivatives are evaluated at faces and their jumps are
+formed afterwards, as in \cref{sec:ofdg-face-evaluation}. This distinction
+allows each element to have a well-defined smooth interior derivative even
+when the global DG function is discontinuous.
+
+Reference differentiation is already available through
+$D_{\xi_r}=V^{-1}G^{(r)}$ from
+\cref{sec:ofdg-coefficient-derivatives}. The next question is how to turn
+this reference operation into a physical derivative when the element map is
+non-affine. We first identify the representation problem, then construct
+one projected derivative, and finally explain repeated differentiation.
 
 \subsection{Why the affine construction is insufficient}
 Let $\boldsymbol x=T_K(\boldsymbol\xi)$ be a smooth, invertible,
@@ -27,6 +61,18 @@ The physical inner product therefore has a nonconstant weight. Even if
 $\widehat v$ and $T_K$ are polynomial, the inverse Jacobian generally makes
 $\partial_{x_j}v$ fall outside the mapped finite element space. Evaluating a
 single inverse Jacobian at the element centre cannot represent this variation.
+Componentwise, the chain rule reads
+\begin{equation}
+ (\partial_{x_j}u_h)(T_K(\xi))
+ =\sum_{r=1}^{d}(J_K^{-1}(\xi))_{rj}
+                  \sum_{b=1}^{N_k}U_b\partial_{\xi_r}\widehat\phi_b(\xi).
+\end{equation}
+Thus the exact first physical derivative of the represented $u_h$ can still
+be evaluated at any quadrature point using the available basis derivatives
+and Jacobian. The difficulty is storing that entire derivative with only
+$N_k$ coefficients in the original space. On an affine map the geometric
+factors are constant and the representation is exact; on a curved map they
+are position-dependent and generally take the derivative outside the space.
 
 A one-dimensional example makes the obstruction explicit. On $[0,1]$, take
 \begin{equation}
@@ -44,11 +90,20 @@ Neither expression is generally a finite-degree reference polynomial. The
 issue is already present for an ordinary polynomial geometry map; it does not
 require NURBS.
 
+\Cref{fig:curved-map} shows the corresponding geometric issue in two dimensions:
+reference coordinate lines are mapped to a curved physical element, and the
+Jacobian weight and face normals vary within that element.
+\input{illustrations/curved-map}
+
 \subsection{Physical mass matrices and nested projections}
 Use the mapped spaces $V^r(K)$ from \cref{eq:ofdg-space}, all with the same
 map $T_K$. Let $\widehat\phi_i$ span the order-$k$ reference space and
 $\widehat\psi_a^{(r)}$ its order-$r$ subspace. Their physical mass and coupling
-matrices are
+matrices are defined below. Let $N_k$ and $N_r$ be the numbers of basis
+functions at orders $k$ and $r$. Then $M_k^K$ is $N_k\times N_k$,
+$M_r^K$ is $N_r\times N_r$, and the coupling matrix $B_r^K$ is
+$N_r\times N_k$. Indices $i,j$ run over the order-$k$ basis and $a,b$
+over the order-$r$ basis:
 \begin{align}
  (M_k^K)_{ij}&=\int_{\widehat K}\widehat\phi_i\widehat\phi_j w_K\,d\xi,\\
  (M_r^K)_{ab}&=\int_{\widehat K}
@@ -91,15 +146,37 @@ $w_K$ is constant and cancels from \cref{eq:curved-projector-matrix}, recovering
 the reusable reference projector. On curved elements it cannot be cancelled.
 
 \subsection{Projecting a physical derivative}
-We seek $z_h=\mathscr D_{K,j}u_h\in V^k(K)$ satisfying
+Let $f=\partial_{x_j}u_h$ denote the exact physical derivative of the
+represented input. Since $f$ need not belong to $V^k(K)$, we select the
+representable function with the smallest physical squared-integral error:
+\begin{equation}
+ z_h=\underset{z\in V^k(K)}{\operatorname{argmin}}\,
+           \int_K |z-f|^2\,dx
+     =\Pi_K^k f=\mathscr D_{K,j}u_h.
+ \label{eq:curved-derivative-minimization}
+\end{equation}
+The word physical refers to the measure $dx$. A region stretched by the
+map occupies more physical volume and must have correspondingly more weight
+in this error. Minimizing an unweighted reference integral would generally
+choose a different approximation.
+
+To obtain the minimizer, require the first variation in every available test
+direction $v_h$ to vanish. This gives the orthogonality condition
 \begin{equation}
  (z_h,v_h)_K=(\partial_{x_j}u_h,v_h)_K
  \quad\text{for every }v_h\in V^k(K).
  \label{eq:curved-derivative-weak}
 \end{equation}
-This is an $L^2$ projection, not a new PDE solve or a finite-difference
-approximation. Inserting the basis expansions and
-\cref{eq:curved-chain-rule} gives
+The residual $z_h-f$ is therefore orthogonal to the available approximation
+space. This does not require it to vanish at nodes or face points: physical
+$L^2$ projection is an integral best approximation, not interpolation.
+Write the unknown projected derivative as
+$z_h=\sum_b Z_b\phi_b$ and test with each $\phi_a$. The result is
+$\sum_b(\phi_a,\phi_b)_K Z_b=
+ \sum_b(\phi_a,\partial_{x_j}\phi_b)_K U_b$.
+The left-hand side is the physical mass matrix acting on $Z$; the
+right-hand side supplies the inner products with the known derivative.
+Using \cref{eq:curved-chain-rule} gives
 \begin{align}
  M_k^K Z&=G_{K,j}U,\qquad D_{K,j}=(M_k^K)^{-1}G_{K,j},\\
  (G_{K,j})_{ab}&=\int_{\widehat K}\widehat\phi_a
@@ -107,6 +184,20 @@ approximation. Inserting the basis expansions and
                    \partial_{\xi_s}\widehat\phi_b\right]w_K\,d\xi.
  \label{eq:curved-derivative-assembly}
 \end{align}
+Here $U,Z\in\mathbb R^{N_k}$ and $M_k^K$, $G_{K,j}$, and $D_{K,j}$
+are all $N_k\times N_k$. The subscript $j$ selects one physical coordinate
+direction. The integral matrix $G_{K,j}$ must not be confused with the
+sampled reference-derivative matrix $G^{(r)}$ used to construct $D_{\xi_r}$.
+The matrix $D_{K,j}$ maps input coefficients directly to projected derivative
+coefficients: $Z=D_{K,j}U$.
+
+At each volume quadrature point, assembly evaluates the reference basis,
+its first derivatives, the inverse Jacobian, and the physical weight. It
+accumulates the mass and derivative inner products, then solves the mass
+system for each column of $G_{K,j}$. The static geometry allows the resulting
+$D_{K,j}$ to be stored and reused. During filtering, applying a derivative is
+a matrix multiplication; no new global PDE problem is solved.
+
 The geometry is evaluated inside the integral. Only first reference
 basis derivatives and first derivatives of the map are needed. A constant
 has zero right-hand side, hence zero projected derivative. For affine maps,
@@ -122,15 +213,54 @@ projected first derivative $z_h$ is characterized by
 \end{equation}
 The Jacobian cancels on the right, but remains in the mass matrix on the left.
 This illustrates why a physical projection is different from an unweighted
-reference projection.
+reference projection. To make the result explicit, set $\varepsilon=1/2$
+and use the reference linear basis $(1,\xi)$. Then
+\begin{equation}
+ \begin{pmatrix}1&5/12\\5/12&1/4\end{pmatrix}
+ \begin{pmatrix}Z_0\\Z_1\end{pmatrix}
+ =\begin{pmatrix}1\\1/2\end{pmatrix},
+ \qquad
+ \widehat z_h(\xi)=\frac6{11}+\frac{12}{11}\xi.
+ \label{eq:curved-projection-worked-example}
+\end{equation}
+This line approximates $1/(3/2-\xi)$ in the physical integral norm.
+At $\xi=1$ it has value $18/11$, whereas the exact derivative is $2$.
+The mismatch is compatible with the best-approximation property: endpoint
+agreement was never imposed. This intentionally coarse example illustrates
+the definition, rather than predicting the error of a refined simulation.
+
+In actual assembly the integrals are replaced by quadrature, giving the
+projection associated with that discrete inner product. Increasing
+quadrature accuracy reduces integration error, but cannot make an
+unrepresentable derivative belong to the fixed solution space.
 
 \subsection{Recursive higher derivatives: the precise approximation}
-The derivative graph reuses these first-derivative matrices:
+\label{sec:curved-recursive-derivatives}
+After the first operation, only the coefficients of $z_x=
+\Pi_K^k\partial_xu_h$ are retained as the derivative state. A second
+$x$-operation differentiates this represented approximation and projects
+again:
+\begin{equation}
+ z_x=\Pi_K^k\partial_xu_h,\qquad
+ z_{xx}=\Pi_K^k\partial_x z_x
+       =\Pi_K^k\partial_x(\Pi_K^k\partial_xu_h).
+\end{equation}
+It does not return to $u_h$ and evaluate its exact second physical
+derivative. The distinction persists even if both projections are assembled
+with exact integration. The derivative graph implements this sequence by
+reusing the same first-derivative matrices:
 \begin{equation}
  U^{(0)}=U,\qquad U^{(\alpha)}=D_{K,j}U^{(\alpha-e_j)},
  \label{eq:curved-recursion}
 \end{equation}
-where $e_j$ selects the coordinate direction assigned to that graph edge.
+For $\alpha\ne0$, the code chooses $j=\max\{s:\alpha_s>0\}$.
+The coordinate unit multi-index $e_j$ has a one in position $j$ and zeros
+elsewhere, so $\alpha-e_j$ denotes the already computed parent state with
+one fewer derivative. $U^{(\alpha)}$ is the coefficient vector of
+$\mathscr D_K^\alpha u_h$, not a power of $U$. For $(1,1)$, for example,
+the parent is $(1,0)$ and the last operation is $D_{K,y}$; for $(2,1)$,
+the chain is $(0,0)\to(1,0)\to(2,0)\to(2,1)$. This gives exactly the
+ordering in \cref{eq:projected-multi-index-order}.
 For instance, the second operation in directions $i$ then $j$ represents
 $\Pi_K^k\partial_{x_j}(\Pi_K^k\partial_{x_i}u_h)$. It generally differs
 from projecting the exact second derivative once. Writing $\Pi=\Pi_K^k$,
@@ -140,12 +270,46 @@ from projecting the exact second derivative once. Writing $\Pi=\Pi_K^k$,
  =\Pi\partial_{x_j}(\Pi-I)\partial_{x_i}u_h.
  \label{eq:curved-recursion-defect}
 \end{equation}
-The right-hand side is the differentiated error from the previous projection.
-It explains both the approximation and why projected mixed derivatives need
-not commute. The implementation fixes an order of application; it does not
-average all orders or claim exact higher chain-rule derivatives. Second- and
-third-derivative convergence must therefore be measured, as in the
-manufactured test below. Projection alone is not a proof of their convergence.
+To read this identity, set $e_i=(\Pi-I)\partial_{x_i}u_h$.
+The first stored derivative is $\partial_{x_i}u_h+e_i$, so the next
+operation is $\Pi\partial_{x_j}\partial_{x_i}u_h+
+\Pi\partial_{x_j}e_i$. The right-hand side of
+\cref{eq:curved-recursion-defect} is precisely this last term.
+A small error in the first projection does not by itself guarantee a small
+higher-derivative error, because differentiating the error can amplify it.
+There are also two distinct accuracy questions: error relative to derivatives
+of the represented $u_h$, and error relative to derivatives of an underlying
+smooth exact solution $u$. The latter includes differentiation of the input
+approximation error $u_h-u$ as well as the intermediate projections.
+It explains the difference between successive projection and a single
+projection of the exact derivative. To isolate the ordering issue, subtract
+the same identity with $i$ and $j$ interchanged. Exact mixed partials cancel:
+\begin{align}
+ (\mathscr D_{K,j}\mathscr D_{K,i}
+   -\mathscr D_{K,i}\mathscr D_{K,j})u_h
+ &=\Pi\partial_{x_j}(\Pi-I)\partial_{x_i}u_h\notag\\
+ &\quad-\Pi\partial_{x_i}(\Pi-I)\partial_{x_j}u_h.
+ \label{eq:curved-commutator}
+\end{align}
+Thus any failure to commute comes from the intermediate projection errors,
+not from a failure of the physical chain rule on curved geometry. The two
+terms vanish when the first derivatives are represented exactly in the
+space. On curved elements they need not vanish, although particular states
+or maps can still give commuting results.
+
+The derivative graph stores one state per multi-index. On the affine path,
+any valid parent gives the same exact derivative; the curved extension
+retains one fixed parent as a definition of the approximation. It neither
+computes every ordering nor verifies that alternative parents agree.
+A multi-index remains a valid storage label with this convention, but it is
+not evidence of order independence. Averaging derivative permutations or
+projecting exact higher derivatives would define different sensor operators
+and would require separate implementation and validation. Second- and
+third-derivative convergence must therefore be assessed using
+manufactured solutions. Projection alone is not a proof of their convergence.
+
+The two routes are contrasted in \cref{fig:projected-derivative-route}.
+\input{illustrations/projected-derivatives}
 
 \subsection{Curved faces, normal directions, and length scales}
 For a reference face with outward unit normal $\widehat{\boldsymbol n}$, the
@@ -189,7 +353,7 @@ with positive, overintegrated quadrature. Consistent quadrature on the nested
 spaces gives the analogous discrete projection identities, up to linear-solve
 roundoff; it preserves the quadrature-defined physical means. Agreement with
 exact integrals, derivative accuracy, and geometric sampling invariance still
-require the recorded quadrature and refinement checks. This solution-space
+require quadrature and refinement checks. This solution-space
 projection does not convert rational NURBS geometry to polynomial geometry;
 that separate, explicit geometry approximation retains the support boundary
 stated in \cref{sec:support-boundary}.

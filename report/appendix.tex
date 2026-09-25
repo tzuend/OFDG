@@ -1,54 +1,646 @@
-\chapter{Evidence, reproducibility, and missing work}
-\label{app:study-design}
-\section{Rebuilding this report without new simulations}
-From the repository root, run
-\begin{quote}\texttt{make report-draft}\end{quote}
-This regenerates report-specific figures and tables from the retained preview
-results, then compiles the thesis. It does not launch solvers or replace the
-supervisor brief. A Python installation with NumPy and Matplotlib and a LaTeX
-installation with BibTeX are required. The editable report sources live under
-\path{report/}; the compiled document is \path{report/thesis.pdf}.
+\chapter{Direct curved differentiation and surface geometry}
+\label{app:geometry-extensions}
 
-\begin{center}\small
-\begin{tabular}{@{}p{.36\textwidth}p{.58\textwidth}@{}}\toprule
-Evidence & Repository location\\\midrule
-Approved preview configuration & \path{experiments/preview_manifest.json}\\
-Commands, metrics, provenance & \path{measurements/study/preview/results.json}\\
-Rank-local polynomial/mean data & \path{measurements/study/preview/profiles/}\\
-Independent WENO references & \path{measurements/study/preview/references/}\\
-Full error/refinement values & \path{measurements/study/preview/convergence.csv}\\
-Preview controls and checks & \path{docs/supervisor-preview.md}\\
-Curved validation and reproducer & \path{docs/curved-validation.md}\\
-Report-specific derived assets & \path{report/generated/preview/}\\\bottomrule
-\end{tabular}\end{center}
+This appendix records the mathematics behind two isolated investigations:
+direct physical differentiation of a mapped DG function, and first-order
+OFDG on a spherical surface. They answer different questions. The first
+changes how derivatives of a function on a volume element are evaluated.
+The second changes the domain from a volume to a two-dimensional surface
+embedded in three-dimensional space. A curved volume element remains a
+full-dimensional region; a surface element does not.
 
-The retained result metadata records commands, source fingerprints, environment,
-and run outcomes. The report export records input hashes for tracing its tables
-and figures to this dataset. The numerical executable is not rebuilt for an
-editorial revision; the current working tree may contain later documentation
-changes. Reproducing numerical measurements requires the corresponding recorded
-source and configuration, not merely the newest checkout.
+\ScopeLimit{The production method remains the recursively projected volume
+construction in \cref{sec:curvilinear-mathematics}. Direct differentiation was
+investigated in a separate operator experiment. The surface implementation
+is an isolated P1/Q1 rotational-transport example, using only first surface
+derivatives. Higher-order surface OFDG and general production surface
+support are outside the scope of this thesis. The final section explains
+that boundary; it does not specify an implemented extension.}
 
-The historical full-study manifest remains a draft proposal outside this
-report's completed matrix. Its large cases, repetitions, and scaling rows are
-not an implied checklist required to interpret the preview. The separate final
-publication target remains guarded; unresolved placeholder boxes also stop a
-final-mode LaTeX build.
+The derivations below introduce their building blocks before combining them.
+In particular, a coordinate transformation, a physical $L^2$ projection,
+and a geometric projection onto a tangent plane are three distinct operations.
+Numerical comparisons remain in the separate supervisor brief; this appendix
+does not turn preliminary operator measurements into a PDE accuracy claim.
 
-\section{Prioritized missing-work register}
-\label{app:missing-work}
-These entries identify evidence needed for stronger claims. They are not mock
-results, and their presence does not invalidate the narrower observations
-already reported.
-\begin{center}\small
-\begin{tabular}{@{}p{.16\textwidth}p{.57\textwidth}p{.18\textwidth}@{}}\toprule
-ID & Evidence needed / claim affected & Location\\\midrule
-REF-01 & Resolved Euler reference; shock-error rankings & p.~\pageref{missing:REF-01}\\
-KX-01 & Spatial detection and thresholds; selectivity mechanism & p.~\pageref{missing:KX-01}\\
-TIME-01 & Controlled cadence; sensor-only comparison & p.~\pageref{missing:TIME-01}\\
-GEO-01 & Geometry variation; broader curved robustness & p.~\pageref{missing:GEO-01}\\\bottomrule
-\end{tabular}\end{center}
-REF-01 and KX-01 are the first priorities for interpreting shock and wave
-comparisons. TIME-01 is needed for claims attributing OFDG/OEDG differences
-specifically to their sensors. GEO-01 expands geometric evidence; native
-NURBS implementation is not required for it.
+\section{Direct physical differentiation of the original DG function}
+\label{sec:appendix-direct}
+
+\subsection{The function is already defined in physical space}
+Let $K\subset\mathbb R^d$ be a volume element and let
+$T:\widehat K\longrightarrow K$ be a smooth invertible map. The reference
+coordinate is $\xi=(\xi_1,\ldots,\xi_d)$ and the physical coordinate is
+$x=(x_1,\ldots,x_d)=T(\xi)$. Write $S=T^{-1}$ for the inverse map.
+For coefficients $U_b$ and reference basis functions $\widehat\phi_b$,
+\begin{equation}
+ \widehat u_h(\xi)=\sum_{b=1}^N U_b\widehat\phi_b(\xi),
+ \qquad u_h(x)=\widehat u_h(S(x)).
+ \label{eq:app-pullback}
+\end{equation}
+The second expression is the physical function, not an approximation to a
+second representation of it. Its physical basis is simply
+$\phi_b(x)=\widehat\phi_b(S(x))$. Thus there is no need to project the input
+into a new space merely to regard it as a function of physical position.
+The original coefficients already define that function exactly, subject to
+floating-point evaluation and the chosen geometry representation.
+
+On a curved element the $\phi_b$ generally are not physical polynomials.
+They remain legitimate basis functions. We can evaluate and differentiate
+such compositions without requiring their derivatives to lie in the
+original finite-dimensional space. What we lose is the ability to store
+an arbitrary exact derivative using just another coefficient vector in that
+same space. Pointwise evaluation and finite-element representation are
+therefore different requirements.
+
+This distinction also separates the present experiment from reconstructing
+$u_h$ as a polynomial in $x$. A physical-polynomial $L^2$ reconstruction would
+usually change the input function before differentiation. Direct composition
+with $S$ does not. All derivatives in this section are element-interior
+classical derivatives. We do not differentiate the discontinuous global DG
+function in the distributional sense.
+
+\subsection{First derivatives: why the Jacobian is still needed}
+Define $J_{ar}=\partial T_a/\partial\xi_r$ and
+$A_{ri}=(J^{-1})_{ri}$. Indices $a,i,j$ refer to physical coordinates;
+$r,s$ refer to reference coordinates. The inverse function identity
+$T(S(x))=x$ gives $DS(x)=J(S(x))^{-1}$. The chain rule then yields
+\begin{equation}
+ \partial_{x_i}u_h(x)
+ =\sum_{r=1}^d \partial_{\xi_r}\widehat u_h(S(x))A_{ri}(S(x)).
+ \label{eq:app-first-direct}
+\end{equation}
+The entries of $A$ describe how the reference position changes when one
+physical coordinate changes. Mapping the function to physical space has not
+removed this dependence: it has placed it inside the composition in
+\cref{eq:app-pullback}. If we differentiate the whole composition
+symbolically or by automatic differentiation, the chain rule supplies these
+factors automatically. If we differentiate the reference polynomial by hand,
+we must supply them explicitly. Omitting them would differentiate a different
+function with respect to a different coordinate.
+
+A simple scaling illustrates this. If $x=2\xi$ and
+$\widehat u_h(\xi)=\xi$, then $u_h(x)=x/2$. Its physical derivative is $1/2$,
+whereas the reference derivative is $1$. The inverse Jacobian is precisely
+the missing factor. Curvature adds variation of that factor with position.
+
+\subsection{Second derivatives: differentiate the geometric factor too}
+The Hessian of a scalar function is the matrix of all its second partial
+derivatives. In two dimensions it is
+\begin{equation}
+ H_xu_h=
+ \begin{pmatrix}
+ \partial_{xx}u_h&\partial_{xy}u_h\\
+ \partial_{yx}u_h&\partial_{yy}u_h
+ \end{pmatrix}.
+\end{equation}
+This is notation for familiar derivatives, rather than a new differentiation
+operation. Applying the product and chain rules to
+\cref{eq:app-first-direct} gives, with all reference quantities evaluated at
+$\xi=S(x)$,
+\begin{align}
+ \partial_{x_j}\partial_{x_i}u_h
+ &=\sum_{r,s=1}^d A_{sj}A_{ri}
+                    \partial_{\xi_s}\partial_{\xi_r}\widehat u_h
+   +\sum_{r,s=1}^d A_{sj}(\partial_{\xi_s}A_{ri})
+                    \partial_{\xi_r}\widehat u_h.
+ \label{eq:app-second-direct}
+\end{align}
+The first sum differentiates the reference function. The second differentiates
+the geometric factor in its first physical derivative. On an affine element
+$A$ is constant, so the second sum vanishes. On a curved element it generally
+does not. Applying the first-derivative transformation twice while treating
+$A$ as constant misses exactly this contribution.
+
+The required inverse-Jacobian derivative follows by differentiating
+$JA=I$:
+\begin{equation}
+ \partial_{\xi_s}A=-A(\partial_{\xi_s}J)A.
+\end{equation}
+Thus a direct second derivative needs second derivatives of the geometry,
+in addition to first and second derivatives of the reference solution.
+This requirement is different from the production recursion, which uses
+first geometry derivatives to assemble each projected first-derivative
+matrix and then differentiates the represented projection again.
+
+\subsection{A one-dimensional example through the third derivative}
+Consider
+\begin{equation}
+ x=T(\xi)=\xi+\varepsilon\xi(1-\xi),\qquad
+ 0<|\varepsilon|<1,\qquad j(\xi)=T'(\xi)>0.
+\end{equation}
+Let $f(\xi)=\widehat u_h(\xi)$. Since $d/dx=j^{-1}d/d\xi$,
+repeated application of the product rule gives
+\begin{align}
+ u_h'&=\frac{f'}{j},\\
+ u_h''&=\frac{f''}{j^2}-\frac{f'j'}{j^3},\\
+ u_h'''&=\frac{f'''}{j^3}
+ -\frac{3f''j'}{j^4}-\frac{f'j''}{j^4}
+ +\frac{3f'(j')^2}{j^5}.
+ \label{eq:app-third-one-dimensional}
+\end{align}
+Primes on $f$ and $j$ mean reference derivatives; primes on $u_h$ mean
+physical derivatives. These equations are evaluated at $x=T(\xi)$.
+For $f(\xi)=\xi$, the reference second and third derivatives vanish, but
+$j=1+\varepsilon-2\varepsilon\xi$, $j'=-2\varepsilon$, and $j''=0$ give
+\begin{equation}
+ u_h'=j^{-1},\qquad
+ u_h''=2\varepsilon j^{-3},\qquad
+ u_h'''=12\varepsilon^2j^{-5}.
+\end{equation}
+A reference-linear function can therefore have nonzero physical derivatives
+of every order. This is not numerical error: it is a property of the
+represented function on the curved element. The powers of $j^{-1}$ also
+explain why nearly singular maps can amplify derivatives and numerical error.
+
+\subsection{Higher derivatives from a local inverse Taylor series}
+\label{sec:appendix-jets}
+Writing every product-rule term separately becomes cumbersome in several
+dimensions. The isolated experiment instead stores a short multivariate
+Taylor polynomial, often called a \emph{Taylor jet}. This polynomial is
+local to one evaluation point; it is not a new DG approximation or an
+$L^2$ projection of the solution.
+
+Choose a reference point $\xi_0$ and its physical image $x_0=T(\xi_0)$.
+Let $h>0$ be a length scale and introduce a dimensionless physical increment
+$\eta=(\eta_1,\ldots,\eta_d)$ by $x=x_0+h\eta$. We seek the Taylor
+polynomial $q(\eta)$ of the inverse map about this point, through total
+degree $m$, satisfying
+\begin{equation}
+ q(0)=\xi_0,\qquad
+ T(q(\eta))=x_0+h\eta+\mathcal O(|\eta|^{m+1}).
+ \label{eq:app-inverse-series}
+\end{equation}
+Substitute it into the original reference function and retain terms through
+that degree:
+\begin{equation}
+ \widehat u_h(q(\eta))
+ =\sum_{|\alpha|\le m}c_\alpha\eta^\alpha
+    +\mathcal O(|\eta|^{m+1}).
+\end{equation}
+Here a multi-index is a tuple of nonnegative integers
+$\alpha=(\alpha_1,\ldots,\alpha_d)$. Its total order,
+factorial and monomial are
+\begin{equation}
+ |\alpha|=\sum_{i=1}^d\alpha_i,\qquad
+ \alpha!=\prod_{i=1}^d\alpha_i!,\qquad
+ \eta^\alpha=\prod_{i=1}^d\eta_i^{\alpha_i}.
+\end{equation}
+For example, $\alpha=(2,1)$ means two $x$ derivatives and one $y$
+derivative; $|\alpha|=3$ and $\alpha!=2$. Comparing with the Taylor
+expansion in physical coordinates shows that
+\begin{equation}
+ \partial_x^\alpha u_h(x_0)=\frac{\alpha!}{h^{|\alpha|}}c_\alpha.
+ \label{eq:app-jet-coefficient}
+\end{equation}
+The factorial and length-scale factors are essential. A Taylor coefficient
+is not in general equal to the derivative it encodes.
+
+Polynomial addition is coefficientwise. Multiplication multiplies all pairs
+of monomials and discards products whose total degree exceeds $m$. Terms of
+higher degree cannot contribute to lower-degree coefficients under these
+operations. Consequently this truncation preserves the derivatives through
+order $m$ at the base point in exact arithmetic. It does not promise an
+accurate approximation over a finite neighbourhood of arbitrary size.
+
+For two dimensions and $m=3$, ten coefficients suffice: one constant, two
+linear, three quadratic and four cubic coefficients. The experiment computes
+the inverse series using the fixed base-point Jacobian $J_0=J(\xi_0)$:
+\begin{align}
+ q^{(0)}(\eta)&=\xi_0,\\
+ q^{(\ell+1)}(\eta)&=
+ \left[q^{(\ell)}(\eta)-J_0^{-1}
+ \{T(q^{(\ell)}(\eta))-x_0-h\eta\}\right]_{\le m}.
+ \label{eq:app-inverse-iteration}
+\end{align}
+The brackets mean truncation by total degree. To see why this works,
+suppose the current inverse-series error begins at degree $r$. Near the
+base point, the linear part of the composition error is $J_0$ times that
+error. Multiplication by $J_0^{-1}$ cancels its degree-$r$ term; variation
+of the Jacobian contributes only higher-degree terms. Each correction thus
+fixes at least one additional degree. Three corrections recover degrees
+one through three in exact arithmetic; the prototype uses four to include
+a redundant residual correction. This is a local series construction, not
+a global guarantee of convergence for arbitrary physical displacements.
+
+The geometry fixtures are explicit polynomial maps, so their composition
+with a jet is available directly. The reference finite-element polynomial
+is expressed in centred monomials by a basis conversion, then evaluated
+at $q(\eta)$. That conversion preserves the represented function in exact
+arithmetic; it is not a physical-polynomial reconstruction. Its conditioning,
+the inverse-series arithmetic and the factor $h^{-|\alpha|}$ can nevertheless
+amplify floating-point errors.
+
+\subsection{What direct differentiation improves, and what it cannot fix}
+Let $\mathcal R_\alpha u_h$ denote the production recursively projected
+derivative in its chosen order, and let $u$ be an underlying smooth exact
+field. Then
+\begin{align}
+ \mathcal R_\alpha u_h-\partial^\alpha u
+ &=\underbrace{\mathcal R_\alpha u_h-\partial^\alpha u_h}
+                 _{\text{derivative-operator discrepancy}}
+   +\underbrace{\partial^\alpha(u_h-u)}
+                 _{\text{differentiated input error}},\\
+ \partial^\alpha u_h-\partial^\alpha u
+ &=\partial^\alpha(u_h-u).
+ \label{eq:app-error-split}
+\end{align}
+Direct differentiation removes the intermediate-projection contribution.
+It does not remove error already present in $u_h$, and differentiation can
+magnify that error. The two terms in the first line may reinforce or cancel
+each other. Removing the first term therefore need not decrease the total
+error against $u$, even though it gives a more faithful derivative of $u_h$.
+Intermediate projection can also suppress some components of the input error.
+These identities explain why an exactly represented test field is useful
+for isolating operator error, and why it cannot establish improved PDE
+performance on its own.
+
+For sufficiently smooth full-dimensional maps and inputs, exact mixed
+Cartesian derivatives commute. The $xxy$, $xyx$ and $yxx$ derivatives of
+$u_h$ agree. The jet represents them by the single coefficient with
+$\alpha=(2,1)$; it does not independently calculate three differentiation
+paths. By contrast, successive finite-space projections can make those
+paths differ, as derived in \cref{sec:curved-recursive-derivatives}.
+Agreement built into a representation is not an independent correctness
+check, which is why the isolated experiment also used physical-coordinate
+finite differences with an independent inverse-map calculation.
+
+In principle, derivatives required only at face quadrature points could be
+evaluated directly there and their one-sided jumps formed afterwards.
+The OFDG damping still uses its physical nested projections; changing the
+sensor derivative evaluator would not remove those projections. Such an
+integration would require geometry derivatives or a suitable differentiable
+map evaluator, pointwise derivative evaluation and verification of the
+resulting damping rates. The experiment supports two explicit polynomial
+geometry families in two dimensions, through third derivatives. It does not
+provide this interface for arbitrary MFEM maps, NURBS or production 3D
+filtering, and it has not replaced the current method.
+
+\section{The mathematics needed for the first-order surface example}
+\label{sec:appendix-surface}
+
+\subsection{Two surface coordinates and three physical components}
+A surface patch $K\subset\Gamma\subset\mathbb R^3$ is parameterized by
+$X(\xi_1,\xi_2)$. Its Jacobian has two columns and three rows:
+\begin{equation}
+ J=(e_1\ e_2),\qquad e_a=\partial_{\xi_a}X\in\mathbb R^3,
+ \qquad G=J^{\mathsf T}J.
+ \label{eq:app-surface-metric}
+\end{equation}
+The columns $e_1,e_2$ span the tangent plane. They need not have length one
+or be perpendicular. The $2\times2$ matrix $G$, called the metric matrix,
+records their lengths and mutual angle: $G_{ab}=e_a\cdot e_b$. For a
+regular surface patch these vectors are independent, so $G$ is positive
+definite. Although the surface lies in three-dimensional space, it has only
+two independent directions of motion. There is no square inverse $J^{-1}$.
+
+A surface DG function is represented as
+$u_h(X(\xi))=\widehat u_h(\xi)$. Surface values do not specify how a function
+changes when leaving the surface in the normal direction. This is why an
+ordinary ambient $x$, $y$ or $z$ derivative is not determined by the surface
+function alone. The tangential gradient is determined: it measures changes
+along admissible surface directions.
+
+\subsection{Deriving the tangential gradient}
+Seek a tangent vector $g$ whose dot product with a tangent displacement
+reproduces the directional change of $u$. A reference displacement
+$\delta\xi$ induces $\delta x=J\delta\xi$. Therefore
+\begin{equation}
+ g\cdot J\delta\xi=(\nabla_\xi\widehat u)\cdot\delta\xi
+ \quad\hbox{for every }\delta\xi.
+\end{equation}
+This means $J^{\mathsf T}g=\nabla_\xi\widehat u$. Because $g$ is tangent,
+write $g=Jc$ for a two-component coefficient vector $c$. The resulting
+system is $Gc=\nabla_\xi\widehat u$, giving
+\begin{equation}
+ \boxed{\nabla_\Gamma u=J G^{-1}\nabla_\xi\widehat u.}
+ \label{eq:app-surface-gradient}
+\end{equation}
+The result has three Cartesian components, but lies in a two-dimensional
+tangent plane. Keeping three components avoids constructing and comparing
+a separate orthonormal tangent basis on every element.
+
+An equivalent physical description uses a unit normal $n$ and the matrix
+\begin{equation}
+ P=I-nn^{\mathsf T}=J G^{-1}J^{\mathsf T}.
+\end{equation}
+For a vector $a$, $Pa=a-n(n\cdot a)$ removes its normal component. If
+$U$ is any smooth ambient extension of $u$, then
+\begin{equation}
+ \nabla_\Gamma u=P\nabla U.
+ \label{eq:app-tangent-projection}
+\end{equation}
+Different extensions can have different normal derivatives. Their tangential
+derivatives agree, because they have identical values along every surface
+curve. Thus the right-hand side does not depend on an arbitrary choice of
+extension. The matrix $P$ is an exact geometric projection of a vector at
+one point; it is not the finite-element $L^2$ projection $\Pi_K$.
+
+\subsection{Surface area, edge length and the co-normal}
+A small reference parallelogram has physical area
+$|e_1\times e_2|$ times its reference area. Consequently
+\begin{equation}
+ dS=\sqrt{\det G}\,d\xi_1d\xi_2,\qquad
+ |K|=\int_{\widehat K}\sqrt{\det G}\,d\xi.
+\end{equation}
+A reference edge parameterized by $\widehat\gamma(s)$ has physical tangent
+$J\widehat\gamma'(s)$ and line element
+\begin{equation}
+ d\ell=|J\widehat\gamma'(s)|\,ds.
+\end{equation}
+A flux leaves a surface cell through its edge. Its relevant outward direction
+must be tangent to the surface and perpendicular to the edge. This unit
+vector is the \emph{co-normal} $\mu$, distinct from the surface normal $n$.
+If $\widehat\nu$ is the outward unit reference-edge normal, then
+\begin{equation}
+ \mu=\frac{J G^{-1}\widehat\nu}
+              {|J G^{-1}\widehat\nu|},\qquad
+ \mu\,d\ell=\sqrt{\det G}\,J G^{-1}\widehat\nu\,d\widehat\ell.
+ \label{eq:app-conormal}
+\end{equation}
+Indeed, its dot product with $J\widehat\tau$ is zero whenever
+$\widehat\nu\cdot\widehat\tau=0$, so it is perpendicular to the edge
+within the tangent plane. The second identity combines this direction with
+the physical edge scale. It is useful for conservative flux assembly.
+\begin{figure}[tbp]
+ \centering
+ \begin{tikzpicture}[scale=1.05,>=Stealth]
+  \fill[blue!7] (-2.8,-.9)--(.3,-.9)--(1.7,.9)--(-1.4,.9)--cycle;
+  \draw[black!40] (-2.8,-.9)--(.3,-.9)--(1.7,.9)--(-1.4,.9)--cycle;
+  \draw[very thick,blue!65!black] (.3,-.9)--(1.7,.9);
+  \coordinate (p) at (1,0);
+  \fill (p) circle (1.8pt);
+  \draw[->,thick] (p)--(1,1.65) node[above] {$n$: surface normal};
+  \draw[->,thick,orange!80!black] (p)--(3.05,0)
+    node[right] {$\mu$: outward co-normal};
+  \draw[->,thick,blue!65!black] (p)--(1.58,.75)
+    node[right] {$\tau$: edge tangent};
+  \node at (-1.1,-.2) {tangent plane};
+  \node[below] at (.6,-.75) {cell edge};
+ \end{tikzpicture}
+ \caption{Local schematic at a surface-cell edge, drawn in perspective.
+ The edge tangent $\tau$ and outward co-normal $\mu$ lie in the tangent
+ plane and are perpendicular in physical space. The surface normal $n$
+ points out of that plane. Transport across the edge uses $v\cdot\mu$,
+ not $v\cdot n$.}
+ \label{fig:appendix-conormal}
+\end{figure}
+Figure~\ref{fig:appendix-conormal} distinguishes these three directions.
+On the smooth sphere, neighbouring cells have opposite co-normals at their
+common edge. For a merely piecewise-planar approximation of a general
+surface, this statement requires additional care because the two tangent
+planes can differ; the prototype uses an exact smooth radial sphere map.
+
+\subsection{The exact sphere map used in the prototype}
+Let $F_h(\xi)$ denote the base element map from an octahedral or cubed-sphere
+mesh, with $F_h(\xi)\ne0$. The actual geometry used at quadrature points is
+\begin{equation}
+ X(\xi)=\frac{F_h(\xi)}{|F_h(\xi)|},\qquad
+ J=\frac{1}{|F_h|}(I-XX^{\mathsf T})\,DF_h.
+ \label{eq:app-radial-map}
+\end{equation}
+The second formula follows by differentiating the normalization. Every
+mapped point has unit length. The tangent projector is $I-XX^{\mathsf T}$,
+since $X$ itself is the outward unit normal on the unit sphere.
+The base mesh supplies connectivity and reference coordinates; assembly,
+projection, error measurement and visualisation use the radial map.
+This is not the same as solving on planar facets whose vertices happen to
+lie on the sphere. It also is not a general change to MFEM's geometry API.
+
+The metric, gradient and co-normal constructions above apply to any smooth
+regular embedded surface patch. The particular radial map and rotation
+problem are sphere-specific. General mathematical formulas do not imply
+that the prototype implements all such surfaces or their interfaces.
+
+\subsection{Surface transport and the conservative DG form}
+For a tangential velocity $v$, the conservative transport equation is
+\begin{equation}
+ \partial_t u+\operatorname{div}_\Gamma(vu)=0.
+\end{equation}
+Surface divergence measures net tangential flux leaving a small surface
+region per unit area. For a test function $w_h$, integration by parts on
+a cell gives
+\begin{equation}
+ \int_K w_h\partial_tu_h\,dS
+ -\int_K \nabla_\Gamma w_h\cdot v u_h\,dS
+ +\int_{\partial K}w_h\widehat f\,d\ell=0.
+ \label{eq:app-surface-weak}
+\end{equation}
+On an edge oriented outward from $K^-$, write $b=v\cdot\mu^-$ and
+let $u^-,u^+$ be the two traces. The upwind flux is
+\begin{equation}
+ \widehat f=b\begin{cases}u^-,&b\ge0,\\u^+,&b<0.\end{cases}
+\end{equation}
+The same numerical flux enters the neighbouring equation with the opposite
+sign. Choosing $w_h=1$ cancels interior fluxes when summing over cells,
+which explains global mass conservation on the closed sphere. The normal
+speed $v\cdot n$ cannot replace $b$: tangential motion has $v\cdot n=0$
+even while it transports material across cell edges.
+
+The example uses $v=(-y,x,0)$, rotation about the $z$ axis. This velocity is
+tangent and surface-divergence-free. Tracing a characteristic backwards gives
+\begin{equation}
+ u(x,y,z,t)=u_0(x\cos t+y\sin t,-x\sin t+y\cos t,z).
+\end{equation}
+At $T=\pi/2$ the pattern has completed a quarter rotation. This provides an
+exact reference without solving a second numerical PDE. The surface is
+closed, so there is no physical boundary condition to impose.
+
+\subsection{Projected first derivatives and the order-one damping}
+The isolated solution space is discontinuous P1 on triangles or Q1 on
+quadrilaterals. Let $\phi_b=\widehat\phi_b\circ X^{-1}$ on a patch, where
+$X^{-1}$ means its local inverse from the surface patch to its reference
+coordinates. For Cartesian component $a\in\{1,2,3\}$, define
+\begin{equation}
+ g_{K,a}=\Pi_K[(\nabla_\Gamma u_h)_a].
+\end{equation}
+Here $\Pi_K$ is the physical surface $L^2$ projection into that same local
+scalar DG space. Testing with each basis function gives
+\begin{align}
+ M^K Z_a&=B_a^K U,\\
+ M^K_{ij}&=\int_{\widehat K}\widehat\phi_i\widehat\phi_j
+                            \sqrt{\det G}\,d\xi,\\
+ (B_a^K)_{ij}&=\int_{\widehat K}\widehat\phi_i
+       (J G^{-1}\nabla_\xi\widehat\phi_j)_a\sqrt{\det G}\,d\xi.
+\end{align}
+The vector $Z_a$ contains coefficients of the projected scalar component.
+Although the exact gradient is tangent at every point, separately projecting
+its three components need not preserve pointwise tangency: the tangent
+plane varies across the element. The prototype uses these three projected
+components as its sensor variables. It does not project the resulting
+vector tangentially a second time.
+
+For an edge $F$, brackets denote the difference of the two one-sided traces
+at the same physical point. The two edge-averaged jump measures are
+\begin{equation}
+ J_{F,0}=\frac1{|F|}\int_F|[u_h]|\,d\ell,\qquad
+ J_{F,1}=\frac1{|F|}\int_F\sum_{a=1}^3|[g_a]|\,d\ell.
+\end{equation}
+The second expression retains a componentwise absolute sum in fixed ambient
+Cartesian axes. It is not a rotationally invariant vector norm, and no such
+invariance is claimed. Changing reference coordinates consistently does
+not change the exact geometric gradient, but changing the ambient Cartesian
+axes can change this particular sensor sum.
+
+Let $h_K=\sqrt{|K|/|\widehat K|}$, let $\beta_F$ be the sampled maximum
+of $|v\cdot\mu|$ on the edge, and let $A$ be the sampled global maximum
+of $|u_h-\overline u_\Gamma|$, where $\overline u_\Gamma$ is the global
+surface mean. Setting $k=1$ in \cref{eq:ofdg-damping-rate} gives
+the prefactors $(2l+1)/(2l!)$: $1/2$ for $l=0$ and $3/2$ for $l=1$.
+The only nonconstant shell receives both rates. With the surface jump
+measures above, the tested rate and update are
+\begin{align}
+ \lambda_K&=\frac1A\sum_{F\subset\partial K}\beta_F
+              \left(\frac{J_{F,0}}{2h_K}+\frac32J_{F,1}\right),\\
+ u_h^{\mathrm{new}}&=\overline u_K+
+        \exp(-\Delta t\lambda_K)(u_h^{\mathrm{old}}-\overline u_K),
+ \qquad \overline u_K=\frac1{|K|}\int_Ku_h\,dS.
+ \label{eq:app-surface-damping}
+\end{align}
+Both terms in the rate have units of inverse time after division by $A$:
+one jump is divided by a length, and the derivative jump already has one
+inverse length. The near-constant guard sets damping inactive when
+$A\le10^{-12}\max(1,\text{sampled volume magnitude})$, avoiding division
+by a vanishing amplitude. The factor is applied once after a complete RK4
+step, with the rate evaluated from that step's input to the filter.
+
+The cell mean is preserved because the damped difference integrates to
+zero. On Q1, all nonconstant modes, including the bilinear reference mode,
+belong to this damped tail. Only first derivatives enter this construction;
+there is no repeated tangential derivative. Positive surface quadrature
+defines the discrete integrals consistently. No positivity limiter or KXRCF
+is included, and the mean-preserving update alone does not prove positivity.
+
+\section{Why higher surface derivatives are a separate extension}
+\label{sec:appendix-surface-boundary}
+\ScopeLimit{This section is explanatory mathematics only. Second- and
+higher-order surface derivative sensors have not been implemented or adopted.
+It records why increasing the polynomial order would require a new decision,
+rather than merely enabling the volume derivative recursion.}
+
+\subsection{Ambient and surface second derivatives answer different questions}
+Let $U(x,y,z)=x$ in ambient space and restrict it to the unit sphere:
+$u=U|_\Gamma$. Certainly $U_x=1$ and $U_{xx}=0$. Those derivatives vary
+$x$ while holding $y,z$ fixed, which generally leaves the sphere. Along
+the unit-speed great circle
+\begin{equation}
+ \gamma(s)=(\cos s,\sin s,0),\qquad
+ u(\gamma(s))=\cos s,
+\end{equation}
+the first and second derivatives with respect to distance $s$ are
+$-\sin s$ and $-\cos s$. There is no contradiction. For any smooth ambient
+function and path, the ordinary chain rule gives
+\begin{equation}
+ \frac{d^2}{ds^2}U(\gamma(s))
+ =\gamma'(s)^{\mathsf T}(H_U)\gamma'(s)
+       +\nabla U\cdot\gamma''(s).
+ \label{eq:app-path-second}
+\end{equation}
+The first term measures change of the gradient; the second accounts for
+change in the direction of travel. For $U=x$, the first term is zero and
+$\nabla U=(1,0,0)$, while
+$\gamma''=(-\cos s,-\sin s,0)$. The second term therefore equals
+$-\cos s$. A straight line and a curved path through the same ambient field
+need not produce the same second derivative along distance.
+
+\subsection{A physical description of the surface Hessian}
+The intrinsic surface Hessian describes how the tangential gradient changes
+along the surface, with its output compared in the tangent plane. If
+$g=\nabla_\Gamma u$, its ambient matrix representation is
+\begin{equation}
+ H_\Gamma u=P\,Dg\,P.
+ \label{eq:app-surface-hessian}
+\end{equation}
+Here $Dg$ has entries $(Dg)_{ij}=\partial_{x_j}g_i$ for a smooth local
+extension. The right $P$ restricts the differentiation direction to tangent
+vectors. The left $P$ keeps only the tangent part of the resulting change.
+The value on tangent directions is independent of how $g$ was extended
+away from the surface. These geometric projections do not introduce an
+$L^2$ approximation.
+
+Since $g=P\nabla U$, differentiating $g$ also differentiates $P$. Surface
+curvature appears precisely because the tangent plane changes with position.
+Using only $P H_U P$ would omit that effect. On the unit sphere, write
+$p=(x,y,z)$, so $P=I-pp^{\mathsf T}$. For $u=x$,
+\begin{equation}
+ g=e_x-xp,\qquad H_\Gamma u=-xP.
+\end{equation}
+To verify the latter, take a tangent vector $t$. Differentiating $g$ in that
+direction gives $-t_xp-xt$; tangential projection removes the first term
+and leaves $-xt$. Thus for a unit tangent $t$,
+$t^{\mathsf T}H_\Gamma u\,t=-x$. Along the great circle this is
+$-\cos s$, exactly as above. In particular, it is a surface derivative,
+not the ambient Cartesian quantity $U_{xx}$.
+
+A general surface curve also has a tangential acceleration. Its second
+derivative of $u$ contains the corresponding first-gradient contribution.
+For a geodesic, meaning a surface path with zero tangential acceleration,
+that contribution vanishes, so the surface Hessian along its tangent gives
+the second derivative along the path. Great circles parameterized by arc
+length are such paths on the sphere. This qualification matters: not every
+curve on a surface measures the Hessian alone.
+
+\subsection{The same construction in reference coordinates}
+The reference-coordinate description expresses the same geometric quantity
+in the moving basis $e_a=\partial_aX$. It is not another physical derivative
+notion. Write $G_{ab}=e_a\cdot e_b$ and let $G^{ab}$ denote entries of
+$G^{-1}$, not componentwise reciprocals. Define the coefficients
+\begin{equation}
+ C^c_{ab}=\sum_{d=1}^2G^{cd}\,e_d\cdot\partial_a\partial_bX.
+\end{equation}
+These are commonly called Christoffel symbols. Their concrete meaning is
+that the tangential part of the changing basis vector $\partial_a e_b$
+is $\sum_c C^c_{ab}e_c$. The remaining part points normally to the surface.
+
+The scalar first derivative is $\partial_b\widehat u=g\cdot e_b$.
+Differentiating this identity with respect to $\xi_a$ gives
+\begin{equation}
+ \partial_a\partial_b\widehat u
+   =(\partial_a g)\cdot e_b+g\cdot\partial_a e_b.
+\end{equation}
+The second term measures change of the basis vector itself. Subtracting
+its tangential contribution isolates change of the gradient:
+\begin{equation}
+ H_{ab}=\partial_a\partial_b\widehat u
+            -\sum_{c=1}^2 C^c_{ab}\partial_c\widehat u.
+ \label{eq:app-coordinate-hessian}
+\end{equation}
+These are the surface Hessian evaluated on the coordinate tangent vectors.
+Recovering its ambient matrix representation uses
+$H_\Gamma u=J G^{-1}H G^{-1}J^{\mathsf T}$. Hence the coordinate formula
+and \cref{eq:app-surface-hessian} describe the same object. The correction
+is required even though the reference second derivatives of the scalar
+function can be evaluated easily.
+
+\subsection{Why third order is not merely another scalar multi-index}
+Differentiating a scalar once gives a gradient; differentiating that gradient
+intrinsically gives a two-slot object, the Hessian. A further derivative must
+account for changes in both of its tangent arguments. With the first index
+specifying the differentiation direction, its coordinate components are
+\begin{equation}
+ T_{abc}=\partial_aH_{bc}
+      -\sum_{d=1}^2 C^d_{ab}H_{dc}
+      -\sum_{d=1}^2 C^d_{ac}H_{bd}.
+ \label{eq:app-third-covariant}
+\end{equation}
+Each subtraction corrects for one moving tangent-basis vector. In general,
+a tensor with $r$ such arguments acquires $r$ corresponding correction
+terms on differentiation. Direct third-order evaluation generally requires
+geometry derivatives through third order. Repeatedly differentiating three
+Cartesian components as if they were unrelated scalar fields does not, by
+itself, specify these intrinsic tensor derivatives.
+
+There is also a fundamental difference from Cartesian volume derivatives.
+The surface Hessian of a smooth scalar field is symmetric, but its covariant
+third derivative need not be fully symmetric on a curved surface. On the
+unit sphere the preceding example gives $H_{bc}=-xG_{bc}$. The intrinsic
+derivative preserves the metric, so
+\begin{equation}
+ T_{abc}=-(\partial_a x)G_{bc}.
+\end{equation}
+At the north pole choose orthonormal tangent directions $e_1=e_x$ and
+$e_2=e_y$. Then $T_{122}=-1$ whereas $T_{212}=0$. This difference exists
+in exact geometry and exact arithmetic. It is not the projection-order
+error measured for volume derivatives. Symmetrizing all slots would define
+a different sensor quantity, rather than correcting that difference as a
+numerical defect.
+

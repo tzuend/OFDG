@@ -1,0 +1,24 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+This work realizes an adapted OFDG filter through nested physical projections,
+without requiring a special modal coefficient basis. The implementation
+separates reusable reference data from geometry-dependent operators and supports
+static polynomial curved elements with KXRCF gating. On curved meshes, its
+higher derivatives are successively projected physical derivatives. Verification
+covers conservation of represented component means, affine regression behaviour,
+selected geometry families, and serial/two-rank consistency within the stated
+support boundary.
+
+The completed small numerical preview provides useful preliminary evidence.
+Gating keeps the finest P2 smooth-advection error close to DG, including on
+curved quadrilaterals. Filtering suppresses large sampled scalar oscillations,
+and the Shu--Osher detail reveals differences in retained wave variation that
+an overview would conceal. The small Euler Riemann case completes with the
+common positivity treatment, but lacks an independent accuracy reference.
+
+The next scientific work should establish where the detector activates,
+resolve Euler reference sensitivity, and separate cadence effects from sensor
+effects. The report marks these gaps explicitly. The current evidence supports
+a maintainable implementation and an empirically tested curved extension;
+it does not support a universal ranking, a general stability theorem, or
+native NURBS support.

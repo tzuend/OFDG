@@ -1,0 +1,997 @@
+{
+  "description": "Three-method FE geometry derivative comparison",
+  "source_sha256": {
+    "benchmarks/fe_mapping_jets.hpp": "1ebcd40dd8228ce781bdc3f99f546d20b6831b481b63aff8c574bc4834ee33ad",
+    "benchmarks/fe_mapping_derivatives.cpp": "0ad3af3c7fff16bce2dfffc7a0774552d29598adb784acc48afc2648854fe9cb",
+    "benchmarks/fe_mapping_derivatives_3d.cpp": "b84f3ea06f732797dedfc1868db729459bcdd06b0c83492e05aa6b12b842e4f5",
+    "benchmarks/direct_derivatives.cpp": "aa53ba9eaaa29e4735928aaf99ae0ef75f3b34bcdf62f1d82282ee86ac605b7b",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "scripts/run_fe_mapping_derivatives.py": "91db22fcf17aa457f9faf92547793e95f08c1451870daa50e92e91abcd7fcdd3",
+    "build/release/benchmarks/fe_mapping_derivatives": "4f5f7a909ace1adc62c9f5a46015ba60d5afc52f4a7b10f24d9ea9ed225382bc",
+    "build/release/benchmarks/fe_mapping_derivatives_3d": "e6acf54af8fb1d7f0b8ebcf2fd19c1dc8b808d1bbc85e9ebebc6916540deed17"
+  },
+  "checks": [
+    {
+      "case": "2d-quad-4-2-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.2346014169997943,
+      "peak_mib": 18.140625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.34762174999923445,
+      "peak_mib": 18.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35596179200001643,
+      "peak_mib": 18.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.3968891670010635,
+      "peak_mib": 18.46875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.6302108749987383,
+      "peak_mib": 18.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-0.0-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.860235083000589,
+      "peak_mib": 18.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.23265254099896993,
+      "peak_mib": 18.0625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.694371042001876,
+      "peak_mib": 18.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.2363987500029907,
+      "peak_mib": 18.09375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.8157206659998337,
+      "peak_mib": 18.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.35204495799916913,
+      "peak_mib": 18.34375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.821057083998312,
+      "peak_mib": 18.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.3837775419997342,
+      "peak_mib": 18.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-2-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 5.009781500000827,
+      "peak_mib": 18.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.633218292001402,
+      "peak_mib": 18.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 5.932950792001066,
+      "peak_mib": 19.171875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.744448959001602,
+      "peak_mib": 18.75,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-4-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 6.7529015420004725,
+      "peak_mib": 19.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.23278587499953574,
+      "peak_mib": 18.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.7012991250012419,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35118824999881326,
+      "peak_mib": 18.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.822809708002751,
+      "peak_mib": 18.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35497358300199267,
+      "peak_mib": 18.359375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.9358765830002085,
+      "peak_mib": 19.09375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.4054626249999274,
+      "peak_mib": 18.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-2-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 5.12469408400284,
+      "peak_mib": 19.015625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.629801374998351,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.066723541996907,
+      "peak_mib": 19.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.866145083000447,
+      "peak_mib": 18.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-4-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.983499125002709,
+      "peak_mib": 19.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gl-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.35067062500093016,
+      "peak_mib": 18.0625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-bernstein-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.23826062499938416,
+      "peak_mib": 18.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gl-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.3417743749996589,
+      "peak_mib": 18.203125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-bernstein-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.3545150410027418,
+      "peak_mib": 18.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gl-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.6423590419981338,
+      "peak_mib": 18.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-bernstein-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.6307959580008173,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gl-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.6330229999985022,
+      "peak_mib": 18.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-bernstein-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.5201434170012362,
+      "peak_mib": 18.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-1.2-gll-coupled-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 0.3520577500021318,
+      "peak_mib": 18.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-4-3-0.7-gll-separable-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 0.35158524999860674,
+      "peak_mib": 18.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-1.2-gll-coupled-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 2.0985220840011607,
+      "peak_mib": 18.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-4-3-0.7-gll-separable-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 2.095823083000141,
+      "peak_mib": 18.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.4-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.8141100419998111,
+      "peak_mib": 18.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-8-3-0.3-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.8222587919990474,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.4-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.0611387500030105,
+      "peak_mib": 19.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-8-3-0.3-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 5.9557561670008,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-16-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.7812748329997703,
+      "peak_mib": 21.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-quad-16-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "quad",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.782630459001666,
+      "peak_mib": 20.40625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-16-3-1.2-gll-coupled-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 23.92864683299922,
+      "peak_mib": 23.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2d-tri-16-3-0.7-gll-separable-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives",
+        "tri",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 23.445339916001103,
+      "peak_mib": 21.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-2-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "2",
+        "2",
+        "0",
+        "0"
+      ],
+      "seconds": 2.9021700420016714,
+      "peak_mib": 19.0625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-3-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "2",
+        "3",
+        "0",
+        "0"
+      ],
+      "seconds": 4.306312957996852,
+      "peak_mib": 20.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-2-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "4",
+        "2",
+        "0",
+        "0"
+      ],
+      "seconds": 22.52939533300014,
+      "peak_mib": 20.203125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-0-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "4",
+        "3",
+        "0",
+        "0"
+      ],
+      "seconds": 33.481205291998776,
+      "peak_mib": 22.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-2-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "2",
+        "2",
+        "1",
+        "0"
+      ],
+      "seconds": 2.9033276670015766,
+      "peak_mib": 19.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-2-3-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "2",
+        "3",
+        "1",
+        "0"
+      ],
+      "seconds": 4.176944457998616,
+      "peak_mib": 19.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-2-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "4",
+        "2",
+        "1",
+        "0"
+      ],
+      "seconds": 22.419864082999993,
+      "peak_mib": 20.234375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-1-0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "4",
+        "3",
+        "1",
+        "0"
+      ],
+      "seconds": 33.186456209001335,
+      "peak_mib": 22.40625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3d-4-3-1-8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_derivatives_3d",
+        "4",
+        "3",
+        "1",
+        "8"
+      ],
+      "seconds": 53.1827689999991,
+      "peak_mib": 23.109375,
+      "returncode": 0,
+      "failure": null
+    }
+  ],
+  "compute_seconds": 316.19923379401735,
+  "peak_mib": 23.328125,
+  "logical_processors": 8,
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "mfem_config": "# Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced\n# at the Lawrence Livermore National Laboratory. All Rights reserved. See files\n# LICENSE and NOTICE for details. LLNL-CODE-806117.\n#\n# This file is part of the MFEM library. For more information and source code\n# availability visit https://mfem.org.\n#\n# MFEM is free software; you can redistribute it and/or modify it under the\n# terms of the BSD-3 license. We welcome feedback and contributions, see file\n# CONTRIBUTING.md for details.\n\n# Variables corresponding to defines in config.hpp (YES, NO, or value)\nMFEM_VERSION           = 40901\nMFEM_VERSION_STRING    = 4.9.1\nMFEM_SOURCE_DIR        = /Users/timozund/Documents/master_thesis/mfem\nMFEM_INSTALL_DIR       = /Users/timozund/Documents/master_thesis/mfem/mfem\nMFEM_GIT_STRING        = heads/master-0-ga1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18\nMFEM_USE_MPI           = YES\nMFEM_USE_METIS         = YES\nMFEM_USE_METIS_5       = NO\nMFEM_USE_DOUBLE        = YES\nMFEM_USE_SINGLE        = NO\nMFEM_DEBUG             = NO\nMFEM_USE_EXCEPTIONS    = NO\nMFEM_USE_ZLIB          = NO\nMFEM_USE_LIBUNWIND     = NO\nMFEM_USE_LAPACK        = NO\nMFEM_THREAD_SAFE       = NO\nMFEM_USE_LEGACY_OPENMP = NO\nMFEM_USE_OPENMP        = NO\nMFEM_USE_MEMALLOC      = YES\nMFEM_TIMER_TYPE        = 4\nMFEM_USE_SUNDIALS      = NO\nMFEM_USE_SUITESPARSE   = NO\nMFEM_USE_SUPERLU       = NO\nMFEM_USE_SUPERLU5      = NO\nMFEM_USE_MUMPS         = NO\nMFEM_USE_STRUMPACK     = NO\nMFEM_USE_GINKGO        = NO\nMFEM_USE_AMGX          = NO\nMFEM_USE_MAGMA         = NO\nMFEM_USE_GNUTLS        = NO\nMFEM_USE_HDF5          = NO\nMFEM_USE_NETCDF        = NO\nMFEM_USE_PETSC         = NO\nMFEM_USE_SLEPC         = NO\nMFEM_USE_MPFR          = NO\nMFEM_USE_SIDRE         = NO\nMFEM_USE_FMS           = NO\nMFEM_USE_CONDUIT       = NO\nMFEM_USE_PUMI          = NO\nMFEM_USE_HIOP          = NO\nMFEM_USE_GSLIB         = NO\nMFEM_USE_CUDA          = NO\nMFEM_USE_HIP           = NO\nMFEM_USE_RAJA          = NO\nMFEM_USE_OCCA          = NO\nMFEM_USE_CEED          = NO\nMFEM_USE_CALIPER       = NO\nMFEM_USE_UMPIRE        = NO\nMFEM_USE_SIMD          = NO\nMFEM_USE_ADIOS2        = NO\nMFEM_USE_MKL_CPARDISO  = NO\nMFEM_USE_MKL_PARDISO   = NO\nMFEM_USE_MOONOLITH     = NO\nMFEM_USE_ADFORWARD     = NO\nMFEM_USE_CODIPACK      = NO\nMFEM_USE_BENCHMARK     = NO\nMFEM_USE_PARELAG       = NO\nMFEM_USE_TRIBOL        = NO\nMFEM_USE_ENZYME        = NO\n\n# Compiler, compile options, and link options\nMFEM_CXX       = mpicxx\nMFEM_HOST_CXX  = mpicxx\nMFEM_CPPFLAGS  =\nMFEM_CXXFLAGS  = -O3 -std=c++17\nMFEM_TPLFLAGS  =  -I$(MFEM_DIR)/../hypre/src/hypre/include\nMFEM_INCFLAGS  = -I$(MFEM_INC_DIR) $(MFEM_TPLFLAGS)\nMFEM_PICFLAG   =\nMFEM_FLAGS     = $(MFEM_CPPFLAGS) $(MFEM_CXXFLAGS) $(MFEM_INCFLAGS)\nMFEM_EXT_LIBS  =  -L$(MFEM_DIR)/../hypre/src/hypre/lib -lHYPRE -L$(MFEM_DIR)/../metis-4.0 -lmetis\nMFEM_LIBS      =  -L$(MFEM_LIB_DIR) -lmfem $(MFEM_EXT_LIBS)\nMFEM_LIB_FILE  = $(MFEM_LIB_DIR)/libmfem.a\nMFEM_STATIC    = YES\nMFEM_SHARED    = NO\nMFEM_BUILD_TAG = Darwin 26eff3c9-0ac7-4965-a644-adc256b93eeb.fritz.box arm64\nMFEM_PREFIX    = ./mfem\nMFEM_INC_DIR   = $(MFEM_DIR)\nMFEM_LIB_DIR   = $(MFEM_DIR)\nMFEM_XLINKER   = -Wl,\n\n# Location of test.mk\nMFEM_TEST_MK = $(MFEM_DIR)/config/test.mk\n\n# Command used to launch MPI jobs\nMFEM_MPIEXEC    = mpirun\nMFEM_MPIEXEC_NP = -np\nMFEM_MPI_NP     = 4\n\n# The NVCC compiler cannot link with -x=cu\nMFEM_LINK_FLAGS := $(filter-out -x=cu -xcuda -xhip, $(MFEM_FLAGS))\n\n# Optional extra configuration\n"
+}

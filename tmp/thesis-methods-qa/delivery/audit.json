@@ -1,0 +1,13 @@
+{
+  "pages": 42,
+  "citations": [
+    "HesthavenWarburton2008",
+    "LiuEtAl2022",
+    "LuEtAl2021",
+    "PengEtAl2024"
+  ],
+  "placeholders": 6,
+  "build": "passed",
+  "pdf_sha256": "afce96cece68eeab1a063b6855c99b900029cda0890ba709b204a0feba201a0f",
+  "visual_inspection": "All 42 rendered pages inspected"
+}

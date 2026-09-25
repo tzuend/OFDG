@@ -1,0 +1,30 @@
+{
+  "checks_passed": true,
+  "controls": {
+    "mean_defect_max": 1.985134844799796e-15,
+    "solve_residual_max": 2.9976021664879227e-15,
+    "constant_max_sampled": 1.8683505933156242e-06,
+    "affine_quadratic_max_l2": 3.8126852569308064e-10,
+    "basis_max_scaled_norm_change": 8.769350544360407e-10,
+    "basis_count": 1080,
+    "quadrature_max_scaled_norm_change": 7.364402570381267e-11,
+    "quadrature_count": 540,
+    "affine_identity_max_scaled_norm_change": 2.2595210511030536e-10,
+    "affine_identity_count": 345,
+    "old_baseline_max_scaled_norm_change": 2.8115727733361057e-14,
+    "old_baseline_count": 1232,
+    "oracle_exact_input_max_scaled_norm_change": 8.18714725871931e-10,
+    "oracle_exact_input_count": 210,
+    "nested_reconstruction_violation": 1.0149830159132501e-16
+  },
+  "pdf_pages": 14,
+  "previous_pdf_pages": 11,
+  "previous_page_text_unchanged": true,
+  "source_sha256": {
+    "benchmarks/physical_reconstruction.cpp": "a47837c4eed43f2ef172cca55c8711a6e405f5ad40f2dc73eef983fb1e013ea4",
+    "scripts/run_physical_reconstruction.py": "a4e084fe027a4deb079bc20d4881bb9926658c08d5176254be6cbe4f3d40fe27",
+    "scripts/analyze_physical_reconstruction.py": "dbf6e6f1fb1f1a24ffb522c0755ad0a3caa277ec4e22ea9a7e4c316eb9b90aea",
+    "scripts/physical_reconstruction_pages.py": "ee83c3848af44ccd18c2fbbfed8d128a5e6751148b238693144cbb6de89a75ac",
+    "docs/physical-reconstruction.md": "829c788d8d9daf57eea358e7176fa95ec552072c0d5eea816386c9a9b665fa6a"
+  }
+}

@@ -1,0 +1,69 @@
+\section{Comparison contract and completed matrix}
+\label{sec:experimental-methodology}
+The primary comparisons are DG, all-cell OFDG, and OFDG--KXRCF. Here DG means
+no oscillation filter; it still receives the common Euler positivity treatment.
+OEDG is included on selected affine shock cases. Within each problem, all
+methods share the mesh, degree, flux, CFL setting, final time, and boundary data.
+RK4 is used throughout. Scalar CFL is 0.15 and Euler CFL is 0.30; the timestep
+also depends on degree, element size, and the current wave-speed estimate.
+OFDG is applied after complete steps and OEDG at RK stages. Consequently, this
+is a comparison of these configured algorithms, not an isolated sensor test.
+KXRCF uses its default threshold of one.
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabular}{@{}p{.33\textwidth}p{.47\textwidth}r@{}}
+\toprule Problem & Degree and cells & $T$\\\midrule
+Smooth periodic advection & P1--P3; 32, 64, 128, 256 & 1.1\\
+Piecewise advection & P2; 128, 256 & 1.1\\
+Smooth Burgers & P2; 32, 64, 128 & 0.6\\
+Post-shock Burgers & P2; 128, 256 & 2.2\\
+Lax & P1/192, P2/128, P3/96 & 1.3\\
+Shu--Osher & P2; 200, 400 & 1.8\\
+Straight/curved 2D advection & degree 2; $8^2,16^2,32^2$ & 1.0\\
+2D Euler Riemann & degree 2; $32^2,64^2$ & 0.25\\\bottomrule
+\end{tabular}
+\caption{Completed preview matrix. P$k$ denotes degree $k$ in 1D. The 2D
+quadrilateral spaces are tensor-product $Q^k$, also called P$k$ in driver
+metadata. OEDG accompanies the finer piecewise, post-shock Burgers, and
+Shu--Osher runs, plus P2 Lax.}
+\label{tab:preview-matrix}
+\end{table}
+
+The study completed 103 solver runs, including three temporal-sensitivity runs,
+and four independent reference solves. Numerical work took 7.35 minutes on an
+eight-processor laptop, sequentially using one rank for 1D and two for the
+larger 2D cases. The sampled peak process-tree memory was 118 MiB. All rows
+completed; no failed or omitted row is hidden. These single-run timings describe
+the resource budget, not comparative performance.
+
+\subsection{Measurements and reference limitations}
+For smooth solutions, the principal error is the quadrature evaluation of
+$E_h=\|u-u_h\|_{L^2(\Omega)}$. The observed refinement rate is
+\begin{equation}
+ r=\log(E_h/E_{h/2})/\log 2.\label{eq:observed-rate}
+\end{equation}
+The reported extrema of discontinuous profiles use 21 samples per 1D cell;
+they are not certified extrema of every polynomial. Curves break at element
+interfaces, preserving DG jumps. Physical cell averages are exported separately
+and are explicitly identified where plotted. A common physical $y$ coordinate
+is used for all 2D line cuts; sampling neighbouring nodal rows would compare
+different locations.
+
+Euler reference curves come from a separate finite-volume WENO5 implementation
+with SSPRK3 time integration. Each of Lax and Shu--Osher has 2,048- and
+4,096-cell references. For sensitivity, adjacent fine cell averages are averaged
+to the coarse grid before differencing. The fine curve is a numerical reference,
+not an exact solution; the maximum differences in \cref{tab:reference-sensitivity}
+are substantial near steep features. Small visual separations must therefore
+not be interpreted as proven accuracy rankings.
+
+Only periodic scalar runs are used for the unforced conservation-drift claim:
+the largest recorded drift is $3.99\times10^{-14}$. For nonperiodic Euler problems,
+total content can change through the boundary. A conservation error would
+require the time-integrated numerical boundary flux, which this preview does
+not supply. Filter preservation of a cell mean is a separate algebraic property.
+
+The approved preview manifest and retained commands define the configurations.
+This dataset is separate from both the historical quick workflow and the
+unexecuted full-study proposal; see \cref{app:study-design}.

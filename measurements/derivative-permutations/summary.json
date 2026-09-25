@@ -1,0 +1,1128 @@
+{
+  "runs": {
+    "description": "Chronological permutations of xy, xxy, xyy; physical L2 initialization; production projected derivative matrices",
+    "ranks": 1,
+    "threads_per_rank": 1,
+    "cpu_detection": "unavailable in initial sandbox; conservative one-rank fallback",
+    "checks": [
+      {
+        "case": "quad-n2-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.12433695793151855,
+        "peak_mib": 0.25,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.12359895801637322,
+        "peak_mib": 0.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.3656881250208244,
+        "peak_mib": 18.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.13545187504496425,
+        "peak_mib": 0.890625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.28157304192427546,
+        "peak_mib": 19.1875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.684987916960381,
+        "peak_mib": 19.78125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.14973154198378325,
+        "peak_mib": 0.671875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.274879458011128,
+        "peak_mib": 19.625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.5135041660396382,
+        "peak_mib": 19.25,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.12260787503328174,
+        "peak_mib": 0.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.13278308301232755,
+        "peak_mib": 0.671875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.560671583050862,
+        "peak_mib": 19.109375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.13672666705679148,
+        "peak_mib": 0.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.26826258399523795,
+        "peak_mib": 19.90625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.5466414579423144,
+        "peak_mib": 19.796875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.12846558296587318,
+        "peak_mib": 0.53125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.24843833304475993,
+        "peak_mib": 18.875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.4956784589448944,
+        "peak_mib": 18.859375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.12481554097030312,
+        "peak_mib": 0.578125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.24366791697684675,
+        "peak_mib": 19.359375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.3779870410216972,
+        "peak_mib": 18.734375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.12378004204947501,
+        "peak_mib": 0.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.2537519170437008,
+        "peak_mib": 18.8125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.5005033749621361,
+        "peak_mib": 18.875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n2-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "2",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.13046012492850423,
+        "peak_mib": 0.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n4-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "4",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.254432582994923,
+        "peak_mib": 18.609375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.6323330830782652,
+        "peak_mib": 19.6875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.6217663330025971,
+        "peak_mib": 18.953125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 2.136454791063443,
+        "peak_mib": 18.875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p3-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "3",
+          "0.0",
+          "0"
+        ],
+        "seconds": 8.023176333052106,
+        "peak_mib": 18.828125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.9021907079732046,
+        "peak_mib": 18.6875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 2.5943730419967324,
+        "peak_mib": 18.9375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p4-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "4",
+          "0.0",
+          "0"
+        ],
+        "seconds": 10.076090625021607,
+        "peak_mib": 19.046875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 0.9142205000389367,
+        "peak_mib": 18.765625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 3.2505070000188425,
+        "peak_mib": 18.890625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p5-a0.0-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "5",
+          "0.0",
+          "0"
+        ],
+        "seconds": 13.207848542020656,
+        "peak_mib": 18.9375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.6316082919947803,
+        "peak_mib": 18.640625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 2.1324870829703286,
+        "peak_mib": 18.78125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p3-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "3",
+          "0.4",
+          "0"
+        ],
+        "seconds": 7.915622666943818,
+        "peak_mib": 18.78125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.7493970830691978,
+        "peak_mib": 18.671875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 2.656266500009224,
+        "peak_mib": 18.953125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p4-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "4",
+          "0.4",
+          "0"
+        ],
+        "seconds": 10.083393083070405,
+        "peak_mib": 19.671875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 0.9044858749257401,
+        "peak_mib": 18.75,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 3.3261198330437765,
+        "peak_mib": 18.640625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p5-a0.4-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "5",
+          "0.4",
+          "0"
+        ],
+        "seconds": 12.472669624956325,
+        "peak_mib": 18.96875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.6207820000126958,
+        "peak_mib": 18.671875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 2.1053362500388175,
+        "peak_mib": 18.609375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 7.890307332971133,
+        "peak_mib": 18.9375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.7490104590542614,
+        "peak_mib": 18.796875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 2.6059760830830783,
+        "peak_mib": 18.578125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 9.869513457990251,
+        "peak_mib": 18.8125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n2-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "2",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 0.8618243340170011,
+        "peak_mib": 18.71875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n4-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "4",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 3.19829241593834,
+        "peak_mib": 18.890625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 12.326967375003733,
+        "peak_mib": 19.0625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n16-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "16",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 1.398954042000696,
+        "peak_mib": 19.546875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n16-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "16",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 1.365609333035536,
+        "peak_mib": 19.34375,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n16-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "16",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 1.6055286249611527,
+        "peak_mib": 19.1875,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n16-p3-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "16",
+          "3",
+          "1.2",
+          "0"
+        ],
+        "seconds": 32.31588283297606,
+        "peak_mib": 19.125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n16-p4-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "16",
+          "4",
+          "1.2",
+          "0"
+        ],
+        "seconds": 39.256075124954805,
+        "peak_mib": 19.40625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n16-p5-a1.2-q0",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "16",
+          "5",
+          "1.2",
+          "0"
+        ],
+        "seconds": 49.81805362494197,
+        "peak_mib": 19.390625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p3-a1.2-q8",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "3",
+          "1.2",
+          "8"
+        ],
+        "seconds": 0.37867175007704645,
+        "peak_mib": 18.65625,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "quad-n8-p5-a1.2-q8",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "quad",
+          "8",
+          "5",
+          "1.2",
+          "8"
+        ],
+        "seconds": 0.4906223330181092,
+        "peak_mib": 18.78125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p3-a1.2-q8",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "3",
+          "1.2",
+          "8"
+        ],
+        "seconds": 7.9353265420068055,
+        "peak_mib": 19.03125,
+        "returncode": 0,
+        "failure": null
+      },
+      {
+        "case": "tri-n8-p5-a1.2-q8",
+        "command": [
+          "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_permutations",
+          "tri",
+          "8",
+          "5",
+          "1.2",
+          "8"
+        ],
+        "seconds": 12.45071070897393,
+        "peak_mib": 19.21875,
+        "returncode": 0,
+        "failure": null
+      }
+    ],
+    "source_sha256": {
+      "benchmarks/derivative_permutations.cpp": "5507bf5fafa63a6ee779824ffa4c15563947c507ef08ca3fa818bc4e18af767c",
+      "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+      "build/release/benchmarks/derivative_permutations": "622a9925f4bf3751d7e4c78f57c6283192946fd15bfc0e51ce516569eb664469"
+    },
+    "mfem_config": "# Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced\n# at the Lawrence Livermore National Laboratory. All Rights reserved. See files\n# LICENSE and NOTICE for details. LLNL-CODE-806117.\n#\n# This file is part of the MFEM library. For more information and source code\n# availability visit https://mfem.org.\n#\n# MFEM is free software; you can redistribute it and/or modify it under the\n# terms of the BSD-3 license. We welcome feedback and contributions, see file\n# CONTRIBUTING.md for details.\n\n# Variables corresponding to defines in config.hpp (YES, NO, or value)\nMFEM_VERSION           = 40901\nMFEM_VERSION_STRING    = 4.9.1\nMFEM_SOURCE_DIR        = /Users/timozund/Documents/master_thesis/mfem\nMFEM_INSTALL_DIR       = /Users/timozund/Documents/master_thesis/mfem/mfem\nMFEM_GIT_STRING        = heads/master-0-ga1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18\nMFEM_USE_MPI           = YES\nMFEM_USE_METIS         = YES\nMFEM_USE_METIS_5       = NO\nMFEM_USE_DOUBLE        = YES\nMFEM_USE_SINGLE        = NO\nMFEM_DEBUG             = NO\nMFEM_USE_EXCEPTIONS    = NO\nMFEM_USE_ZLIB          = NO\nMFEM_USE_LIBUNWIND     = NO\nMFEM_USE_LAPACK        = NO\nMFEM_THREAD_SAFE       = NO\nMFEM_USE_LEGACY_OPENMP = NO\nMFEM_USE_OPENMP        = NO\nMFEM_USE_MEMALLOC      = YES\nMFEM_TIMER_TYPE        = 4\nMFEM_USE_SUNDIALS      = NO\nMFEM_USE_SUITESPARSE   = NO\nMFEM_USE_SUPERLU       = NO\nMFEM_USE_SUPERLU5      = NO\nMFEM_USE_MUMPS         = NO\nMFEM_USE_STRUMPACK     = NO\nMFEM_USE_GINKGO        = NO\nMFEM_USE_AMGX          = NO\nMFEM_USE_MAGMA         = NO\nMFEM_USE_GNUTLS        = NO\nMFEM_USE_HDF5          = NO\nMFEM_USE_NETCDF        = NO\nMFEM_USE_PETSC         = NO\nMFEM_USE_SLEPC         = NO\nMFEM_USE_MPFR          = NO\nMFEM_USE_SIDRE         = NO\nMFEM_USE_FMS           = NO\nMFEM_USE_CONDUIT       = NO\nMFEM_USE_PUMI          = NO\nMFEM_USE_HIOP          = NO\nMFEM_USE_GSLIB         = NO\nMFEM_USE_CUDA          = NO\nMFEM_USE_HIP           = NO\nMFEM_USE_RAJA          = NO\nMFEM_USE_OCCA          = NO\nMFEM_USE_CEED          = NO\nMFEM_USE_CALIPER       = NO\nMFEM_USE_UMPIRE        = NO\nMFEM_USE_SIMD          = NO\nMFEM_USE_ADIOS2        = NO\nMFEM_USE_MKL_CPARDISO  = NO\nMFEM_USE_MKL_PARDISO   = NO\nMFEM_USE_MOONOLITH     = NO\nMFEM_USE_ADFORWARD     = NO\nMFEM_USE_CODIPACK      = NO\nMFEM_USE_BENCHMARK     = NO\nMFEM_USE_PARELAG       = NO\nMFEM_USE_TRIBOL        = NO\nMFEM_USE_ENZYME        = NO\n\n# Compiler, compile options, and link options\nMFEM_CXX       = mpicxx\nMFEM_HOST_CXX  = mpicxx\nMFEM_CPPFLAGS  =\nMFEM_CXXFLAGS  = -O3 -std=c++17\nMFEM_TPLFLAGS  =  -I$(MFEM_DIR)/../hypre/src/hypre/include\nMFEM_INCFLAGS  = -I$(MFEM_INC_DIR) $(MFEM_TPLFLAGS)\nMFEM_PICFLAG   =\nMFEM_FLAGS     = $(MFEM_CPPFLAGS) $(MFEM_CXXFLAGS) $(MFEM_INCFLAGS)\nMFEM_EXT_LIBS  =  -L$(MFEM_DIR)/../hypre/src/hypre/lib -lHYPRE -L$(MFEM_DIR)/../metis-4.0 -lmetis\nMFEM_LIBS      =  -L$(MFEM_LIB_DIR) -lmfem $(MFEM_EXT_LIBS)\nMFEM_LIB_FILE  = $(MFEM_LIB_DIR)/libmfem.a\nMFEM_STATIC    = YES\nMFEM_SHARED    = NO\nMFEM_BUILD_TAG = Darwin 26eff3c9-0ac7-4965-a644-adc256b93eeb.fritz.box arm64\nMFEM_PREFIX    = ./mfem\nMFEM_INC_DIR   = $(MFEM_DIR)\nMFEM_LIB_DIR   = $(MFEM_DIR)\nMFEM_XLINKER   = -Wl,\n\n# Location of test.mk\nMFEM_TEST_MK = $(MFEM_DIR)/config/test.mk\n\n# Command used to launch MPI jobs\nMFEM_MPIEXEC    = mpirun\nMFEM_MPIEXEC_NP = -np\nMFEM_MPI_NP     = 4\n\n# The NVCC compiler cannot link with -x=cu\nMFEM_LINK_FLAGS := $(filter-out -x=cu -xcuda -xhip, $(MFEM_FLAGS))\n\n# Optional extra configuration\n",
+    "compute_seconds": 277.7778818302322,
+    "peak_mib": 19.90625
+  },
+  "comparison_count": 576,
+  "fine_third_count": 72,
+  "fine_better": 41,
+  "fine_ratio_min": 0.7119666663271617,
+  "fine_ratio_median": 0.9994561422094372,
+  "fine_ratio_max": 2.219791556535779,
+  "fine_change_min": 0.00994171677056539,
+  "fine_change_max": 2.0164893944046294,
+  "affine_max_change": 5.570861304059003e-09,
+  "affine_cubic_error": 3.251724988617826e-09,
+  "first_weak_max": 3.372302437298913e-15,
+  "constant_max": 8.542500040675804e-12,
+  "geometry_min_global_det": 0.7000002080277758,
+  "quadrature_max_relative_error_change": 2.4065915749730512e-05,
+  "representative": [
+    {
+      "family": "quad",
+      "n": 8.0,
+      "p": 3.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 0.15149967342293114,
+      "mean_error": 0.14458919507948043,
+      "mean_to_canonical": 0.9543861832351334,
+      "change_over_error": 0.16916933731635933,
+      "change_l2": 0.025629099356602115,
+      "canonical_relative": 0.01780049521410184,
+      "floor": 7.016499646886219e-05
+    },
+    {
+      "family": "quad",
+      "n": 8.0,
+      "p": 4.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 0.008933044372653947,
+      "mean_error": 0.00849109334885532,
+      "mean_to_canonical": 0.950526270175984,
+      "change_over_error": 0.15923998519245713,
+      "change_l2": 0.0014224978536249771,
+      "canonical_relative": 0.001049590471121881,
+      "floor": 1.7637630479303694e-06
+    },
+    {
+      "family": "quad",
+      "n": 8.0,
+      "p": 5.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 0.00043966809327466544,
+      "mean_error": 0.0004282749813968079,
+      "mean_to_canonical": 0.9740870168835742,
+      "change_over_error": 0.13249086220457465,
+      "change_l2": 5.8252004761801776e-05,
+      "canonical_relative": 5.1658921853123824e-05,
+      "floor": 5.9214636377764724e-08
+    },
+    {
+      "family": "tri",
+      "n": 8.0,
+      "p": 3.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 2.6493328797700886,
+      "mean_error": 2.648789711967202,
+      "mean_to_canonical": 0.99979497940518,
+      "change_over_error": 0.024318910143536748,
+      "change_l2": 0.06442888824344623,
+      "canonical_relative": 0.3112840851825408,
+      "floor": 0.00026964074338088736
+    },
+    {
+      "family": "tri",
+      "n": 8.0,
+      "p": 4.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 0.42839672798588213,
+      "mean_error": 0.4277877140285554,
+      "mean_to_canonical": 0.998578387934497,
+      "change_over_error": 0.021618611126660928,
+      "change_l2": 0.009261342270260726,
+      "canonical_relative": 0.05033458973183056,
+      "floor": 1.4741107424378324e-05
+    },
+    {
+      "family": "tri",
+      "n": 8.0,
+      "p": 5.0,
+      "amplitude": 1.2,
+      "qextra": 0.0,
+      "field": "sine",
+      "multi": "xxy",
+      "canonical_error": 0.04932369659556886,
+      "mean_error": 0.0492186258742297,
+      "mean_to_canonical": 0.9978697719637543,
+      "change_over_error": 0.020265739920017997,
+      "change_l2": 0.0009995812070996756,
+      "canonical_relative": 0.0057953011076150715,
+      "floor": 7.374409982445807e-07
+    }
+  ],
+  "refinement": [
+    {
+      "family": "quad",
+      "p": 3,
+      "canonical_rate": 1.2634457155830414,
+      "mean_rate": 1.2201298634760784
+    },
+    {
+      "family": "quad",
+      "p": 4,
+      "canonical_rate": 2.223646829681866,
+      "mean_rate": 2.1744159518862216
+    },
+    {
+      "family": "quad",
+      "p": 5,
+      "canonical_rate": 3.119690836970289,
+      "mean_rate": 3.092710291696604
+    },
+    {
+      "family": "tri",
+      "p": 3,
+      "canonical_rate": 0.9969610086221993,
+      "mean_rate": 0.9967459688636272
+    },
+    {
+      "family": "tri",
+      "p": 4,
+      "canonical_rate": 2.0029880831833893,
+      "mean_rate": 2.0014506288300877
+    },
+    {
+      "family": "tri",
+      "p": 5,
+      "canonical_rate": 3.006138104233961,
+      "mean_rate": 3.003896530937244
+    }
+  ]
+}

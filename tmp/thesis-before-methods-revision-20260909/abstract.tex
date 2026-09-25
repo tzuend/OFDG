@@ -1,0 +1,25 @@
+\begin{abstract}
+This work studies an adapted oscillation-free discontinuous Galerkin (OFDG)
+implementation in MFEM for hyperbolic conservation laws. The method damps
+nonconstant element content through nested physical $L^2$ projections and can
+be restricted by a KXRCF troubled-cell indicator. Its realization operates in
+the host coefficient basis and supports static polynomial curvilinear geometry.
+Curved derivative sensors use successively projected physical derivatives;
+they are not exact higher derivatives of the mapped solution. The verified
+support boundary and the MFEM limitation for native NURBS faces are explicit.
+
+A small preliminary study compares DG, all-cell adapted OFDG, and gated OFDG,
+with OEDG on selected affine problems. It includes smooth transport, Burgers
+flow, Lax and Shu--Osher problems, straight/curved advection, and a small
+2D Euler Riemann problem. The 103 solver runs and four independent reference
+solves completed in 7.35 minutes on the laptop. Filtering suppresses the large
+sampled DG excursions in the scalar shock tests. At the finest P2 transport
+grids, gated OFDG has errors close to the unfiltered DG baseline. Wave-detail
+and positivity diagnostics expose differences that whole-domain profiles hide.
+
+These observations characterize the tested configurations rather than establish
+universal superiority or new convergence theory. Visible placeholders identify
+missing detector, reference-accuracy, and cadence evidence needed for stronger
+claims. Large-scale performance and broad Euler robustness remain outside the
+current empirical conclusions.
+\end{abstract}

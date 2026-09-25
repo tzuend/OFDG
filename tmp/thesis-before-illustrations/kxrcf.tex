@@ -1,0 +1,128 @@
+\section{KXRCF troubled-cell indication}
+\label{chap:kxrcf}
+A troubled-cell indicator decides where a separate stabilization should act;
+it does not itself change the solution. The KXRCF indicator, named after
+Krivodonova, Xin, Remacle, Chevaugeon, and Flaherty, supplies that decision in
+this implementation. Adapted OFDG then damps the selected elements using the
+operator in \cref{chap:ofdg}.
+
+\MissingWork{KX-SOURCE}{Review and approve the original KXRCF paper, which is
+not currently in the papers folder. The formulas below define the implemented
+indicator; historical attribution and comparison with the original analysis
+still require that source. Its bibliographic entry is in suggested-references.}
+
+\subsection{Inflow jumps and normalization}
+Let $K$ have outward unit normal $\boldsymbol n_K$ and neighbour $N$. Define
+$[u_h]_{K,N}=u_h|_K-u_h|_N$. The part of the interior boundary on which
+transport enters $K$ is
+\begin{equation}
+ \partial K^- =\{x\in\partial K\text{ on interior faces}:
+                         v_n(x)<0\}.
+ \label{eq:kxrcf-inflow}
+\end{equation}
+Here $v_n$ is the signed transport velocity viewed from $K$. With detector
+radius $r_K$, local solution scale $S_K$, and reference order $k$, define
+\begin{equation}
+ I_K=\frac{\left|\displaystyle\int_{\partial K^-}
+                  [u_h]_{K,N}\,ds\right|}
+                 {r_K^{(k+1)/2}|\partial K^-|S_K},
+ \qquad K\in\mathcal A\ \Longleftrightarrow\ I_K>\tau.
+ \label{eq:kxrcf-indicator}
+\end{equation}
+The default threshold is $\tau=1$; $I_K=0$ when there is no inflow measure.
+The radius is denoted by $r_K$ here to distinguish it from the OFDG length
+$h_K$. The face measure averages the jump, and $S_K$ normalizes the state
+magnitude. The absolute value is taken \emph{after} integration, so signed
+contributions can cancel. This differs from the absolute-jump integral used
+by the OFDG sensor.
+
+For motivation, suppose the averaged signed jump is
+$\mathcal O(r_K^{k+1})$ in a smooth region and $S_K=\mathcal O(1)$.
+Then $I_K=\mathcal O(r_K^{(k+1)/2})$ tends to zero under refinement.
+An unresolved discontinuity with a noncancelling $\mathcal O(1)$ averaged jump
+instead gives $I_K=\mathcal O(r_K^{-(k+1)/2})$. These conditional estimates
+explain the normalization; they are not a convergence theorem or a guarantee
+that every discontinuity is detected. Cancellation and a small local scale
+can both affect the decision. The numerical value also depends on the
+coordinate scaling through $r_K$, so a threshold must be interpreted with
+that scaling specified.
+
+In one dimension, with positive velocity and cell width $\Delta x_j$, the
+inflow boundary is the left endpoint and $r_K=\Delta x_j/2$. The implemented
+scale is $S_K=|\overline u_K|$, giving
+\begin{equation}
+ I_j=\frac{|u_h(x_{j-1/2}^{+})-u_h(x_{j-1/2}^{-})|}
+                 {(\Delta x_j/2)^{(k+1)/2}|\overline u_j|},
+ \label{eq:kxrcf-1d}
+\end{equation}
+when the denominator is resolved. In higher dimensions, $S_K$ is the maximum
+absolute solution value at the element quadrature points. A relative scale
+floor is used in the numerical realization described below.
+
+\subsection{Conservative systems and transport direction}
+For each conservative component $c$, the implementation forms $I_{K,c}$ from
+\cref{eq:kxrcf-indicator} and pools the decision:
+\begin{equation}
+ I_K=\max_c I_{K,c},\qquad
+ \mathcal A=\{K:I_K>\tau\}.
+ \label{eq:kxrcf-components}
+\end{equation}
+All components are therefore filtered on the same active set. This pooling,
+together with the following transport choices, defines the project-specific
+system extension; it should not be mistaken for characteristic-variable
+limiting.
+
+For prescribed advection, $v_n$ is the arithmetic mean of the normal velocities
+on the two sides. For one-dimensional Burgers flow it is
+$v_n=\tfrac12(u_1+u_2)n$. For Euler it is
+\begin{equation}
+ v_n=\tfrac12(\boldsymbol v_1+\boldsymbol v_2)\cdot\boldsymbol n.
+ \label{eq:kxrcf-euler-inflow}
+\end{equation}
+This is a fluid transport direction, not the Euler spectral radius.
+Characteristic fields can travel in both directions at a subsonic interface;
+a single signed velocity does not describe them all. OFDG uses the full
+one-sided radii $|\boldsymbol v_i\cdot\boldsymbol n|+c_i$ for damping strength,
+whereas the sign of \cref{eq:kxrcf-euler-inflow} controls KXRCF inflow only.
+
+\subsection{Physical geometry and numerical realization}
+In higher dimensions, $r_K$ is the largest sampled distance from the mapped
+reference centre to mapped vertices and, on curved elements, boundary
+quadrature points. It is a sampled geometric scale rather than an exact
+circumradius for an arbitrary curved cell. Face quadrature supplies the signed
+jump integral and the physical inflow measure. Unit normals and the transport
+sign are evaluated at those points. Transport within $128\epsilon$ times the
+local speed scale is treated as tangential, where $\epsilon$ is machine
+precision.
+
+For component $c$, the scale used in the denominator is
+\begin{equation}
+ S_{K,c}^{\rm eff}=\max(S_{K,c},10^{-14}S_c^{\max}),
+ \qquad S_c^{\max}=\max_K S_{K,c}.
+\end{equation}
+Globally zero components are skipped.
+This avoids division by a vanishing local scale while preserving the
+multiplicative scale dependence away from numerical roundoff. Physical
+boundary faces are omitted because the indicator uses neighbouring DG traces;
+boundary conditions remain part of the DG evolution.
+
+Element and face evaluation matrices, geometric weights, normals, and the
+factor $r_K^{(k+1)/2}$ are prepared at construction. Local face transformations
+are retained, but solution values and transport directions are reevaluated
+on every application. At shared MPI faces, neighbour coefficients are imported
+and each rank accumulates only its own element's contribution. Geometry and
+solution spaces must remain fixed during the lifetime of the indicator.
+
+\subsection{Coupling to OFDG and limitations}
+KXRCF determines $\mathcal A$ from the candidate DG state. An interior face is
+needed by the OFDG sensor whenever at least one adjacent element is active;
+this ensures that active elements receive all their interface contributions.
+The damping map is applied only to active elements. Its mean-preservation
+identity therefore survives gating, and inactive coefficients remain unchanged.
+
+KXRCF requires no solution derivatives, although the subsequent OFDG sensor
+does. A small active set does not eliminate the cost of cell normalization,
+inflow integration, or OFDG derivative preparation. Nor does the indicator
+alone guarantee nonoscillatory or positive solutions. Threshold sensitivity,
+missed fronts, and unnecessary activation in smooth regions require empirical
+assessment in the eventual numerical study.

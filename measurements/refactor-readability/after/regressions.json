@@ -1,0 +1,112 @@
+[
+  {
+    "name": "test_ofdg_geometry",
+    "command": [
+      "build/release/tests/test_ofdg_geometry"
+    ],
+    "returncode": 0,
+    "seconds": 0.511916832998395
+  },
+  {
+    "name": "test_mixed_geometry",
+    "command": [
+      "build/release/tests/test_mixed_geometry"
+    ],
+    "returncode": 0,
+    "seconds": 0.5691571249626577
+  },
+  {
+    "name": "test_kxrcf",
+    "command": [
+      "build/release/tests/test_kxrcf"
+    ],
+    "returncode": 0,
+    "seconds": 0.5590260829776525
+  },
+  {
+    "name": "test_ofdg_regression",
+    "command": [
+      "build/release/tests/test_ofdg_regression"
+    ],
+    "returncode": 0,
+    "seconds": 0.5194557909853756
+  },
+  {
+    "name": "test_oedg_2024",
+    "command": [
+      "build/release/tests/test_oedg_2024"
+    ],
+    "returncode": 0,
+    "seconds": 0.2944174580043182
+  },
+  {
+    "name": "test_euler_positivity",
+    "command": [
+      "build/release/tests/test_euler_positivity"
+    ],
+    "returncode": 0,
+    "seconds": 0.2922784580150619
+  },
+  {
+    "name": "test_face_physics",
+    "command": [
+      "build/release/tests/test_face_physics"
+    ],
+    "returncode": 0,
+    "seconds": 0.30013574997428805
+  },
+  {
+    "name": "test_rk4_cadence",
+    "command": [
+      "build/release/tests/test_rk4_cadence"
+    ],
+    "returncode": 0,
+    "seconds": 0.29353829100728035
+  },
+  {
+    "name": "test_experiment_rk",
+    "command": [
+      "build/release/tests/test_experiment_rk"
+    ],
+    "returncode": 0,
+    "seconds": 0.29374120896682143
+  },
+  {
+    "name": "test_curved_geometry",
+    "command": [
+      "build/release/tests/test_curved_geometry"
+    ],
+    "returncode": 0,
+    "seconds": 24.67427612503525
+  },
+  {
+    "name": "test_curved_euler",
+    "command": [
+      "build/release/tests/test_curved_euler"
+    ],
+    "returncode": 0,
+    "seconds": 0.5423815830145031
+  },
+  {
+    "name": "test_curved_geometry-mpi",
+    "command": [
+      "mpirun",
+      "-np",
+      "2",
+      "build/release/tests/test_curved_geometry"
+    ],
+    "returncode": 0,
+    "seconds": 4.652561374939978
+  },
+  {
+    "name": "test_curved_euler-mpi",
+    "command": [
+      "mpirun",
+      "-np",
+      "2",
+      "build/release/tests/test_curved_euler"
+    ],
+    "returncode": 0,
+    "seconds": 0.3104159580543637
+  }
+]

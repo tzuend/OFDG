@@ -1,0 +1,39 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Latex,font=\small]
+ \node at (1.4,4.75) {reference element $\widehat K$};
+ \node at (7.4,4.75) {curved physical element $K$};
+ \foreach \s in {0,.25,.5,.75,1} {
+  \draw[blue!30] ({2.8*\s},0)--({2.8*\s},2.8);
+  \draw[blue!30] (0,{2.8*\s})--(2.8,{2.8*\s});
+  \draw[blue!30,domain=0:1,samples=35]
+    plot ({6+2.8*\x},{2.8*((1+.25*\x)*\s+.2*\x*\x)});
+  \draw[blue!30] ({6+2.8*\s},{2.8*.2*\s*\s})--
+    ({6+2.8*\s},{2.8*(1+.25*\s+.2*\s*\s)});
+ }
+ \draw[blue!70!black,thick] (0,0) rectangle (2.8,2.8);
+ \foreach \s in {0,1} {
+  \draw[blue!70!black,thick,domain=0:1,samples=35]
+    plot ({6+2.8*\x},{2.8*((1+.25*\x)*\s+.2*\x*\x)});
+  \draw[blue!70!black,thick] ({6+2.8*\s},{2.8*.2*\s*\s})--
+    ({6+2.8*\s},{2.8*(1+.25*\s+.2*\s*\s)});
+ }
+ \foreach \s in {.2,.5,.8} {
+  \draw[->,orange!85!black,thick]
+    ({6+2.8*\s},{2.8*(1+.25*\s+.2*\s*\s)})--
+    ({6+2.8*\s-.52*(.25+.4*\s)},{2.8*(1+.25*\s+.2*\s*\s)+.52});
+ }
+ \draw[->,thick] (3.25,1.55)--(5.4,1.55);
+ \node[above] at (4.3,1.55) {$T_K$};
+ \node[below,align=center] at (1.4,-.25) {straight reference grid\\coordinates $(\xi,\eta)$};
+ \node[below,align=center] at (7.4,-.25) {mapped grid\\spatially varying Jacobian and normals};
+\end{tikzpicture}
+\caption{An illustrative polynomial map
+$T_K(\xi,\eta)=(\xi,(1+\xi/4)\eta+\xi^2/5)$ from the unit square.
+Its determinant is $1+\xi/4>0$: equal reference areas need not have equal
+physical areas. Orange arrows show outward normal directions along the curved
+top face (not their magnitudes). The interior lines are coordinate lines
+within one element, not separate DG cells. This is a geometric schematic,
+not a mesh from a numerical experiment.}
+\label{fig:curved-map}
+\end{figure}

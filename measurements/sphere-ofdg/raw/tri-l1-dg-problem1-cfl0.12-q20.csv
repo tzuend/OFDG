@@ -1,0 +1,2 @@
+family,level,method,problem,cfl,quadrature,elements,dofs,steps,final_time,l2,relative_l2,l1,minimum,maximum,initial_minimum,initial_maximum,mass_drift,filter_mean_defect,constant_operator_residual,flux_mismatch,area
+tri,1,dg,1,0.12,20,32,96,48,1.5707963267948954,0.67872897007459643,0.38318197353059102,1.5732011143320583,-0.20009440348193788,1.3290915801924081,-0.54380564366993311,1.2381954580890566,0,0,3.9453736842974898e-11,3.3306690738754696e-16,12.566370614359187

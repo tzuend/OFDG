@@ -1,0 +1,45 @@
+{
+  "preserved_source_files": 78,
+  "preserved_source_changes": [],
+  "matching_run_fingerprints": true,
+  "monitored_cases": 73,
+  "benchmark_failures": 0,
+  "previous_pdf_pages": 22,
+  "new_pdf_pages": 25,
+  "earlier_page_text_identical": true,
+  "earlier_page_renders_identical": true,
+  "inspected_appended_pages": [
+    23,
+    24,
+    25
+  ],
+  "auxiliary_source_sha256": {
+    "benchmarks/reused_basis_controls.cpp": "d7cdeaeeac7dd3a0ee69fdd4fb04eb9a782b00cfd68ae4273a4ee92bb5ae6a26",
+    "scripts/reused_stored_reference.py": "a1cb5a7e328b34ee19733293c25ed0c34d50a3676cf14a5ea847e74330e799c6",
+    "scripts/analyze_reused_derivatives.py": "9a52aeaf6963347fd42f981028503b2fa8098182e9b9e7a1a339a83517f7bcb7",
+    "scripts/reused_derivative_pages.py": "9bb16b1636f2b6ed2bfe7a4547df12e33f887af2ce8a1b63366ab020972ac671",
+    "scripts/build_preview_pdf.py": "a5b2df7678b4ccc655cd6e2a1ccf996de4a6499bf5e67a98acd4a6ea8ddbc298",
+    "scripts/fe_mapping_reference.py": "ab8ba8a67fd9b4d42f1bb2150144cea632544478ca64b09a6b0bf1d72d9dd9dd",
+    "docs/reused-derivatives.md": "04578f4bc7ad88587ed812f3a32708c0a26ce6e5312cd35604147f309d45254c",
+    "Makefile": "861f996fe2e33785e15ecbb9ed13cbfd93789c8a4716f3b6c20fcb2c1ece355f",
+    "build/release/benchmarks/reused_basis_controls": "6c79b09d29f6bf2db77046b5f9fe179fe04c635f231dfe5ecdf9106b8efa0f46"
+  },
+  "output_sha256": {
+    "summary.json": "fa6bd19769999cc6c5dc5b6ff449a4c3741df530589606feb4daf85a5b9aebb8",
+    "stored-reference-run.json": "7eb5aea455388890020a7a66b730f6cc34e25ecfa8659e4d02369a0e051c0eed",
+    "basis-controls.csv": "a4e4a312260259e70d2444622ddb5aefd84c2cea30da0f28ae267e35ea2e61f1",
+    "high-order-errors.csv": "93ce08a979727f48871589ff4bc2781b286794573ba1012c46ee920d95af6484",
+    "high-order-summary.csv": "ce201f766356a7e008cc228afa2a69f3cb0ef0f49ad7e0da52ccddde1d481203",
+    "high-order.csv": "e089f4639eb6a571c001c84155bd5d35ee2559268c6e7eb9a923a45c93bafc8f",
+    "stored-reference-summary.csv": "ddde041a472946d76edd0ba5fba876b2fb23527bc95d467afb82280d2064a37b",
+    "stored-reference.log": "3635544da2104f03b3fccadb83acb51996b7312854044af4bd8c788d7628d44d",
+    "stored-reference.csv": "ba49e6f0b63da5b4387530a4f4d24b6093de2f1fbd4ad25d9556588bb6685124",
+    "errors.csv": "cf471385454e386cc8fe4d602f0eff51c1bb8ab0e96663c08af5156ac6b593ea",
+    "run.json": "08e5d9a7955ad28fc7bd1410c8de08bf8e2d4b68e26179d9c01cb02336b47f5f",
+    "results.csv": "2ece89dfc808aaeb3bf459c90b1a12d12f6e75118a1965a341a9da93334db47b"
+  },
+  "pdf_sha256": "6cc0d157b25fca43ffeed63d51c11e3a9d337f20ed75c0bec040f5659b6aa574",
+  "independent_reference_command": "python3 scripts/reused_stored_reference.py",
+  "basis_control_command": "OMP_NUM_THREADS=1 build/release/benchmarks/reused_basis_controls",
+  "accuracy_limitation": "The fifth-order 1e-7 normalized evaluation target is not met uniformly; tenth-order fine-element errors remain large."
+}

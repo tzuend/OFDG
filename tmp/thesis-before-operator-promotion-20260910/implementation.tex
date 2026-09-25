@@ -1,0 +1,63 @@
+\section{Implementation assumptions and geometric scope}
+\label{chap:implementation}
+\label{sec:support-boundary}
+The implementation separates equation-dependent face physics, geometry-dependent
+operators, and damping. MFEM supplies meshes, finite element bases, geometric
+transformations, and distributed ownership. This organisation allows the same
+projection algebra to act on scalar fields and conservative systems.
+
+The supported construction assumes full-dimensional elements, a fixed mesh,
+and uniform solution order $k\geq1$. It covers affine intervals and polynomial
+curved triangles, quadrilaterals, tetrahedra, hexahedra, and prisms. Different
+supported element families may coexist at the same order. Moving meshes,
+variable solution order, pyramids, and embedded surfaces are excluded.
+
+Native NURBS geometry is not supported by the two-sided face path used with
+the project's pinned MFEM version. A NURBS mesh may instead be explicitly
+approximated by polynomial geometry before the filter is constructed. This
+changes the geometric representation and is separate from the solution-space
+$L^2$ projection derived above. It does not imply that MFEM lacks NURBS support
+in general. The OEDG implementation is treated here as an affine comparator;
+the curvilinear extension described in this chapter concerns adapted OFDG
+and KXRCF.
+
+\subsection{Reference data and physical operators}
+\label{sec:curved-construction}
+Reference basis evaluations and the derivative graph are reusable by finite
+element signature. Physical mass, projection, and derivative matrices belong
+to each curved element. The reference projector is sufficient only when the
+constant affine Jacobian weight cancels. Element and face geometry data remain
+fixed during the lifetime of a filter; a change in mesh geometry, topology, or
+solution space requires reconstruction.
+
+Curved integration uses quadrature order
+$2k+2\max(0,\mathrm{OrderW})+8$, where MFEM's \texttt{OrderW} estimates the
+transformation-weight order. Positive tensor or Duffy quadrature and symmetric
+triangular sampling are used to reduce orientation-dependent sampling effects.
+This is an integration policy, not a guarantee of exact integration for every
+mapped function. The physical projection identities refer to the resulting
+quadrature inner product unless exact integration is stated explicitly.
+
+The implementation retains derivative coefficient states for every local
+cell and rebuilds them for each new solution. For gated filtering, local faces
+whose two neighbours are inactive are skipped before their geometry is
+constructed. Adjacent damping shells reuse their shared projection. These
+choices eliminate redundant work without changing the operator. The detailed
+matrix representation is given in \cref{sec:ofdg-implementation}.
+
+\subsection{Distributed evaluation}
+MPI distributes elements across processes, or ranks. An ordinary interior
+face contributes to both adjacent elements. At a shared face, a rank imports
+neighbour coefficients and accumulates only its own element's contribution;
+the adjacent rank performs the complementary operation. Global solution
+amplitudes require collective reductions. Local and imported elements use the
+same physical operator construction, so an MPI interface has no additional
+physical boundary condition.
+
+Geometry caches are fixed, but their integration-point state and the working
+arrays are mutable. Concurrent applications of the same filter object are
+therefore unsupported. This ownership convention keeps numerical state
+separate from reusable geometric data.
+
+The verification criteria in \cref{sec:verification-criteria} distinguish
+operator consistency from the empirical assessment reserved for Results.

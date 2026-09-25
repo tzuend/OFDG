@@ -1,0 +1,170 @@
+\chapter{Mathematical background}
+\label{chap:background}
+
+This chapter assumes familiarity with the finite element idea: approximate a
+function in a finite-dimensional space and require a residual to vanish against
+test functions. DG retains that idea but removes continuity between elements.
+The price is that communication across each interface must be defined explicitly.
+We first explain this communication, then the time update that the filters modify. The introductory DG treatment follows the finite element viewpoint of~\cite{HesthavenWarburton2008}.
+
+\section{Conservation laws and the quantity being conserved}
+\label{sec:rkdg}
+A conservation law describes a balance between local storage and transport:
+\begin{equation}
+ \partial_t\boldsymbol u+\nabla\cdot\boldsymbol f(\boldsymbol u)=0,
+ \qquad \boldsymbol u(\boldsymbol x,0)=\boldsymbol u_0(\boldsymbol x).
+ \label{eq:conservation-law}
+\end{equation}
+Here $\boldsymbol u\in\R^m$ contains the conserved quantities, $\Omega$ is the
+spatial domain, and $\boldsymbol f$ gives their fluxes in the $d$ coordinate
+directions. Boundary conditions supply the missing information on the exterior
+of $\Omega$. Integrating over a region says that its total content changes only
+through flux across the region's boundary. We discuss the scalar case first;
+the same balance applies component by component to a system.
+
+\section{What changes from continuous FEM?}
+Let $\mathcal T_h$ be a mesh of elements $K$. In a continuous finite element
+space, neighbouring polynomial pieces must agree on a shared interface. In DG,
+each element has its own coefficients, so that agreement is not imposed. At a
+face, $u_h^-$ denotes the value approached from inside the current element and
+$u_h^+$ the value approached from the neighbour. These are \emph{traces}, not
+positive and negative parts of a number. Their difference is a \emph{jump}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Latex,scale=1.0]
+ \draw[thick] (0,0) rectangle (3,1.6);
+ \draw[thick] (3,0) rectangle (6,1.6);
+ \node at (1.5,1.25) {element $K$};\node at (4.5,1.25) {neighbour $N$};
+ \draw[blue!70!black,thick] (.2,.4)--(2.8,.95);
+ \draw[orange!80!black,thick] (3.2,.4)--(5.8,.65);
+ \node[below] at (2.55,.8) {$u_h^-$};\node[above] at (3.6,.45) {$u_h^+$};
+ \draw[->,thick] (3,1.8)--(4,1.8);\node[above] at (3.5,1.8) {$n_K$};
+ \node[below,align=center] at (3,-.25) {independent traces; one shared numerical flux};
+\end{tikzpicture}
+\caption{A schematic pair of elements. The separate polynomial pieces may
+jump. A numerical flux gives both elements a consistent exchange across their
+common face. The drawn heights illustrate values, not element geometry.}
+\label{fig:dg-traces}
+\end{figure}
+
+This locality makes DG convenient for discontinuous solutions and distributed
+meshes. It does not by itself prevent oscillations: a high-order polynomial
+can overshoot near a shock even when its cell average is reasonable.
+
+\subsection{Spaces, coefficients, and geometry}
+Each physical element is the image of a reference element $\widehat K$ under
+an invertible map $T_K$. Its order-$k$ space is
+\begin{equation}
+ V^k(K)=\{\widehat v\circ T_K^{-1}:\widehat v\in\widehat V^k(\widehat K)\},
+ \qquad V_h^k=\{v:v|_K\in V^k(K),\ K\in\mathcal T_h\}.
+ \label{eq:ofdg-space}
+\end{equation}
+The reference family is total-degree $P^k$ on a simplex, tensor-product $Q^k$
+on a quadrilateral or hexahedron, and the corresponding triangle--segment
+product on a prism. Thus ``order $k$'' does not always mean total degree $k$.
+A curved map generally produces functions that are not polynomials in physical
+coordinates. All lower-order spaces in this work use the same map, so they
+remain nested: $V^0(K)\subset\cdots\subset V^k(K)$.
+
+With basis functions $\phi_i$, the approximation is
+\begin{equation}
+ u_h|_K=\sum_{i=1}^{N_K}U_{K,i}\phi_i.
+ \label{eq:ofdg-local-expansion}
+\end{equation}
+$N_K$ is the number of local coefficients, or degrees of freedom (DOFs).
+Coefficients may be nodal values or modal expansion coefficients. The function
+represented by them, rather than the storage basis, is the object to which
+our projections and filters apply.
+
+\section{One element's weak form}
+Multiply the scalar conservation law by a test function $w_h\in V^k(K)$,
+integrate over $K$, and integrate the spatial divergence by parts:
+\begin{equation}
+ \int_K\partial_tu_h w_h\,dx
+ -\int_K\boldsymbol f(u_h)\cdot\nabla w_h\,dx
+ +\int_{\partial K}\widehat f(u_h^-,u_h^+,\boldsymbol n_K)w_h^-\,ds=0.
+ \label{eq:rkdg-weak-form}
+\end{equation}
+The first term is storage; the second accounts for variation inside the element;
+the third is exchange across its boundary. $\boldsymbol n_K$ is the outward
+unit normal. Since there are two traces, evaluating the physical flux from
+only one trace would leave the exchange ambiguous. The \emph{numerical flux}
+$\widehat f$ resolves that ambiguity.
+
+The shared baseline uses the Rusanov flux
+\begin{equation}
+ \widehat f(u^-,u^+,\boldsymbol n)
+ =\tfrac12\bigl(\boldsymbol f(u^-)+\boldsymbol f(u^+)\bigr)\cdot\boldsymbol n
+   -\tfrac12\lambda(u^+-u^-),
+ \label{eq:rusanov}
+\end{equation}
+where $\lambda$ bounds the relevant normal propagation speeds. The second term
+adds interface dissipation proportional to the jump. Equal traces recover the
+physical flux. Swapping traces and reversing the normal reverses the numerical
+flux, so an internal interface adds to one element exactly what it removes
+from the other, subject to consistent quadrature.
+
+Choosing $w_h=1$ gives the cell balance
+\begin{equation}
+ \frac{d}{dt}\int_K u_h\,dx
+ =-\int_{\partial K}\widehat f\,ds.
+ \label{eq:cell-balance}
+\end{equation}
+Internal contributions cancel in the global sum. Domain totals therefore stay
+constant for periodic problems, but can change through open boundaries.
+A conservative filter must preserve the cell integral established by this DG
+update; it does not remove the boundary flux from this balance.
+
+\subsection{Example: linear advection}
+For $u_t+a u_x=0$ with constant $a>0$, the physical flux is $au$. Setting
+$\lambda=|a|$ in \cref{eq:rusanov} gives $\widehat f=a u^-$ at the right face:
+the upstream trace supplies the transported quantity. If two traces differ,
+the method communicates their effect through this flux rather than making the
+polynomials continuous. This example illustrates the general construction;
+it is not an additional governing assumption for OFDG.
+
+\section{Time stepping and the location of filtering}
+Substitution of the basis expansion into the weak form gives a finite system
+\begin{equation}
+ M\frac{dU}{dt}=R(U),
+ \qquad M_{ij}=\int_K\phi_i\phi_j\,dx\quad\hbox{on each element}.
+\end{equation}
+The mass matrix $M$ is block-local; the residual $R$ includes neighbour traces.
+An explicit Runge--Kutta method evaluates this residual at several intermediate
+\emph{stages}. The implementation provides classical fourth-order RK (RK4), with a CFL
+step-size rule depending on mesh scale, order, and characteristic speed.
+CFL refers to the Courant--Friedrichs--Lewy restriction: the timestep limits
+how far information travels relative to a cell width, with a stricter
+restriction at higher approximation order. A common CFL number therefore does
+not necessarily produce the same timestep for different evolving states.
+RK4's formal ODE order is not a proof of fourth-order accuracy for a nonlinear
+filtered shock calculation.
+
+The terminology RKDG means DG in space combined with Runge--Kutta time stepping
+\cite{LuEtAl2021,LiuEtAl2022}. In this work, adapted OFDG is normally
+applied after a complete step, whereas the OEDG comparator filters each RK
+stage. Their cadence is part of the comparison. Exact solution of the damping
+substep, introduced next, does not make the combined DG/filter evolution exact.
+
+\section{Nonlinear scalar equations and Euler}
+Burgers' equation uses $f(u)=u^2/2$, so its propagation speed depends on the
+state; initially smooth data can develop a shock. Compressible Euler has
+$m=d+2$ conserved components,
+\begin{equation}
+ \boldsymbol u=(\rho,\rho\boldsymbol v,E)^\mathsf T,
+ \qquad p=(\gamma-1)\left(E-\tfrac12\rho|\boldsymbol v|^2\right).
+ \label{eq:euler-state}
+\end{equation}
+Here $\rho$ is density, $\boldsymbol v$ velocity, $E$ total energy per unit
+volume, $p$ pressure, and $\gamma=1.4$ the ratio of specific heats used by the Euler implementation.
+The flux in coordinate direction $j$ is
+\begin{equation}
+ \boldsymbol f_j=(\rho v_j,\ \rho v_j\boldsymbol v+p\boldsymbol e_j,\ (E+p)v_j)^\mathsf T,
+ \label{eq:euler-flux}
+\end{equation}
+with $\boldsymbol e_j$ the coordinate unit vector. The maximum normal wave
+speed is $|\boldsymbol v\cdot\boldsymbol n|+c$, where
+$c=\sqrt{\gamma p/\rho}$ is the sound speed. This differs from the signed
+fluid transport velocity used by the KXRCF inflow decision. Density and pressure
+must remain positive for these states and speeds to be physically admissible.

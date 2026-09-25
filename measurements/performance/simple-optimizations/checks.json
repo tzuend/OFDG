@@ -1,0 +1,72 @@
+[
+  {
+    "name": "test_ofdg_regression",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_ofdg_regression"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.454727458069101,
+    "peak_mib": 0.03125,
+    "metrics": {}
+  },
+  {
+    "name": "test_kxrcf",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_kxrcf"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.24015675007831305,
+    "peak_mib": 0.03125,
+    "metrics": {}
+  },
+  {
+    "name": "test_mixed_geometry",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_mixed_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.4475527920294553,
+    "peak_mib": 12.453125,
+    "metrics": {}
+  },
+  {
+    "name": "test_oedg_2024",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_oedg_2024"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.23292124993167818,
+    "peak_mib": 0.03125,
+    "metrics": {}
+  },
+  {
+    "name": "test_curved_geometry",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_curved_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 36.525328333023936,
+    "peak_mib": 162.171875,
+    "metrics": {}
+  },
+  {
+    "name": "curved_mpi",
+    "command": [
+      "mpirun",
+      "-np",
+      "2",
+      "--nooversubscribe",
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_curved_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 6.907345499959774,
+    "peak_mib": 209.296875,
+    "metrics": {}
+  }
+]

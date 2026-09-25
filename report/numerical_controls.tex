@@ -1,27 +1,43 @@
-\section{Common numerical controls}
+\section{Numerical controls}
 \label{sec:numerical-controls}
-\subsection{Euler positivity is separate from oscillation damping}
-An oscillation filter need not prevent negative density or pressure. The common
-positivity limiter instead scales each local state toward its conservative
-cell mean. It constrains density first and pressure by bisection along the same
-line segment, following the mean-preserving scaling principle
-of~\cite{ZhangShu2010}. All components use the same scaling so that the
-conservative means are preserved.
+\subsection{Euler admissibility}
+Oscillation damping does not guarantee positive density and pressure. The
+implementation therefore includes a separate control for Euler states. For
+an element mean $\overline{\boldsymbol u}_K$, it replaces a candidate polynomial
+by
+\begin{equation}
+ \boldsymbol u_h^{\rm lim}
+ =\overline{\boldsymbol u}_K+	heta_K
+          (\boldsymbol u_h-\overline{\boldsymbol u}_K),
+ \qquad 0\leq\theta_K\leq1.
+\end{equation}
+A single factor is used for all conservative components. Integration shows
+that the component means are unchanged. The factor is restricted first for
+density, then for pressure by bisection along the segment toward the mean.
+Admissibility is checked at the volume and face points needed by the evolution
+and filtering operators; it is not a statement about every point of the
+continuous polynomial.
 
-Checks use volume nodes and the local/shared face evaluation points required
-by the evolution and filter operators. A nonphysical mean cannot be repaired
-by scaling toward itself; the candidate step is rejected and retried with a
-smaller time step, subject to a retry limit. The preview enables this treatment
-for every Euler method, including DG, and records its interventions. Thus
-``DG'' in an Euler plot means DG without an oscillation filter but with the
-common positivity control.
+A nonphysical mean cannot be repaired by scaling toward itself. In that case
+the candidate step is rejected and retried with a smaller timestep, subject to
+a retry limit. Comparisons between Euler methods must apply the same
+admissibility control and record its interventions so that its influence is
+not attributed to the oscillation filter.
 
-\subsection{Independent one-dimensional references}
-The finite-volume reference solver uses component-wise WENO5 reconstruction,
-Lax--Friedrichs flux splitting, and SSPRK3~\cite{JiangShu1996,GottliebShu1998}.
-It shares no DG projector, detector, or damping code. Smooth Euler and exact
-Sod tests check its implementation~\cite{Sod1978}. The preview compares
-2,048- and 4,096-cell references; fine densities are averaged in pairs onto the
-coarse grid. A reference may be useful for viewing a profile while still being
-insufficient for a quantitative error claim near a shock. That distinction is
-carried into the results and missing-work register.
+\MissingWork{POSITIVITY-SOURCE}{Review the proposed positivity-preserving DG
+reference before adding its citation and relating this implementation to the
+published assumptions. The scaling formula above describes the implemented
+control and does not claim a positivity theorem for the complete scheme.}
+
+\subsection{Experimental choices still to be fixed}
+The formulation distinguishes approximation order, spatial resolution, CFL
+number, filtering cadence, detector threshold, and positivity treatment.
+These must be specified when comparing methods. In particular, comparing
+post-step OFDG with stage-wise OEDG changes both the sensor and the placement
+of filtering. Such a comparison cannot isolate the sensor's effect without
+an additional controlled comparison of cadences.
+
+The final selection of problems, reference solutions, error measures, and
+resolution studies is deferred to the Results chapter. Existing exploratory
+calculations and their reference-solver workflow remain separate from this
+methodological account.

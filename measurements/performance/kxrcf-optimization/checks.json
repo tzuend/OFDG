@@ -1,0 +1,72 @@
+[
+  {
+    "name": "kxrcf",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_kxrcf"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.4539174579549581,
+    "peak_mib": 0.03125,
+    "metrics": {}
+  },
+  {
+    "name": "mixed",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_mixed_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.4611096669686958,
+    "peak_mib": 11.828125,
+    "metrics": {}
+  },
+  {
+    "name": "curved",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_curved_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 36.66561933408957,
+    "peak_mib": 169.828125,
+    "metrics": {}
+  },
+  {
+    "name": "curved_mpi",
+    "command": [
+      "mpirun",
+      "-np",
+      "2",
+      "--nooversubscribe",
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_curved_geometry"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 6.902105042012408,
+    "peak_mib": 212.9375,
+    "metrics": {}
+  },
+  {
+    "name": "release-velocity-cache",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/release/tests/test_kxrcf"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.4557998329401016,
+    "peak_mib": 0.03125,
+    "metrics": {}
+  },
+  {
+    "name": "debug-velocity-cache",
+    "command": [
+      "/Users/timozund/Documents/master_thesis/codex_dev/build/debug/tests/test_kxrcf"
+    ],
+    "status": "ok",
+    "exit_code": 0,
+    "wall_seconds": 0.9139816670212895,
+    "peak_mib": 10.625,
+    "metrics": {}
+  }
+]

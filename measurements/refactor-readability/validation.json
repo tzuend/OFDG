@@ -1,0 +1,45 @@
+{
+  "final_regressions_passed": 13,
+  "sanitizers_passed": true,
+  "public_headers_passed": true,
+  "coefficient_comparison": {
+    "coefficients": 69824,
+    "changed_hex_values": 2211,
+    "max_absolute_difference": 1.1102230246251565e-16,
+    "max_scaled_difference": 1.1102230246251565e-16,
+    "files": [
+      {
+        "name": "mpi-rank0.txt",
+        "byte_identical": false
+      },
+      {
+        "name": "mpi-rank1.txt",
+        "byte_identical": false
+      },
+      {
+        "name": "serial-rank0.txt",
+        "byte_identical": true
+      }
+    ],
+    "worst_absolute_case": {
+      "file": "mpi-rank0.txt",
+      "case": "case 2 3 1 1 0 0",
+      "vector": "residual",
+      "coefficient": 3,
+      "before": 0.481398797140494,
+      "after": 0.4813987971404939
+    },
+    "passed": true
+  },
+  "source_sha256": {
+    "src/ofdg_core.cpp": "7d82641f77feb4f4295b7143cae59a2c1af31ad0c17ad2f588735b09fafdd8aa",
+    "src/kxrcf.cpp": "dda685fe0540ce45d46a4cbd9b5409b912401f2c17b04bb1e862628c47d790d8",
+    "tests/test_refactor_outputs.cpp": "1c42f1661de7f5b94fa828b26d6e997b95cc0ee15e1497e203810c2d035443ec",
+    "tests/compare_refactor_outputs.py": "3742b71668f6601da388123b50b660ca572ee1592c85b80c2be32492c9b53299",
+    "tests/test_ofdg_regression.cpp": "3c6adeeb0dba21eaac67ceca43897193ca951cc8793c4c7e69d8af0880ae987f"
+  },
+  "core_lines_before": 1796,
+  "core_lines_after": 1660,
+  "kxrcf_lines_before": 811,
+  "kxrcf_lines_after": 784
+}

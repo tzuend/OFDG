@@ -1,0 +1,7 @@
+{
+  "checks": 135,
+  "decimal_precision": 70,
+  "step": "1e-9",
+  "max_error_scaled_by_max_1_truth": 1.2527392257121989e-16,
+  "method": "Independent centered finite differences of analytic inverse, orders 1, 2, 3; powers 0,1,2; parameters 0,.21,.3,.49,.7; x=.1,.4,.9"
+}

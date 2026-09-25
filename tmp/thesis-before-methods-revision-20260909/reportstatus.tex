@@ -1,0 +1,14 @@
+% Visible evidence states. Missing research is never disguised as finished prose.
+\newcommand{\EvidenceBox}[2]{%
+  \par\medskip\noindent\begingroup\setlength{\fboxsep}{8pt}%
+  \fcolorbox{black!60}{blue!3}{\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+  \textbf{#1}\par\smallskip #2
+  \end{minipage}}\endgroup\par\medskip}
+\newcommand{\MissingWork}[2]{%
+  \ifdraftresults\else\PackageError{thesis}{Unresolved placeholder #1}{Complete or explicitly remove the associated claim before final publication.}\fi
+  \par\medskip\noindent\begingroup\setlength{\fboxsep}{8pt}%
+  \fcolorbox{black}{yellow!12}{\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
+  \textbf{[ PLACEHOLDER #1 --- Still needs: ]}\label{missing:#1}\par\smallskip #2
+  \end{minipage}}\endgroup\par\medskip}
+\newcommand{\Preliminary}[1]{\EvidenceBox{PRELIMINARY RESULT}{#1}}
+\newcommand{\ScopeLimit}[1]{\EvidenceBox{SCOPE LIMITATION}{#1}}

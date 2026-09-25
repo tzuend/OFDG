@@ -1,0 +1,7 @@
+{
+  "benchmarks/sphere_ofdg.cpp": "61515ef4868e71a015a7a8da53cb84a485f8584fbd50f334a2eb91799cd95c2b",
+  "scripts/run_sphere_ofdg.py": "1b16d7a007cd1af02a1f1826c35d2a843754a01fe1783e0240ffbe3f35b622e1",
+  "scripts/analyze_sphere_ofdg.py": "091d14894e0fad97c5e14cfed296dac50558509fdfd859e76c21cc24e91528e1",
+  "scripts/sphere_ofdg_pages.py": "e699e78bb6c4cf7a9b61dee89cb2dd089fe0adecd68decb428274c98f7e6e423",
+  "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066"
+}

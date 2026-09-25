@@ -1,0 +1,2453 @@
+{
+  "description": "Analytic physical derivative accuracy; production derivative matrices; smooth projected fields and exactly representable mapped quadratic",
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "cpu_detection": "8 logical processors confirmed; one rank/thread chosen for small operator checks",
+  "checks": [
+    {
+      "case": "coupled-quad-n4-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.36620325000000004,
+      "peak_mib": 9.984375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.3649925,
+      "peak_mib": 18.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.892719042,
+      "peak_mib": 19.015625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2423740000000001,
+      "peak_mib": 18.5,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4991459170000003,
+      "peak_mib": 18.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.6487064580000004,
+      "peak_mib": 19.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2472013749999995,
+      "peak_mib": 18.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.7304002499999998,
+      "peak_mib": 19.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 2.800322917,
+      "peak_mib": 20.34375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.41036954199999975,
+      "peak_mib": 19.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8551375419999996,
+      "peak_mib": 19.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.039966915999999,
+      "peak_mib": 21.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.1590387919999987,
+      "peak_mib": 0.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.3670991250000011,
+      "peak_mib": 18.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9865112499999995,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2514112500000003,
+      "peak_mib": 18.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4839568339999989,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.5695710419999997,
+      "peak_mib": 19.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.25036650000000193,
+      "peak_mib": 18.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.7436507910000003,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 2.7843980839999993,
+      "peak_mib": 20.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.24673754099999812,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8434786669999994,
+      "peak_mib": 19.25,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.048023834000002,
+      "peak_mib": 21.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.12583866599999993,
+      "peak_mib": 0.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.36775820900000156,
+      "peak_mib": 18.515625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9686312499999978,
+      "peak_mib": 18.75,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.25145116699999903,
+      "peak_mib": 18.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4983523749999996,
+      "peak_mib": 18.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.6068275000000014,
+      "peak_mib": 19.25,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.24625483299999829,
+      "peak_mib": 18.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.7244093750000005,
+      "peak_mib": 18.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 2.8022072079999987,
+      "peak_mib": 20.34375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.273957124999999,
+      "peak_mib": 19.515625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8471417080000023,
+      "peak_mib": 19.140625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.0422251250000016,
+      "peak_mib": 21.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.4829791669999963,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 5.737438917000006,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n16-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "16",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 22.589038083,
+      "peak_mib": 19.46875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.331880125000012,
+      "peak_mib": 18.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 12.591810209000002,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n16-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "16",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 50.172638625000005,
+      "peak_mib": 19.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 6.118541666999988,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p1-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "1",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.512588542,
+      "peak_mib": 18.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p2-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9054762080000001,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.5284027500000001,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 23.740892333,
+      "peak_mib": 19.171875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.863858583999999,
+      "peak_mib": 18.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 7.529963041000002,
+      "peak_mib": 19.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a0.0-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 28.84856275,
+      "peak_mib": 18.96875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.5248972079999987,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.4873919169999965,
+      "peak_mib": 18.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p1-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "1",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 5.666585042000008,
+      "peak_mib": 18.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8597807499999988,
+      "peak_mib": 18.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.219009208000003,
+      "peak_mib": 18.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 12.561957042000003,
+      "peak_mib": 18.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.5155630830000035,
+      "peak_mib": 18.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 6.001331542000003,
+      "peak_mib": 18.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 23.690612458999993,
+      "peak_mib": 19.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.8910585409999925,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 7.476241958000003,
+      "peak_mib": 18.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a0.4-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 28.818165709,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.5184466659999885,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.513613625000005,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p1-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "1",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 5.819475916999977,
+      "peak_mib": 18.828125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8767307919999894,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 3.2602091249999887,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 12.612411457999997,
+      "peak_mib": 19.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 1.6470989999999972,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 5.929928333000021,
+      "peak_mib": 18.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 24.267337584000018,
+      "peak_mib": 19.265625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 2.426366874999985,
+      "peak_mib": 19.3125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 8.188130957999988,
+      "peak_mib": 19.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 28.678569041000003,
+      "peak_mib": 18.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n16-p3-a1.2-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 93.12649175000001,
+      "peak_mib": 19.5,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.49193237500003306,
+      "peak_mib": 18.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4871614159999922,
+      "peak_mib": 18.40625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8554018749999841,
+      "peak_mib": 19.03125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.7374779589999889,
+      "peak_mib": 18.90625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8516756660000055,
+      "peak_mib": 19.0,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8542450410000129,
+      "peak_mib": 20.0,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 12.532092541999987,
+      "peak_mib": 18.90625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 11.786012959000004,
+      "peak_mib": 18.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 23.179254500000013,
+      "peak_mib": 19.359375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 20.26894512499996,
+      "peak_mib": 19.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a1.2-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "gl",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 28.51627208299999,
+      "peak_mib": 19.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a1.2-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0",
+        "0"
+      ],
+      "seconds": 22.32143366600002,
+      "peak_mib": 19.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2675197909999838,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.3753067080000392,
+      "peak_mib": 18.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9772721250000131,
+      "peak_mib": 19.03125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.25007133299999396,
+      "peak_mib": 18.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.48433845800002473,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.5895653339999853,
+      "peak_mib": 19.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.24892699999998058,
+      "peak_mib": 18.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.49075958399998854,
+      "peak_mib": 18.796875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.6988655420000214,
+      "peak_mib": 20.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.12290695899997672,
+      "peak_mib": 0.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.3613249580000115,
+      "peak_mib": 18.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9975858749999702,
+      "peak_mib": 19.25,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2421945419999929,
+      "peak_mib": 18.484375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.49334333399997377,
+      "peak_mib": 18.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.5717764999999986,
+      "peak_mib": 19.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.2430831249999983,
+      "peak_mib": 18.515625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4932124579999595,
+      "peak_mib": 18.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "16",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.7132251669999619,
+      "peak_mib": 20.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4868481670000051,
+      "peak_mib": 18.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.7459749170000123,
+      "peak_mib": 18.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p2-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 6.577242917000035,
+      "peak_mib": 18.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8552654580000194,
+      "peak_mib": 18.84375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 3.158185000000003,
+      "peak_mib": 18.71875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 12.114201625000021,
+      "peak_mib": 19.234375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.9778982500000097,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 3.760738291999985,
+      "peak_mib": 19.0625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p4-a0.3-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "0.3",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 15.014758708000045,
+      "peak_mib": 19.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.5000797919999513,
+      "peak_mib": 18.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.7632074580000108,
+      "peak_mib": 18.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p2-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 6.51027354200005,
+      "peak_mib": 18.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.8906334580000248,
+      "peak_mib": 18.625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 3.119775000000004,
+      "peak_mib": 18.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 12.144926749999968,
+      "peak_mib": 18.90625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "2",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 1.006692457999975,
+      "peak_mib": 18.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 3.855511459000013,
+      "peak_mib": 18.984375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p4-a0.7-gll-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 14.900800541999956,
+      "peak_mib": 19.296875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.4984522500000139,
+      "peak_mib": 18.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 0.49717345900000964,
+      "peak_mib": 18.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-gl-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 12.01981970899999,
+      "peak_mib": 19.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-bernstein-q0-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0",
+        "0"
+      ],
+      "seconds": 10.399365290999981,
+      "peak_mib": 19.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-gll-q8-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8",
+        "0"
+      ],
+      "seconds": 0.7392716250000149,
+      "peak_mib": 18.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-gll-q0-e8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "8"
+      ],
+      "seconds": 0.9942962919999445,
+      "peak_mib": 18.84375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-gll-q8-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8",
+        "0"
+      ],
+      "seconds": 0.5049903330000234,
+      "peak_mib": 18.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-gll-q0-e8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "8"
+      ],
+      "seconds": 0.6279901249999966,
+      "peak_mib": 18.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-gll-q8-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8",
+        "0"
+      ],
+      "seconds": 23.46799454199993,
+      "peak_mib": 19.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-gll-q0-e8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0",
+        "8"
+      ],
+      "seconds": 32.59958545799998,
+      "peak_mib": 18.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-gll-q8-e0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8",
+        "0"
+      ],
+      "seconds": 12.16144225000005,
+      "peak_mib": 18.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-gll-q0-e8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/derivative_accuracy",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0",
+        "8"
+      ],
+      "seconds": 16.626422542,
+      "peak_mib": 19.0625,
+      "returncode": 0,
+      "failure": null
+    }
+  ],
+  "source_sha256": {
+    "benchmarks/derivative_accuracy.cpp": "207701750da6b4d10b9287a0bf2a8d7d599b7748ef0ec780c4d5f8c8b81bc92b",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "build/release/benchmarks/derivative_accuracy": "fd4ac541b7bcd84d27b844799aafcfdc85b06eb9d456e799dd0933de7e2a6d4e"
+  },
+  "mfem_config": "# Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced\n# at the Lawrence Livermore National Laboratory. All Rights reserved. See files\n# LICENSE and NOTICE for details. LLNL-CODE-806117.\n#\n# This file is part of the MFEM library. For more information and source code\n# availability visit https://mfem.org.\n#\n# MFEM is free software; you can redistribute it and/or modify it under the\n# terms of the BSD-3 license. We welcome feedback and contributions, see file\n# CONTRIBUTING.md for details.\n\n# Variables corresponding to defines in config.hpp (YES, NO, or value)\nMFEM_VERSION           = 40901\nMFEM_VERSION_STRING    = 4.9.1\nMFEM_SOURCE_DIR        = /Users/timozund/Documents/master_thesis/mfem\nMFEM_INSTALL_DIR       = /Users/timozund/Documents/master_thesis/mfem/mfem\nMFEM_GIT_STRING        = heads/master-0-ga1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18\nMFEM_USE_MPI           = YES\nMFEM_USE_METIS         = YES\nMFEM_USE_METIS_5       = NO\nMFEM_USE_DOUBLE        = YES\nMFEM_USE_SINGLE        = NO\nMFEM_DEBUG             = NO\nMFEM_USE_EXCEPTIONS    = NO\nMFEM_USE_ZLIB          = NO\nMFEM_USE_LIBUNWIND     = NO\nMFEM_USE_LAPACK        = NO\nMFEM_THREAD_SAFE       = NO\nMFEM_USE_LEGACY_OPENMP = NO\nMFEM_USE_OPENMP        = NO\nMFEM_USE_MEMALLOC      = YES\nMFEM_TIMER_TYPE        = 4\nMFEM_USE_SUNDIALS      = NO\nMFEM_USE_SUITESPARSE   = NO\nMFEM_USE_SUPERLU       = NO\nMFEM_USE_SUPERLU5      = NO\nMFEM_USE_MUMPS         = NO\nMFEM_USE_STRUMPACK     = NO\nMFEM_USE_GINKGO        = NO\nMFEM_USE_AMGX          = NO\nMFEM_USE_MAGMA         = NO\nMFEM_USE_GNUTLS        = NO\nMFEM_USE_HDF5          = NO\nMFEM_USE_NETCDF        = NO\nMFEM_USE_PETSC         = NO\nMFEM_USE_SLEPC         = NO\nMFEM_USE_MPFR          = NO\nMFEM_USE_SIDRE         = NO\nMFEM_USE_FMS           = NO\nMFEM_USE_CONDUIT       = NO\nMFEM_USE_PUMI          = NO\nMFEM_USE_HIOP          = NO\nMFEM_USE_GSLIB         = NO\nMFEM_USE_CUDA          = NO\nMFEM_USE_HIP           = NO\nMFEM_USE_RAJA          = NO\nMFEM_USE_OCCA          = NO\nMFEM_USE_CEED          = NO\nMFEM_USE_CALIPER       = NO\nMFEM_USE_UMPIRE        = NO\nMFEM_USE_SIMD          = NO\nMFEM_USE_ADIOS2        = NO\nMFEM_USE_MKL_CPARDISO  = NO\nMFEM_USE_MKL_PARDISO   = NO\nMFEM_USE_MOONOLITH     = NO\nMFEM_USE_ADFORWARD     = NO\nMFEM_USE_CODIPACK      = NO\nMFEM_USE_BENCHMARK     = NO\nMFEM_USE_PARELAG       = NO\nMFEM_USE_TRIBOL        = NO\nMFEM_USE_ENZYME        = NO\n\n# Compiler, compile options, and link options\nMFEM_CXX       = mpicxx\nMFEM_HOST_CXX  = mpicxx\nMFEM_CPPFLAGS  =\nMFEM_CXXFLAGS  = -O3 -std=c++17\nMFEM_TPLFLAGS  =  -I$(MFEM_DIR)/../hypre/src/hypre/include\nMFEM_INCFLAGS  = -I$(MFEM_INC_DIR) $(MFEM_TPLFLAGS)\nMFEM_PICFLAG   =\nMFEM_FLAGS     = $(MFEM_CPPFLAGS) $(MFEM_CXXFLAGS) $(MFEM_INCFLAGS)\nMFEM_EXT_LIBS  =  -L$(MFEM_DIR)/../hypre/src/hypre/lib -lHYPRE -L$(MFEM_DIR)/../metis-4.0 -lmetis\nMFEM_LIBS      =  -L$(MFEM_LIB_DIR) -lmfem $(MFEM_EXT_LIBS)\nMFEM_LIB_FILE  = $(MFEM_LIB_DIR)/libmfem.a\nMFEM_STATIC    = YES\nMFEM_SHARED    = NO\nMFEM_BUILD_TAG = Darwin 26eff3c9-0ac7-4965-a644-adc256b93eeb.fritz.box arm64\nMFEM_PREFIX    = ./mfem\nMFEM_INC_DIR   = $(MFEM_DIR)\nMFEM_LIB_DIR   = $(MFEM_DIR)\nMFEM_XLINKER   = -Wl,\n\n# Location of test.mk\nMFEM_TEST_MK = $(MFEM_DIR)/config/test.mk\n\n# Command used to launch MPI jobs\nMFEM_MPIEXEC    = mpirun\nMFEM_MPIEXEC_NP = -np\nMFEM_MPI_NP     = 4\n\n# The NVCC compiler cannot link with -x=cu\nMFEM_LINK_FLAGS := $(filter-out -x=cu -xcuda -xhip, $(MFEM_FLAGS))\n\n# Optional extra configuration\n",
+  "compute_seconds": 881.1413162130002,
+  "peak_mib": 21.328125,
+  "planning_interruptions": [
+    {
+      "case": "coupled-tri-n8-p3-a0.0-gll-q0-e0",
+      "reason": "Reduced redundant expensive triangle checks before budget was approached; retained partial raw output",
+      "compute_seconds_charged": 60
+    }
+  ]
+}

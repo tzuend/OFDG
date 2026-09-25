@@ -1,0 +1,492 @@
+{
+  "description": "MFEM ex7 surface screened Poisson, u=xy on the sphere; conforming H1 FEM, no OFDG",
+  "logical_processors": 8,
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "planned_cases": 28,
+  "source_sha256": {
+    "benchmarks/sphere_surface.cpp": "19e864a3361e751228b8d64bbff4617d9a3d36c9041656a648bb4289bcf19fe5",
+    "build/release/benchmarks/sphere_surface": "cb12b636e940a9f06c3ed32e63b43a4e39890445a1b7aa9830bba81bc097843b",
+    "/Users/timozund/Documents/master_thesis/mfem/examples/ex7.cpp": "0e99f4c41ddaed7c8a041f73aff105634a6656c1feaf536363172a4b19037731"
+  },
+  "compute_seconds": 5.61362908128649,
+  "peak_mib": 23.078125,
+  "checks": [
+    {
+      "case": "tri-l1-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "1",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.4527635001577437,
+      "peak_mib": 16.40625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07356954086571932,
+      "peak_mib": 0.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.16378279100172222,
+      "peak_mib": 15.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l1-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "1",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07987754209898412,
+      "peak_mib": 0.953125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "2",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.148609166033566,
+      "peak_mib": 18.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "2",
+        "2",
+        "0",
+        "0",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-surface/visualization/tri"
+      ],
+      "seconds": 0.28726966702379286,
+      "peak_mib": 19.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l1-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "1",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.14014370902441442,
+      "peak_mib": 18.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "2",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.2183396660257131,
+      "peak_mib": 18.828125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.5134983749594539,
+      "peak_mib": 20.203125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "1",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.06869383295997977,
+      "peak_mib": 0.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "2",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07187679200433195,
+      "peak_mib": 0.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p1-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "1",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.13569645793177187,
+      "peak_mib": 18.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "1",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07463016710244119,
+      "peak_mib": 0.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "2",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.14321050001308322,
+      "peak_mib": 0.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "2",
+        "2",
+        "0",
+        "0",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/sphere-surface/visualization/quad"
+      ],
+      "seconds": 0.3607404171489179,
+      "peak_mib": 19.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l1-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "1",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07521583302877843,
+      "peak_mib": 0.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "2",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.07422000006772578,
+      "peak_mib": 0.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p3-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "3",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.21365720801986754,
+      "peak_mib": 21.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l4-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "4",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.43189774989150465,
+      "peak_mib": 21.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l4-p2-g2-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "4",
+        "2",
+        "2",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.37033666716888547,
+      "peak_mib": 23.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p2-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "2",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.1394924579653889,
+      "peak_mib": 18.9375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p2-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "2",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.21708908304572105,
+      "peak_mib": 19.03125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p2-g1-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "2",
+        "1",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.15398125001229346,
+      "peak_mib": 19.390625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p2-g3-q0-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "2",
+        "3",
+        "0",
+        "0",
+        "-"
+      ],
+      "seconds": 0.14234637492336333,
+      "peak_mib": 18.84375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l3-p2-g2-q6-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "3",
+        "2",
+        "2",
+        "6",
+        "0",
+        "-"
+      ],
+      "seconds": 0.42672191583551466,
+      "peak_mib": 19.0625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l3-p2-g2-q6-constant0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "3",
+        "2",
+        "2",
+        "6",
+        "0",
+        "-"
+      ],
+      "seconds": 0.14433170901611447,
+      "peak_mib": 18.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "tri-l2-p2-g2-q0-constant1",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "tri",
+        "2",
+        "2",
+        "2",
+        "0",
+        "1",
+        "-"
+      ],
+      "seconds": 0.14511633291840553,
+      "peak_mib": 0.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "quad-l2-p2-g2-q0-constant1",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/sphere_surface",
+        "quad",
+        "2",
+        "2",
+        "2",
+        "0",
+        "1",
+        "-"
+      ],
+      "seconds": 0.14652037504129112,
+      "peak_mib": 0.546875,
+      "returncode": 0,
+      "failure": null
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "description": "3D periodic volume advection, affine Q2 hexes; production OFDG unchanged",
+  "logical_processors": 8,
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "planned_cases": 10,
+  "source_sha256": {
+    "benchmarks/volume_showcase.cpp": "bb52ff804a8fec7ea9a314ec7bb143cf1bdda93f8e9b5f6068bd85ea75863c3f",
+    "scripts/run_volume_showcase.py": "ea0053352da2cb148172e344579baa6544d8469d6c81004eda3d29efc8372b05",
+    "build/release/benchmarks/volume_showcase": "40234b6bfec050a8e7d5905ab166ccda0908f020be685609af5a7233a826960a",
+    "src/kxrcf.cpp": "dda685fe0540ce45d46a4cbd9b5409b912401f2c17b04bb1e862628c47d790d8",
+    "src/oedg_2024.cpp": "2d884adc4a8bf74b93ef76b3ff58730bb1b59994e26e4aae08c660c090d01dde",
+    "src/ofdg.cpp": "7e96ab5c1517a6212b07c4d976dc4628e47acbce793f7a1456e4fb8342b5e92e",
+    "src/ofdg_core.cpp": "7d82641f77feb4f4295b7143cae59a2c1af31ad0c17ad2f588735b09fafdd8aa",
+    "src/conservation.hpp": "c3ab46ad95bd765ca16a5b5ac6a9e6aca1c77ab0dc52e005fd84339fe4bed00b",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "src/euler_positivity.hpp": "fc9faacff48c58a80b1ac979b3b4c63ee18496bf323ade2364352804fe7764ed",
+    "src/experiment_rk.hpp": "39789e97824c0d5f3c71f190cf92dba1c139838dc85a5c55077bca5912b147d0",
+    "src/face_physics.hpp": "0175745c5d97409ebc81db7e3c862108f644076a0abd1341f95f0c844b4c1f02",
+    "src/glvis_output.hpp": "755e26663f875ecd317ecfb5c7ea344cfbf81b8549d9fb31797f21952402df1d",
+    "src/kxrcf.hpp": "80f0f903f49ea0acdc33e18a9e7bdcfd1fb9c7899f5996f62070b34d1b81b6dd",
+    "src/oedg_2024.hpp": "cc25d102542bef6f2137c572981c1155133d9cbb6de01b7554c1ba573c474bdd",
+    "src/ofdg.hpp": "01982f059906aeb439ce54f5682f6f7fb4238dea46496d1f66338b01f156f213",
+    "src/ofdg_core.hpp": "bce2dbc9bff7ee5a68c43ae68a6d958c7d0b3ebf7b99654439322e71480cbc59",
+    "src/profile_output.hpp": "15b71cd15c4ad47ed0b4e5f29f9b232a871dfac15e008277f2851608d19d5444",
+    "src/rk4.hpp": "b42d224867989510675be1f3e29e36b9a925486468489d9f14c691f4514c139b",
+    "src/study_filter.hpp": "5b19b0d450741d57b9818f49e28aeb1a88c239b36cc7ff684b9174da7b55dcb6",
+    "src/study_method.hpp": "edb2c61471dcb111b1fbba80e13e4fe6f3d048a63cb307832381b1692cc6d345"
+  },
+  "compute_seconds": 52.11899483180605,
+  "peak_mib": 80.921875,
+  "checks": [
+    {
+      "case": "n6-dg-p1-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "6",
+        "dg",
+        "1",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 1.654324458912015,
+      "peak_mib": 25.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n6-ofdg-p1-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "6",
+        "ofdg",
+        "1",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 1.8512502498924732,
+      "peak_mib": 32.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n10-dg-p1-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "10",
+        "dg",
+        "1",
+        "0.003",
+        ".3",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/volume-showcase/visualization/n10-dg-p1-dt0.003"
+      ],
+      "seconds": 5.320428499951959,
+      "peak_mib": 46.21875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n10-ofdg-p1-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "10",
+        "ofdg",
+        "1",
+        "0.003",
+        ".3",
+        "/Users/timozund/Documents/master_thesis/codex_dev/measurements/volume-showcase/visualization/n10-ofdg-p1-dt0.003"
+      ],
+      "seconds": 8.67427658289671,
+      "peak_mib": 80.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n6-dg-p0-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "6",
+        "dg",
+        "0",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 1.1167842920403928,
+      "peak_mib": 24.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n6-ofdg-p0-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "6",
+        "ofdg",
+        "0",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 1.8539647911675274,
+      "peak_mib": 32.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n10-dg-p0-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "10",
+        "dg",
+        "0",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 4.874167958041653,
+      "peak_mib": 46.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n10-ofdg-p0-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "10",
+        "ofdg",
+        "0",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 8.385850250022486,
+      "peak_mib": 80.125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n6-ofdg-p2-dt0.003",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "6",
+        "ofdg",
+        "2",
+        "0.003",
+        ".3",
+        "-"
+      ],
+      "seconds": 1.9294991658534855,
+      "peak_mib": 32.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "n10-ofdg-p1-dt0.0015",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/volume_showcase",
+        "10",
+        "ofdg",
+        "1",
+        "0.0015",
+        ".3",
+        "-"
+      ],
+      "seconds": 16.458448583027348,
+      "peak_mib": 80.640625,
+      "returncode": 0,
+      "failure": null
+    }
+  ]
+}

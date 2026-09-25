@@ -1,0 +1,27 @@
+\section{Common numerical controls}
+\label{sec:numerical-controls}
+\subsection{Euler positivity is separate from oscillation damping}
+An oscillation filter need not prevent negative density or pressure. The common
+positivity limiter instead scales each local state toward its conservative
+cell mean. It constrains density first and pressure by bisection along the same
+line segment, following the mean-preserving scaling principle
+of~\cite{ZhangShu2010}. All components use the same scaling so that the
+conservative means are preserved.
+
+Checks use volume nodes and the local/shared face evaluation points required
+by the evolution and filter operators. A nonphysical mean cannot be repaired
+by scaling toward itself; the candidate step is rejected and retried with a
+smaller time step, subject to a retry limit. The preview enables this treatment
+for every Euler method, including DG, and records its interventions. Thus
+``DG'' in an Euler plot means DG without an oscillation filter but with the
+common positivity control.
+
+\subsection{Independent one-dimensional references}
+The finite-volume reference solver uses component-wise WENO5 reconstruction,
+Lax--Friedrichs flux splitting, and SSPRK3~\cite{JiangShu1996,GottliebShu1998}.
+It shares no DG projector, detector, or damping code. Smooth Euler and exact
+Sod tests check its implementation~\cite{Sod1978}. The preview compares
+2,048- and 4,096-cell references; fine densities are averaged in pairs onto the
+coarse grid. A reference may be useful for viewing a profile while still being
+insufficient for a quantitative error claim near a shock. That distinction is
+carried into the results and missing-work register.

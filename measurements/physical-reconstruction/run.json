@@ -1,0 +1,1073 @@
+{
+  "description": "Matched DG input: recursive projection vs one physical Pq reconstruction, q=p,p+1,p+2; independent analytic-field oracle",
+  "ranks": 1,
+  "threads_per_rank": 1,
+  "cpu_detection": "8 logical processors confirmed; one rank/thread chosen for small operator checks",
+  "checks": [
+    {
+      "case": "coupled-quad-n4-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.48736591599999995,
+      "peak_mib": 19.328125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.6011918749999999,
+      "peak_mib": 20.359375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 2.0494914160000004,
+      "peak_mib": 22.34375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.36540970900000014,
+      "peak_mib": 20.234375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.1895684170000003,
+      "peak_mib": 22.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 4.410251083,
+      "peak_mib": 25.75,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.4759984999999993,
+      "peak_mib": 22.609375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.66755575,
+      "peak_mib": 25.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n16-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.3014860420000005,
+      "peak_mib": 29.234375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.4746755839999999,
+      "peak_mib": 25.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.6560001660000019,
+      "peak_mib": 26.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "2",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.345531209000001,
+      "peak_mib": 31.203125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.9590490840000001,
+      "peak_mib": 34.4375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 3.485373124999999,
+      "peak_mib": 34.8125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 13.482918833,
+      "peak_mib": 36.109375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n2-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.319729584000001,
+      "peak_mib": 34.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 5.004619957999999,
+      "peak_mib": 39.703125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a1.2-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "4",
+        "1.2",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 19.480480874999998,
+      "peak_mib": 42.265625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p2-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.6068878749999982,
+      "peak_mib": 20.5,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p3-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.1998725830000012,
+      "peak_mib": 22.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n8-p4-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.709269207999995,
+      "peak_mib": 25.171875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p2-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "2",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 6.394661499999998,
+      "peak_mib": 29.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p3-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "3",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 13.610367292000007,
+      "peak_mib": 37.828125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n8-p4-a0.4-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "4",
+        "0.4",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 19.556828374999995,
+      "peak_mib": 42.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p2-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.24266020800000376,
+      "peak_mib": 19.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.4858788750000116,
+      "peak_mib": 20.59375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p4-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.601645750000003,
+      "peak_mib": 22.859375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p2-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "2",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 1.9237016659999995,
+      "peak_mib": 26.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 4.128086167000006,
+      "peak_mib": 34.515625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p4-a0.0-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "4",
+        "0.0",
+        "gll",
+        "coupled",
+        "0"
+      ],
+      "seconds": 5.645060749999999,
+      "peak_mib": 39.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.24430699999999206,
+      "peak_mib": 18.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.4794047500000005,
+      "peak_mib": 20.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.6746305829999955,
+      "peak_mib": 21.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.3688364160000219,
+      "peak_mib": 20.171875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.9636155419999852,
+      "peak_mib": 21.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 3.6380592499999977,
+      "peak_mib": 23.921875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.48188441600001397,
+      "peak_mib": 22.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.3538599580000152,
+      "peak_mib": 24.828125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n16-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "16",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 5.302313749999996,
+      "peak_mib": 25.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.48855362500000865,
+      "peak_mib": 23.421875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.4401633749999974,
+      "peak_mib": 26.78125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p2-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "2",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 5.436189458000001,
+      "peak_mib": 30.140625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.8401598330000013,
+      "peak_mib": 28.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.879700334000006,
+      "peak_mib": 33.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 11.29934962499999,
+      "peak_mib": 37.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n2-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "2",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 1.091739500000017,
+      "peak_mib": 32.953125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 4.122466833999994,
+      "peak_mib": 36.640625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p4-a0.7-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "4",
+        "0.7",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 16.191483625000018,
+      "peak_mib": 40.53125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n8-p3-a0.3-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.9588355420000028,
+      "peak_mib": 21.296875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n8-p3-a0.3-gll-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "8",
+        "3",
+        "0.3",
+        "gll",
+        "separable",
+        "0"
+      ],
+      "seconds": 11.279652667000022,
+      "peak_mib": 35.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a1.2-gl-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.36556950000002075,
+      "peak_mib": 19.65625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a1.2-bernstein-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 0.3643944579999925,
+      "peak_mib": 20.15625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.7-gl-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.36146408300001553,
+      "peak_mib": 19.765625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.7-bernstein-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 0.3661162080000224,
+      "peak_mib": 20.578125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a1.2-gl-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gl",
+        "coupled",
+        "0"
+      ],
+      "seconds": 3.5279403750000142,
+      "peak_mib": 33.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a1.2-bernstein-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "bernstein",
+        "coupled",
+        "0"
+      ],
+      "seconds": 3.471519833000002,
+      "peak_mib": 35.734375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.7-gl-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gl",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.9030448749999778,
+      "peak_mib": 33.375,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.7-bernstein-extra0",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "bernstein",
+        "separable",
+        "0"
+      ],
+      "seconds": 2.914523457999991,
+      "peak_mib": 34.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-quad-n4-p3-a1.2-gll-extra8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 0.513113374999989,
+      "peak_mib": 20.6875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-quad-n4-p3-a0.7-gll-extra8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "quad",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 0.3643186250000099,
+      "peak_mib": 20.875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "coupled-tri-n4-p3-a1.2-gll-extra8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "1.2",
+        "gll",
+        "coupled",
+        "8"
+      ],
+      "seconds": 4.424647499999992,
+      "peak_mib": 36.1875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "separable-tri-n4-p3-a0.7-gll-extra8",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/physical_reconstruction",
+        "tri",
+        "4",
+        "3",
+        "0.7",
+        "gll",
+        "separable",
+        "8"
+      ],
+      "seconds": 3.703276374999973,
+      "peak_mib": 35.328125,
+      "returncode": 0,
+      "failure": null
+    }
+  ],
+  "source_sha256": {
+    "benchmarks/physical_reconstruction.cpp": "a47837c4eed43f2ef172cca55c8711a6e405f5ad40f2dc73eef983fb1e013ea4",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "build/release/benchmarks/physical_reconstruction": "908173c33eaa8ddd6e94e60312278eba4857f6db49784363a45d060e5016a75a"
+  },
+  "mfem_config": "# Copyright (c) 2010-2025, Lawrence Livermore National Security, LLC. Produced\n# at the Lawrence Livermore National Laboratory. All Rights reserved. See files\n# LICENSE and NOTICE for details. LLNL-CODE-806117.\n#\n# This file is part of the MFEM library. For more information and source code\n# availability visit https://mfem.org.\n#\n# MFEM is free software; you can redistribute it and/or modify it under the\n# terms of the BSD-3 license. We welcome feedback and contributions, see file\n# CONTRIBUTING.md for details.\n\n# Variables corresponding to defines in config.hpp (YES, NO, or value)\nMFEM_VERSION           = 40901\nMFEM_VERSION_STRING    = 4.9.1\nMFEM_SOURCE_DIR        = /Users/timozund/Documents/master_thesis/mfem\nMFEM_INSTALL_DIR       = /Users/timozund/Documents/master_thesis/mfem/mfem\nMFEM_GIT_STRING        = heads/master-0-ga1ce49fb5742ad3c46e3e3732e5f9b04e4ca6e18\nMFEM_USE_MPI           = YES\nMFEM_USE_METIS         = YES\nMFEM_USE_METIS_5       = NO\nMFEM_USE_DOUBLE        = YES\nMFEM_USE_SINGLE        = NO\nMFEM_DEBUG             = NO\nMFEM_USE_EXCEPTIONS    = NO\nMFEM_USE_ZLIB          = NO\nMFEM_USE_LIBUNWIND     = NO\nMFEM_USE_LAPACK        = NO\nMFEM_THREAD_SAFE       = NO\nMFEM_USE_LEGACY_OPENMP = NO\nMFEM_USE_OPENMP        = NO\nMFEM_USE_MEMALLOC      = YES\nMFEM_TIMER_TYPE        = 4\nMFEM_USE_SUNDIALS      = NO\nMFEM_USE_SUITESPARSE   = NO\nMFEM_USE_SUPERLU       = NO\nMFEM_USE_SUPERLU5      = NO\nMFEM_USE_MUMPS         = NO\nMFEM_USE_STRUMPACK     = NO\nMFEM_USE_GINKGO        = NO\nMFEM_USE_AMGX          = NO\nMFEM_USE_MAGMA         = NO\nMFEM_USE_GNUTLS        = NO\nMFEM_USE_HDF5          = NO\nMFEM_USE_NETCDF        = NO\nMFEM_USE_PETSC         = NO\nMFEM_USE_SLEPC         = NO\nMFEM_USE_MPFR          = NO\nMFEM_USE_SIDRE         = NO\nMFEM_USE_FMS           = NO\nMFEM_USE_CONDUIT       = NO\nMFEM_USE_PUMI          = NO\nMFEM_USE_HIOP          = NO\nMFEM_USE_GSLIB         = NO\nMFEM_USE_CUDA          = NO\nMFEM_USE_HIP           = NO\nMFEM_USE_RAJA          = NO\nMFEM_USE_OCCA          = NO\nMFEM_USE_CEED          = NO\nMFEM_USE_CALIPER       = NO\nMFEM_USE_UMPIRE        = NO\nMFEM_USE_SIMD          = NO\nMFEM_USE_ADIOS2        = NO\nMFEM_USE_MKL_CPARDISO  = NO\nMFEM_USE_MKL_PARDISO   = NO\nMFEM_USE_MOONOLITH     = NO\nMFEM_USE_ADFORWARD     = NO\nMFEM_USE_CODIPACK      = NO\nMFEM_USE_BENCHMARK     = NO\nMFEM_USE_PARELAG       = NO\nMFEM_USE_TRIBOL        = NO\nMFEM_USE_ENZYME        = NO\n\n# Compiler, compile options, and link options\nMFEM_CXX       = mpicxx\nMFEM_HOST_CXX  = mpicxx\nMFEM_CPPFLAGS  =\nMFEM_CXXFLAGS  = -O3 -std=c++17\nMFEM_TPLFLAGS  =  -I$(MFEM_DIR)/../hypre/src/hypre/include\nMFEM_INCFLAGS  = -I$(MFEM_INC_DIR) $(MFEM_TPLFLAGS)\nMFEM_PICFLAG   =\nMFEM_FLAGS     = $(MFEM_CPPFLAGS) $(MFEM_CXXFLAGS) $(MFEM_INCFLAGS)\nMFEM_EXT_LIBS  =  -L$(MFEM_DIR)/../hypre/src/hypre/lib -lHYPRE -L$(MFEM_DIR)/../metis-4.0 -lmetis\nMFEM_LIBS      =  -L$(MFEM_LIB_DIR) -lmfem $(MFEM_EXT_LIBS)\nMFEM_LIB_FILE  = $(MFEM_LIB_DIR)/libmfem.a\nMFEM_STATIC    = YES\nMFEM_SHARED    = NO\nMFEM_BUILD_TAG = Darwin 26eff3c9-0ac7-4965-a644-adc256b93eeb.fritz.box arm64\nMFEM_PREFIX    = ./mfem\nMFEM_INC_DIR   = $(MFEM_DIR)\nMFEM_LIB_DIR   = $(MFEM_DIR)\nMFEM_XLINKER   = -Wl,\n\n# Location of test.mk\nMFEM_TEST_MK = $(MFEM_DIR)/config/test.mk\n\n# Command used to launch MPI jobs\nMFEM_MPIEXEC    = mpirun\nMFEM_MPIEXEC_NP = -np\nMFEM_MPI_NP     = 4\n\n# The NVCC compiler cannot link with -x=cu\nMFEM_LINK_FLAGS := $(filter-out -x=cu -xcuda -xhip, $(MFEM_FLAGS))\n\n# Optional extra configuration\n",
+  "compute_seconds": 425.426752123,
+  "retained_attempt": "measurements/physical-reconstruction-normal-equations; mass-matrix solve failed polynomial reproduction control; charged 205.75 seconds",
+  "projection_solver": "weighted QR, twice-reorthogonalized modified Gram-Schmidt",
+  "planned_cases": 62,
+  "peak_mib": 42.578125
+}

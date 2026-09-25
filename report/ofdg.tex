@@ -1,6 +1,6 @@
 \section{Adapted OFDG: damping without changing the cell mean}
 \label{chap:ofdg}
-The DG state from \cref{chap:methods} may contain unresolved oscillations.
+The DG state from \cref{chap:background} may contain unresolved oscillations.
 Adapted OFDG reduces nonconstant content within each element while preserving
 its mean. Three ingredients determine the operation: nested projections separate
 orders of variation, interelement jumps measure roughness, and wave-speed-scaled
@@ -43,6 +43,10 @@ slope and curvature but leaves $a_0$ unchanged. This orthogonal example is an
 explanation, not a required storage basis: the code assembles projections in
 MFEM's existing scalar finite element basis.
 
+\Cref{fig:projection-damping} illustrates how attenuating zero-mean terms
+changes a profile while preserving its average.
+\input{illustrations/projection-damping}
+
 Define the remainders and shells
 \begin{align}
  \mathcal R_K^{(l)}&=I-\Pi_K^{l-1},\quad \Pi_K^{-1}:=\Pi_K^0,
@@ -51,32 +55,250 @@ Define the remainders and shells
  \mathcal Q_K^{(j)}=\Pi_K^j-\Pi_K^{j-1},\quad 1\leq j\leq k.
  \label{eq:ofdg-modal-shells}
 \end{align}
-A shell contains the variation added when increasing the reference-space order
+Here $I$ is the identity operator. In particular,
+$\mathcal R_K^{(0)}=\mathcal R_K^{(1)}=I-\Pi_K^0$: both remove the
+constant mean and retain everything else. For $l\geq2$, the remainder
+removes the whole order-$(l-1)$ subspace. The special convention for
+$\Pi_K^{-1}$ ensures that even the solution-jump contribution cannot damp
+the mean. A shell contains the variation added when increasing the reference-space order
 from $j-1$ to $j$. These shells are mutually orthogonal in the physical inner
 product. On tensor-product or curved elements, ``shell $j$'' means this nested
 space difference; it does not mean total physical polynomial degree $j$.
 
+\subsection{Projection matrices in the solution basis}
+\label{sec:ofdg-projection-coefficients}
+To apply these function-space operations to the stored DG coefficients, we
+need matrices in the existing solution basis. Write
+$u_h=\sum_{i=1}^{N_k}U_i\phi_i$ on $K$, so $U\in\mathbb R^{N_k}$
+is a coefficient vector, not a list of point values in general.
+The physical inner product in \cref{eq:ofdg-l2-projection} supplies the
+matrix entries below; its evaluation on curved elements is derived in
+\cref{eq:curved-weighted-masses}.
+
+Let $\{\phi_i\}_{i=1}^{N_k}$ be the local degree-$k$ basis and
+$\{\psi_a^{(r)}\}_{a=1}^{N_r}$ the degree-$r$ basis.  The code assembles
+\begin{align}
+  (M_k)_{ij}&=(\phi_i,\phi_j)_K,
+  & (M_r)_{ab}&=(\psi_a^{(r)},\psi_b^{(r)})_K,\\
+  (B_r)_{ai}&=(\psi_a^{(r)},\phi_i)_K.
+\end{align}
+Here $M_k\in\mathbb R^{N_k\times N_k}$ and
+$M_r\in\mathbb R^{N_r\times N_r}$ are mass matrices, while
+$B_r\in\mathbb R^{N_r\times N_k}$ transfers the inner products with
+$u_h$ to the lower-order test basis. Testing the projection equation gives
+$M_r C_r=B_r U$. The lower-order coefficients $C_r$ represent
+$\Pi_K^r u_h$; lifting this same function to the original basis gives
+$M_k U_r=B_r^{\mathsf T}C_r$. Eliminating $C_r$ yields the projector,
+and subtraction from $U$ yields the remainder.
+The matrix representation of $I-\Pi_K^r$ in the degree-$k$ coefficient basis is
+\begin{equation}
+  Q_r=M_k-B_r^\mathsf{T}M_r^{-1}B_r,
+  \qquad
+  S_r=M_k^{-1}Q_r
+     =I-M_k^{-1}B_r^\mathsf{T}M_r^{-1}B_r.
+  \label{eq:ofdg-projection-matrices}
+\end{equation}
+Thus applying $S_r$ to a degree-$k$ coefficient vector directly returns the
+coefficients of the remainder $w-\Pi_K^r w$.  Here $I$ is the $N_k\times N_k$ identity matrix, and inverse notation denotes linear solves.  The code stores $S_r$
+for $0\leq r\leq k$.
+
+Crucially, this construction never converts the solution to Legendre or other
+orthogonal modal coefficients.  It represents the same projection operator in
+whatever supported scalar polynomial DG basis the host framework supplies.
+Consequently, a nodal basis, a modal basis, or another polynomial coefficient
+basis produces the same function-space operation up to quadrature and roundoff.
+This basis-agnostic realization is what makes the implementation portable: a
+second framework need not add a special OFDG solution basis, provided it can
+form the corresponding polynomial-space projections.
+
+On an affine element, all three mass
+and coupling matrices contain the same constant physical Jacobian factor, which
+cancels in $S_r$.  Therefore affine projection matrices are reused per finite-element signature.
+For curved elements every mass and coupling matrix includes the physical
+Jacobian weight at each quadrature point.  The lower-order spaces are mapped
+reference polynomial spaces; their physical $L^2$ projectors remain nested.
+
+For example, $S_0U$ is the nonconstant remainder, and
+$(S_{j-1}-S_j)U$ represents shell $j$. Since $S_k=0$, these stored
+remainders suffice for every shell in \cref{eq:ofdg-modal-shells}.
+
 \subsection{Which derivatives enter the sensor?}
 \label{sec:projected-derivatives}
-The derivative notation must reflect the geometry. Define
+First distinguish an exact derivative from the projected operation used in
+its numerical approximation. A \emph{multi-index} is a tuple of nonnegative
+integers. For spatial dimension $d$, define
+\begin{equation}
+ \alpha=(\alpha_1,\ldots,\alpha_d)\in\mathbb N_0^d,\qquad
+ |\alpha|=\sum_{j=1}^d\alpha_j,\qquad
+ \partial^\alpha=\partial_{x_1}^{\alpha_1}\cdots
+                         \partial_{x_d}^{\alpha_d}.
+ \label{eq:derivative-multi-index}
+\end{equation}
+Here $\mathbb N_0=\{0,1,2,\ldots\}$, $\alpha_j$ counts differentiations in
+coordinate $x_j$, and $|\alpha|$ is their total order. For example, in two
+dimensions $(1,0)$ means $\partial_x$, $(0,1)$ means $\partial_y$,
+$(1,1)$ means a mixed second derivative, and $(2,1)$ means two
+$x$-derivatives and one $y$-derivative. The zero multi-index means no
+differentiation: $\partial^0v=v$. For sufficiently smooth functions within
+an element, exact mixed partial derivatives commute, including on curved
+elements. This statement concerns the physical function, not its discrete
+approximation.
+
+Define the projected first-derivative operator by
 \begin{equation}
  \mathscr D_{K,j}v=\Pi_K^k(\partial_{x_j}v).
  \label{eq:projected-first-derivative}
 \end{equation}
-A multi-index $\alpha=(\alpha_1,\ldots,\alpha_d)$ counts differentiations in
-each coordinate; $|\alpha|$ is their total. Set $\mathscr D_K^0=I$ and form
-$\mathscr D_K^\alpha$ by successive applications of \cref{eq:projected-first-derivative}
-in the code's fixed derivative-graph order. For example, a mixed second
-operation is $\mathscr D_{K,x}\mathscr D_{K,y}v$.
+It first differentiates in physical coordinate $x_j$, then projects the result
+back into $V^k(K)$. For repeated application, this report uses the explicit
+convention
+\begin{equation}
+ \mathscr D_K^\alpha
+ =\mathscr D_{K,d}^{\alpha_d}\cdots
+   \mathscr D_{K,2}^{\alpha_2}\mathscr D_{K,1}^{\alpha_1},
+ \qquad \mathscr D_K^0=I.
+ \label{eq:projected-multi-index-order}
+\end{equation}
+Operators act from right to left: all $x_1$ operations come first, then
+$x_2$, and so on. This is the sequence selected by the implementation.
+Thus $\mathscr D_K^{(1,1)}v=\mathscr D_{K,y}\mathscr D_{K,x}v$ in 2D;
+the superscript labels that particular sequence, not all its permutations.
 
 On affine elements whose reference family is closed under differentiation,
 these operators recover the exact polynomial derivatives up to numerical
-precision. On a curved element they approximate \emph{successively projected}
-physical derivatives. They are not exact higher derivatives of the mapped
-function, and the projected mixed derivatives need not commute. This
-qualification applies to every curved sensor formula below.
+precision, and their order is immaterial. On a curved element they represent
+\emph{successively projected} physical derivatives. Inserting a projection
+between differentiations can destroy commutation. Consequently
+$\mathscr D_{K,y}\mathscr D_{K,x}v$ and
+$\mathscr D_{K,x}\mathscr D_{K,y}v$ need not agree, even though
+$\partial_y\partial_xv=\partial_x\partial_yv$.
+\Cref{sec:curved-recursive-derivatives} derives the difference and explains
+what the multi-index storage does and does not imply.
 
-For an interior face $F=\partial K^-\cap\partial K^+$, define
+\subsection{From reference derivatives to physical coefficients}
+\label{sec:ofdg-coefficient-derivatives}
+
+The sensor needs derivative traces on both sides of a face. We first
+construct derivative coefficients within each element, then evaluate their
+traces. This avoids requesting higher basis derivatives from MFEM.
+Let $\widehat\phi_i=\phi_i\circ T_K$ be the reference basis and let
+$\{\boldsymbol\xi_q\}_{q=1}^{N_k}$ be the finite element's interpolation
+points. These are distinct from the integration points used for volume or
+face quadrature. The supported element must provide an invertible evaluation
+matrix at these points. For each reference direction $r\in\{1,\ldots,d\}$,
+define the two $N_k\times N_k$ matrices
+\begin{equation}
+  V_{qi}=\widehat\phi_i(\boldsymbol{\xi}_q),
+  \qquad
+  G_{qi}^{(r)}
+  =\frac{\partial\widehat\phi_i}{\partial\xi_r}(\boldsymbol{\xi}_q).
+\end{equation}
+Rows index sample points and columns index basis functions. Thus
+$V\boldsymbol u$ gives solution values at the interpolation points, while
+$G^{(r)}\boldsymbol u$ contains
+reference-derivative values at the interpolation points.  To express those derivative values as coefficients, solve
+$V\boldsymbol u_{\xi_r}=G^{(r)}\boldsymbol u$. Because reference
+polynomial differentiation stays in the supported space, this reconstructs
+the derivative exactly up to roundoff. Therefore
+\begin{equation}
+  \boldsymbol{u}_{\xi_r}=D_{\xi_r}\boldsymbol{u},
+  \qquad
+  D_{\xi_r}=V^{-1}G^{(r)}.
+  \label{eq:ofdg-reference-derivative-matrix}
+\end{equation}
+The code's \texttt{AssembleReferenceDerivatives} builds $V$ with MFEM's
+\texttt{CalcShape}, builds $G^{(r)}$ with \texttt{CalcDShape}, and
+explicitly forms $V^{-1}G^{(r)}$. For a Lagrange nodal basis at its own nodes,
+$V=I$. Keeping $V$ explicit also handles supported bases whose coefficients
+are not those nodal values; invertibility is essential.
+
+For a small example, use $(1,\xi,\xi^2)$ on $[0,1]$ and sample at
+$0,\tfrac12,1$. Then
+\begin{equation}
+ V=\begin{pmatrix}1&0&0\\1&1/2&1/4\\1&1&1\end{pmatrix},\quad
+ G=\begin{pmatrix}0&1&0\\0&1&1\\0&1&2\end{pmatrix},\quad
+ D_\xi=\begin{pmatrix}0&1&0\\0&0&2\\0&0&0\end{pmatrix}.
+\end{equation}
+For $\boldsymbol u=(a,b,c)^{\mathsf T}$, $G\boldsymbol u$ contains
+the sampled slopes $(b,b+c,b+2c)^{\mathsf T}$, whereas
+$D_\xi\boldsymbol u=(b,2c,0)^{\mathsf T}$ contains the coefficients
+of $b+2c\xi$. This is why values and coefficients cannot generally be
+interchanged.
+
+Now introduce the affine element map
+\begin{equation}
+ \boldsymbol x=T_K(\boldsymbol\xi)=\boldsymbol b_K+J_K\boldsymbol\xi,
+ \qquad (J_K)_{jr}=\frac{\partial x_j}{\partial\xi_r}.
+ \label{eq:ofdg-affine-map}
+\end{equation}
+The vector $\boldsymbol b_K$ translates the element and the invertible
+$d\times d$ matrix $J_K$ describes scaling, rotation, and shear.
+It is constant within this element but may differ between elements.
+The chain rule $\partial_{x_j}=\sum_r(J_K^{-1})_{rj}\partial_{\xi_r}$
+gives the physical coefficient matrices
+\begin{equation}
+  D_{x_j}^{K}
+  =\sum_{r=1}^d(J_K^{-1})_{rj}D_{\xi_r}.
+  \label{eq:ofdg-physical-derivative-matrix}
+\end{equation}
+The inverse Jacobian $J_K^{-1}$ is read once at the reference-element centre and
+one set of matrices $\{D_{x_j}^{K}\}_{j=1}^d$ is stored for every element.
+
+For a curved map $J_K$ varies within the element, so the constant
+combination in \cref{eq:ofdg-physical-derivative-matrix} is insufficient.
+The matrix representing \cref{eq:projected-first-derivative} is instead
+$D_{K,j}=(M_k^K)^{-1}G_{K,j}$, with the physical integral matrix
+$G_{K,j}$ derived in \cref{eq:curved-derivative-assembly}.
+Unlike $G^{(r)}$, which stores pointwise reference derivative values,
+$G_{K,j}$ stores physical inner products. Repeated application follows
+\cref{eq:projected-multi-index-order}; the parent rule and the projection
+error are developed in \cref{sec:curved-recursive-derivatives}.
+
+\paragraph{Coordinate derivatives and normal derivatives.}
+A physical coordinate derivative differentiates along $x_j$. At a face
+point $x_q$ with outward unit normal
+$\boldsymbol n_K(x_q)=(n_1(x_q),\ldots,n_d(x_q))$, the normal derivative is
+\begin{equation}
+ \partial_{n_K}u_h(x_q)=\sum_{j=1}^d n_j(x_q)\partial_{x_j}u_h(x_q).
+ \label{eq:ofdg-normal-derivative}
+\end{equation}
+On an affine planar face it can be evaluated from
+$\sum_j n_jD_{x_j}^K\boldsymbol u$ and the face basis values. On a curved
+face, contracting the projected coordinate derivatives gives an approximation
+$\sum_j n_j(x_q)(\mathscr D_{K,j}u_h)(x_q)$; the normal must be evaluated
+at that point. This need not equal the exact normal derivative or its single
+physical projection. The implemented OFDG sensor uses jumps of the
+\emph{coordinate derivatives} in \cref{eq:ofdg-face-jump}, not jumps of
+this contraction. Normals instead enter its wave speeds and KXRCF's inflow
+selection. No separate normal-derivative matrix is required by these sensors.
+
+Only first reference derivatives of the supplied finite-element basis are
+requested from MFEM.  Repeated application of the resulting coefficient
+operators generates every higher derivative needed by OFDG.  In framework
+terms, the construction requires scalar polynomial DG basis values and first
+derivatives, quadrature, nested lower-order polynomial spaces or equivalent
+projection operators, element and face transformations, and local
+degree-of-freedom access.  It therefore avoids a modal-basis requirement, but it
+does not claim support for arbitrary nonpolynomial, $H(\mathrm{div})$,
+$H(\mathrm{curl})$, or mixed finite-element spaces.
+
+All multi-indices with total degree at most $k$ are organized in a directed
+acyclic graph.  Each nonzero multi-index selects one parent of degree one less and
+one physical derivative direction.  Walking this graph evaluates every required
+derivative once.  The number of stored derivative states per element and component
+is
+\begin{equation}
+  \sum_{l=0}^k\binom{l+d-1}{d-1}=\binom{k+d}{d}.
+\end{equation}
+
+\subsection{Derivative jumps and their face evaluation}
+\label{sec:ofdg-face-evaluation}
+For an interior face $F=\partial K^-\cap\partial K^+$, let $w^-$ and
+$w^+$ be traces from its two adjacent elements. The jump is their difference.
+For component $c\in\{1,\ldots,m\}$ and derivative order
+$l\in\{0,\ldots,k\}$, the sensor adds the mean absolute jumps of all
+projected derivatives of total order $l$. With $|F|$ the physical face
+measure, these definitions read
 \begin{equation}
  [\![w]\!]_F=w^-|_F-w^+|_F,
  \qquad
@@ -84,11 +306,66 @@ For an interior face $F=\partial K^-\cap\partial K^+$, define
  \left|[\![\mathscr D^\alpha u_{h,c}]\!]_F\right|\,ds.
  \label{eq:ofdg-face-jump}
 \end{equation}
-Each trace uses its own element's derivative operator. $c$ identifies a
-conservative component; $l=0$ measures solution jumps. Face measure $|F|$ is
+The sum runs over
+all nonnegative multi-indices with $|\alpha|=l$, once each. In 2D, the
+$l=1$ sum includes $(1,0)$ and $(0,1)$; the $l=2$ sum includes $(2,0)$,
+$(1,1)$, and $(0,2)$. The mixed term is counted once, using
+\cref{eq:projected-multi-index-order}; there is no additional reversed-order
+term or multiplicity factor. For $l=0$ the only index is $(0,0)$, so the
+sensor measures jumps of the solution itself. Each trace uses its own
+element's derivative operator at the same physical face point. Face measure $|F|$ is
 length in 2D or area in 3D; a 1D point face uses the ordinary absolute jump.
 Taking the absolute value before integration prevents cancellation. For
 constant traces 2 and 1.25, $J_F^{(0)}=0.75$ regardless of face size.
+
+
+MFEM remains the sole source of mesh connectivity.  The setup loops over MFEM
+face numbers and obtains the two adjacent elements from MFEM's face-transformation
+data.  Boundary faces are skipped.  For each
+interior affine face, a quadrature rule of order $2k+1$ is selected.  Curved
+faces use an overintegrated rule that also depends on the geometry order.  Let $x_q$ be a physical face quadrature point and let
+$\boldsymbol\xi_{F,q}^{\pm}=T_{K^{\pm}}^{-1}(x_q)$ be its reference
+coordinates in the two adjacent elements. If their coefficient counts are
+$N_k^-$ and $N_k^+$, then $E_F^\pm$ has size $N_{q,F}\times N_k^\pm$.
+Each row converts one side's coefficients to a trace value at $x_q$.
+The following data are cached directly at the MFEM face index:
+\begin{equation}
+  (E_F^-)_{qi}=\widehat\phi_i(\boldsymbol{\xi}_{F,q}^-),
+  \qquad
+  (E_F^+)_{qi}=\widehat\phi_i(\boldsymbol{\xi}_{F,q}^+),
+  \qquad
+  \widehat{\omega}_q=\frac{\omega_q J_F(\xi_q)}{\sum_p\omega_p J_F(\xi_p)}.
+  \label{eq:ofdg-face-evaluation-matrices}
+\end{equation}
+Here $J_F$ is the physical face Jacobian.  For affine faces it is constant and cancels between the
+integral and $|F|$ in~\eqref{eq:ofdg-face-jump}; hence the normalized reference
+weights $\widehat{\omega}_q$ are sufficient.  All derivative traces and all
+components on one side of a face are evaluated together in one dense matrix
+multiplication.  There is no face-pattern matching or deduplication.
+
+If $\boldsymbol{u}_{\boldsymbol{\alpha}}^-$ and
+$\boldsymbol{u}_{\boldsymbol{\alpha}}^+$ are the coefficient vectors of the
+same physical derivative on the two neighboring elements, the actual quadrature
+calculation is
+\begin{equation}
+  J_{F,c}^{(l)}
+  \approx\sum_{|\boldsymbol{\alpha}|=l}\sum_{q=1}^{N_{q,F}}
+  \widehat{\omega}_q
+  \left|
+    \bigl(E_F^-\boldsymbol{u}_{\boldsymbol{\alpha}}^-\bigr)_q
+    -\bigl(E_F^+\boldsymbol{u}_{\boldsymbol{\alpha}}^+\bigr)_q
+  \right|.
+  \label{eq:ofdg-discrete-face-jump}
+\end{equation}
+The implementation therefore performs one subtraction and one absolute value for
+each derivative, component, and quadrature point.  No squared-jump accumulator or
+final square root is required.
+
+Thus the full coefficient-to-sensor route is: differentiate the element
+coefficients, multiply by $E_F^-$ and $E_F^+$, subtract matching traces,
+take absolute values, and average with normalized physical face weights.
+For curved elements, the pointwise normal and surface factor are derived in
+\cref{eq:curved-face-metric,eq:curved-face-normalization}.
 
 \begin{figure}[htbp]
 \centering
@@ -106,6 +383,7 @@ KXRCF, when enabled, selects which elements receive the final operation.}
 \end{figure}
 
 \subsection{Damping rates and physical scales}
+\label{sec:ofdg-rates}
 Let $\overline u_c=|\Omega|^{-1}\int_\Omega u_{h,c}\,dx$ and define the ideal
 component amplitude
 \begin{equation}
@@ -124,9 +402,11 @@ $|\boldsymbol a\cdot\boldsymbol n_K|$; Euler uses
 $|\boldsymbol v_K\cdot\boldsymbol n_K|+c_K$ evaluated from face traces.
 The other element can have a different radius. Normals are evaluated at the
 same physical face quadrature points. Unit speed is a compatibility policy,
-not the physical-speed setting used in this preview.
+rather than the state-dependent physical-speed policy defined here.
 
-With the length $h_K=(|K|/|\widehat K|)^{1/d}$, the rates are
+With $k\geq1$ the solution-space order, $|K|$ and $|\widehat K|$ the
+physical and reference element volumes, and
+$h_K=(|K|/|\widehat K|)^{1/d}$, the rates are
 \begin{equation}
  \delta_{K,c}^{(l)}=
  \frac{2l+1}{2(2k-1)l!}\frac{h_K^{l-1}}{A_c}
@@ -134,7 +414,10 @@ With the length $h_K=(|K|/|\widehat K|)^{1/d}$, the rates are
  \beta_{K,F}J_{F,c}^{(l)},\qquad 0\leq l\leq k,
  \label{eq:ofdg-damping-rate}
 \end{equation}
-where the sum is over interior faces of $K$ only. Physical boundary conditions
+Here $\mathcal F_h^{\rm i}$ denotes the set of interior mesh faces,
+$\partial K$ is the element boundary, and $l!$ is the factorial of the total
+derivative order, with $0!=1$. The sum collects contributions from interior
+faces of $K$ only. Physical boundary conditions
 belong to the DG flux operator. Face and volume integrals in the implementation
 use quadrature, including geometry-dependent weights on curved cells.
 
@@ -152,7 +435,11 @@ the physical speeds, so the complete nonlinear filtering map does not inherit
 that statement unconditionally.
 
 \subsection{Conservation, dissipation, and exact frozen decay}
-The damping operator is
+\label{sec:ofdg-decay}
+We now combine the two element-local building blocks. For each derivative
+order $l$, the rate $\delta_{K,c}^{(l)}$ measures how strongly to act, and
+the remainder $\mathcal R_K^{(l)}u_{h,c}$ selects which content may be
+removed. Adding these contributions defines the damping operator
 \begin{equation}
  \mathcal D_{K,c}u_{h,c}=\sum_{l=0}^k\delta_{K,c}^{(l)}
           \mathcal R_K^{(l)}u_{h,c}.
@@ -189,7 +476,7 @@ shells; rate $l=2$ affects shells two and three; rate $l=3$ affects shell three.
 from the evolving solution, and operator splitting remains part of the method.
 
 The public stabilization routine returns coefficients of $\mathcal D u$ for
-a caller that wants a semidiscrete term. The preview uses the exponential
+a caller that wants a semidiscrete term. The default post-step implementation uses the exponential
 \texttt{CompDecay} map after a full RK4 step, with $\tau$ equal to the step
 size. Basis-independent matrix construction is given in
-\cref{sec:ofdg-implementation}.
+\cref{sec:ofdg-projection-coefficients}.

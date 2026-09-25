@@ -1,0 +1,29 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[>=Latex,font=\small,
+ state/.style={draw,rounded corners,fill=blue!4,minimum height=10mm,
+               minimum width=21mm,inner sep=4pt}]
+ \node[state] (u) at (0,1.65) {$u_h$};
+ \node[state] (first) at (3.7,1.65) {$\partial_{x_i}u_h$};
+ \node[state] (second) at (8,1.65) {$\partial_{x_j}\partial_{x_i}u_h$};
+ \draw[->,thick] (u)--node[above] {$\partial_{x_i}$}(first);
+ \draw[->,black!55,dashed,thick] (first)--node[above] {$\partial_{x_j}$}(second);
+ \node[state,fill=teal!6] (projected) at (3.7,-.25) {$\Pi\partial_{x_i}u_h$};
+ \node[state,fill=teal!6] (recursive) at (8,-.25)
+    {$\Pi\partial_{x_j}(\Pi\partial_{x_i}u_h)$};
+ \draw[->,teal!80!black,thick] (first)--node[left] {project: $\Pi$}(projected);
+ \draw[->,teal!80!black,thick] (projected)--node[above]
+    {$\Pi\partial_{x_j}$}(recursive);
+ \node[align=left,anchor=east] at (1.9,-.25)
+    {implemented route\\back into $V^k(K)$};
+ \node[align=center] at (8,-1.55)
+    {generally $\neq\Pi\partial_{x_j}\partial_{x_i}u_h$};
+\end{tikzpicture}
+\caption{Exact differentiation and the implemented recursive construction on a
+curved element, with $\Pi=\Pi_K^k$. The first physical derivative generally
+leaves $V^k(K)$. Projecting it back changes the input to the next derivative.
+The lower route therefore differs from differentiating twice and projecting
+only at the end. Each lower state is represented in the same finite element
+space; no second derivative of the geometry map is needed by this route.}
+\label{fig:projected-derivative-route}
+\end{figure}

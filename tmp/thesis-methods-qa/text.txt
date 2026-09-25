@@ -1,0 +1,1535 @@
+PDF PAGE 1
+Oscillation-Free Discontinuous
+Galerkin Stabilization in MFEM
+Master Thesis
+Timo Zund
+September 2026
+Advisors: Dr. R. K¨ appeli
+Seminar for Applied Mathematics,
+Department of Mathematics, ETH Z¨ urich
+
+PDF PAGE 2
+
+
+PDF PAGE 3
+Abstract
+[ PLACEHOLDER ABSTRACT — Still needs: ]
+Principal findings and the final conclusion, after the numerical ex-
+periments have been agreed and evaluated. The text below is a
+provisional account of the problem and approach.
+High-order discontinuous Galerkin methods provide local approxima-
+tions of solutions to hyperbolic conservation laws, but unresolved dis-
+continuities can produce spurious oscillations. This thesis investigates
+projection-based oscillation damping and its implementation on static
+curvilinear meshes. The approach combines an adapted oscillation-free
+discontinuous Galerkin (OFDG) filter with optional KXRCF troubled-
+cell indication, separating the strength of damping from the decision
+of where to apply it.
+The formulation acts on finite element functions independently of their
+coefficient basis. PhysicalL 2 projections separate nonconstant compo-
+nents for damping while retaining cell averages. On curved elements,
+first physical derivatives are projected into the solution space and ap-
+plied recursively to construct the derivative sensor. These operations
+represent successively projected derivatives rather than exact higher
+physical derivatives. The methodological account distinguishes pub-
+lished formulations from the adaptations used here and specifies the
+geometric and numerical assumptions needed for their realization in
+MFEM.
+i
+
+PDF PAGE 4
+
+
+PDF PAGE 5
+Contents
+Contents iii
+1 Introduction 1
+1.1 Motivation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 1
+1.2 Aim and research questions . . . . . . . . . . . . . . . . . . . . 1
+1.3 Scope and approach . . . . . . . . . . . . . . . . . . . . . . . . 2
+1.4 Organisation of the thesis . . . . . . . . . . . . . . . . . . . . . 2
+2 Mathematical background 5
+2.1 Conservation laws and the quantity being conserved . . . . . 5
+2.2 What changes from continuous FEM? . . . . . . . . . . . . . . 5
+2.2.1 Spaces, coefficients, and geometry . . . . . . . . . . . . 6
+2.3 One element’s weak form . . . . . . . . . . . . . . . . . . . . . 6
+2.3.1 A labelled example: linear advection . . . . . . . . . . 7
+2.4 Time stepping and the location of filtering . . . . . . . . . . . 7
+2.5 Nonlinear scalar equations and Euler . . . . . . . . . . . . . . 8
+3 Methods 9
+3.1 Baseline discretization and method composition . . . . . . . . 9
+3.2 Adapted OFDG: damping without changing the cell mean . . 10
+3.2.1 Relation to the published methods . . . . . . . . . . . . 10
+3.2.2 Projections and a small example . . . . . . . . . . . . . 10
+3.2.3 Which derivatives enter the sensor? . . . . . . . . . . . 11
+3.2.4 Damping rates and physical scales . . . . . . . . . . . . 11
+3.2.5 Conservation, dissipation, and exact frozen decay . . . 13
+3.3 KXRCF troubled-cell indication . . . . . . . . . . . . . . . . . . 13
+3.3.1 Inflow jumps and normalization . . . . . . . . . . . . . 14
+3.3.2 Conservative systems and transport direction . . . . . 15
+3.3.3 Physical geometry and numerical realization . . . . . . 15
+3.3.4 Coupling to OFDG and limitations . . . . . . . . . . . 16
+3.4 Mathematical construction on curvilinear elements . . . . . . 16
+3.4.1 Why the affine construction is insufficient . . . . . . . 16
+iii
+
+PDF PAGE 6
+Contents
+3.4.2 Physical mass matrices and nested projections . . . . . 17
+3.4.3 Projecting a physical derivative . . . . . . . . . . . . . . 18
+3.4.4 Recursive higher derivatives: the precise approximation 18
+3.4.5 Curved faces, normal directions, and length scales . . 19
+3.5 The 2024 OEDG comparator . . . . . . . . . . . . . . . . . . . . 19
+3.5.1 Scale-invariant interface sensor . . . . . . . . . . . . . . 20
+3.5.2 Exact attenuation without a prescribed coefficient basis 21
+3.5.3 Runge–Kutta cadence and comparison contract . . . . 21
+3.6 Numerical controls . . . . . . . . . . . . . . . . . . . . . . . . . 22
+3.6.1 Euler admissibility . . . . . . . . . . . . . . . . . . . . . 22
+3.6.2 Experimental choices still to be fixed . . . . . . . . . . 22
+3.7 Implementation assumptions and geometric scope . . . . . . 23
+3.7.1 Reference data and physical operators . . . . . . . . . 23
+3.7.2 Distributed evaluation . . . . . . . . . . . . . . . . . . . 24
+3.7.3 Verification principles . . . . . . . . . . . . . . . . . . . 24
+4 Results 25
+5 Discussion 27
+6 Conclusion 29
+A Coefficient-space operators 31
+A.1 Scope and geometric assumptions . . . . . . . . . . . . . . . . 31
+A.2 Projection matrices . . . . . . . . . . . . . . . . . . . . . . . . . 32
+A.3 Coefficient-to-coefficient derivatives . . . . . . . . . . . . . . . 32
+A.4 Face quadrature and cached evaluation . . . . . . . . . . . . . 34
+A.5 Runtime sequence and storage policy . . . . . . . . . . . . . . 34
+Bibliography 37
+iv
+
+PDF PAGE 7
+Chapter 1
+Introduction
+1.1 Motivation
+Hyperbolic conservation laws describe the transport of quantities such as
+mass, momentum, and energy. Their solutions can contain both smooth
+structures and sharp fronts. Even smooth initial data can develop a discon-
+tinuity, so a numerical method must accommodate qualitatively different
+behaviour within the same calculation.
+Discontinuous Galerkin (DG) methods combine finite element approxima-
+tion within each mesh element with numerical fluxes between elements.
+Independent local polynomial representations allow high-order approxima-
+tion without imposing continuity across interfaces [1]. Near an unresolved
+front, however, a polynomial approximation can develop overshoots and
+undershoots. Damping these oscillations indiscriminately can also remove
+smooth features that a high-order method is intended to resolve.
+Projection-based damping offers a way to separate these concerns. The cell
+mean can be retained while nonconstant parts of the approximation are at-
+tenuated. The scalar OFDG formulation of Lu, Liu, and Shu [3] and its
+extension to hyperbolic systems [2] provide the starting point. The OEDG
+formulation of Peng, Sun, and Wu [4] further motivates normalized sensing
+and exact integration of a frozen damping step. A separate troubled-cell
+indicator can restrict the operation to selected cells. The central issue is
+then how to define the damping, its sensor, and its geometric realization
+consistently.
+1.2 Aim and research questions
+This thesis concerns a basis-independent realization of an adapted OFDG
+method in the finite element library MFEM. Here, basis independence
+1
+
+PDF PAGE 8
+1. Introduction
+means that a change in coefficient representation does not change the
+filtered finite element function. The formulation combines physical pro-
+jections, face-averaged derivative jumps, and optional KXRCF gating. It is
+an adaptation of the cited methods rather than a literal reproduction of a
+single paper.
+The work is guided by three questions:
+1. How can projection damping be expressed in the host finite element
+basis while preserving component-wise cell averages?
+2. How should projection, derivative sensing, and geometric normaliza-
+tion be constructed when element maps are curved?
+3. How do damping and selective activation affect accuracy and resolu-
+tion of smooth and discontinuous solutions?
+The first two questions determine the mathematical construction and its
+implementation. The third requires an agreed set of numerical experiments;
+its answer is deliberately left open in this draft.
+1.3 Scope and approach
+The construction uses a fixed mesh and a uniform solution order. It includes
+scalar conservation laws and conservative systems, with compressible Euler
+providing the system formulation. Static polynomial curved element maps
+are considered; moving meshes and variable solution order are outside the
+scope. On curved elements, differentiation generally leaves the mapped ap-
+proximation space. The method therefore projects first physical derivatives
+back into that space and applies these projected operators recursively. The
+distinction between this construction and exact higher differentiation is cen-
+tral to the curvilinear extension.
+The thesis separates three kinds of statements: identities derived from pro-
+jection algebra, implementation choices defining the actual method, and em-
+pirical conclusions requiring numerical evidence. In particular, cell-mean
+preservation by the filter does not by itself establish positivity, full-scheme
+stability, or accuracy near a shock. Published analyses are used under their
+stated assumptions, not transferred automatically to the adapted method.
+1.4 Organisation of the thesis
+Chapter 2 introduces the conservation-law and DG notation for a reader
+familiar with finite elements. Chapter 3 develops the adapted OFDG formu-
+lation, KXRCF gating, the curvilinear construction, and the related OEDG
+implementation. It also states numerical controls and essential implementa-
+tion assumptions. Coefficient-space details appear in Chapter A.
+2
+
+PDF PAGE 9
+1.4. Organisation of the thesis
+Results, Discussion, and Conclusion retain their intended positions in Chap-
+ters 4 to 6, but are marked as incomplete until the experimental programme
+has been settled with the supervisor. Existing exploratory results remain in
+the separate preliminary results brief and are not used here to anticipate the
+thesis conclusions.
+3
+
+PDF PAGE 10
+
+
+PDF PAGE 11
+Chapter 2
+Mathematical background
+This chapter assumes familiarity with the finite element idea: approximate
+a function in a finite-dimensional space and require a residual to vanish
+against test functions. DG retains that idea but removes continuity between
+elements. The price is that communication across each interface must be
+defined explicitly. We first explain this communication, then the time update
+that the filters modify. The introductory DG treatment follows the finite
+element viewpoint of [1].
+2.1 Conservation laws and the quantity being conserved
+A conservation law describes a balance between local storage and transport:
+∂tu+∇ ·f(u) =0,u(x, 0) =u 0(x). (2.1)
+Hereu∈R m contains the conserved quantities,Ωis the spatial domain,
+andfgives their fluxes in thedcoordinate directions. Boundary condi-
+tions supply the missing information on the exterior ofΩ. Integrating over
+a region says that its total content changes only through flux across the re-
+gion’s boundary. We discuss the scalar case first; the same balance applies
+component by component to a system.
+2.2 What changes from continuous FEM?
+LetT h be a mesh of elementsK. In a continuous finite element space, neigh-
+bouring polynomial pieces must agree on a shared interface. In DG, each
+element has its own coefficients, so that agreement is not imposed. At a
+face,u −
+h denotes the value approached from inside the current element and
+u+
+h the value approached from the neighbour. These aretraces, not positive
+and negative parts of a number. Their difference is ajump.
+5
+
+PDF PAGE 12
+2. Mathematical background
+elementK neighbourN
+u−
+h
+u+
+h
+nK
+independent traces; one shared numerical flux
+Figure 2.1:A schematic pair of elements. The separate polynomial pieces may jump. A
+numerical flux gives both elements a consistent exchange across their common face. The drawn
+heights illustrate values, not element geometry.
+This locality makes DG convenient for discontinuous solutions and dis-
+tributed meshes. It does not by itself prevent oscillations: a high-order
+polynomial can overshoot near a shock even when its cell average is rea-
+sonable.
+2.2.1 Spaces, coefficients, and geometry
+Each physical element is the image of a reference element bKunder an in-
+vertible mapT K. Its order-kspace is
+Vk(K) ={ bv◦T −1
+K :bv∈ bVk(bK)},V k
+h ={v:v| K ∈V k(K),K∈ T h}. (2.2)
+The reference family is total-degreeP k on a simplex, tensor-productQ k on a
+quadrilateral or hexahedron, and the corresponding triangle–segment prod-
+uct on a prism. Thus “orderk” does not always mean total degreek. A
+curved map generally produces functions that are not polynomials in phys-
+ical coordinates. All lower-order spaces in this work use the same map, so
+they remain nested:V 0(K)⊂ · · · ⊂V k(K).
+With basis functionsφ i, the approximation is
+uh|K =
+NK
+∑
+i=1
+UK,i φi. (2.3)
+NK is the number of local coefficients, or degrees of freedom (DOFs). Coef-
+ficients may be nodal values or modal expansion coefficients. The function
+represented by them, rather than the storage basis, is the object to which our
+projections and filters apply.
+2.3 One element’s weak form
+Multiply the scalar conservation law by a test functionwh ∈V k(K), integrate
+overK, and integrate the spatial divergence by parts:
+Z
+K
+∂tuhwh dx−
+Z
+K
+f(u h)· ∇w h dx+
+Z
+∂K
+bf(u −
+h ,u +
+h ,n K)w−
+h ds=0. (2.4)
+6
+
+PDF PAGE 13
+2.4. Time stepping and the location of filtering
+The first term is storage; the second accounts for variation inside the el-
+ement; the third is exchange across its boundary.n K is the outward unit
+normal. Since there are two traces, evaluating the physical flux from only
+one trace would leave the exchange ambiguous. Thenumerical flux bfresolves
+that ambiguity.
+The shared baseline uses the Rusanov flux
+bf(u −,u +,n) = 1
+2
+ 
+f(u −) +f(u +)
+
+·n− 1
+2 λ(u+ −u −), (2.5)
+whereλbounds the relevant normal propagation speeds. The second term
+adds interface dissipation proportional to the jump. Equal traces recover
+the physical flux. Swapping traces and reversing the normal reverses the
+numerical flux, so an internal interface adds to one element exactly what it
+removes from the other, subject to consistent quadrature.
+Choosingw h =1 gives the cell balance
+d
+dt
+Z
+K
+uh dx=−
+Z
+∂K
+bf ds. (2.6)
+Internal contributions cancel in the global sum. Domain totals therefore stay
+constant for periodic problems, but can change through open boundaries. A
+conservative filter must preserve the cell integral established by this DG
+update; it does not remove the boundary flux from this balance.
+2.3.1 A labelled example: linear advection
+Foru t +au x =0 with constanta>0, the physical flux isau. Settingλ=|a|
+in Eq. (2.5) gives bf=au − at the right face: the upstream trace supplies the
+transported quantity. If two traces differ, the method communicates their
+effect through this flux rather than making the polynomials continuous. This
+example illustrates the general construction; it is not an additional governing
+assumption for OFDG.
+2.4 Time stepping and the location of filtering
+Substitution of the basis expansion into the weak form gives a finite system
+M dU
+dt =R(U),M ij =
+Z
+K
+φi φj dxon each element. (2.7)
+The mass matrixMis block-local; the residualRincludes neighbour traces.
+An explicit Runge–Kutta method evaluates this residual at several interme-
+diatestages. The implementation provides classical fourth-order RK (RK4),
+with a CFL step-size rule depending on mesh scale, order, and characteristic
+speed. CFL refers to the Courant–Friedrichs–Lewy restriction: the timestep
+7
+
+PDF PAGE 14
+2. Mathematical background
+limits how far information travels relative to a cell width, with a stricter
+restriction at higher approximation order. A common CFL number there-
+fore does not necessarily produce the same timestep for different evolving
+states. RK4’s formal ODE order is not a proof of fourth-order accuracy for a
+nonlinear filtered shock calculation.
+The terminology RKDG means DG in space combined with Runge–Kutta
+time stepping [3, 2]. In this work, adapted OFDG is normally applied after
+a complete step, whereas the OEDG comparator filters each RK stage. Their
+cadence is part of the comparison. Exact solution of the damping substep,
+introduced next, does not make the combined DG/filter evolution exact.
+2.5 Nonlinear scalar equations and Euler
+Burgers’ equation usesf(u) =u 2/2, so its propagation speed depends on
+the state; initially smooth data can develop a shock. Compressible Euler has
+m=d+2 conserved components,
+u= (ρ,ρv,E) T,p= (γ−1)
+ 
+E− 1
+2 ρ|v|2
+. (2.8)
+Hereρis density,vvelocity,Etotal energy per unit volume,ppressure, and
+γ=1.4 the ratio of specific heats used by the Euler implementation. The
+flux in coordinate directionjis
+f j = (ρv j,ρv jv+pe j,(E+p)v j)T, (2.9)
+withe j the coordinate unit vector. The maximum normal wave speed is
+|v·n|+c, wherec=
+p
+γp/ρis the sound speed. This differs from the signed
+fluid transport velocity used by the KXRCF inflow decision. Density and
+pressure must remain positive for these states and speeds to be physically
+admissible.
+8
+
+PDF PAGE 15
+Chapter 3
+Methods
+This chapter defines the numerical method used in this work. The DG for-
+mulation in Chapter 2 supplies the conservative evolution. Adapted OFDG
+adds local damping, and KXRCF optionally determines which cells receive
+it. The curvilinear construction gives these operations their physical mean-
+ing on mapped elements. OEDG is described as a related method avail-
+able for comparison, followed by numerical controls and implementation
+assumptions.
+3.1 Baseline discretization and method composition
+The baseline is the weak DG formulation Eq. (2.4) with the Rusanov flux
+Eq. (2.5). It uses a fixed scalar DG space, repeated for each conservative
+component, and explicit Runge–Kutta time integration. Periodic boundaries
+identify the corresponding traces; physical boundaries supply an exterior
+state through the DG flux. The oscillation sensor uses interior interfaces and
+does not replace this boundary treatment.
+For a post-step filter, one update has the form
+U∗ =H ∆t(Un),U n+1 =F ∆t(U∗), (3.1)
+whereHis the RKDG update andFis the frozen damping map defined
+below. With KXRCF, the active set is computed fromU ∗ before applyingF.
+Without an oscillation filter,Fis the identity. The implementation defaults
+to post-step OFDG and stage-wise OEDG; the location of filtering is part of
+the numerical method, not an incidental software setting. Euler additionally
+uses the admissibility control in Section 3.6.
+9
+
+PDF PAGE 16
+3. Methods
+3.2 Adapted OFDG: damping without changing the cell
+mean
+The DG state from Chapter 2 may contain unresolved oscillations. Adapted
+OFDG reduces nonconstant content within each element while preserving
+its mean. Three ingredients determine the operation: nested projections
+separate orders of variation, interelement jumps measure roughness, and
+wave-speed-scaled rates determine how strongly each part is damped.
+3.2.1 Relation to the published methods
+The nameadapted OFDGis used throughout this report for the specific hy-
+brid construction implemented here. Projection damping originates in [3, 2];
+global scale normalization and exponential decay are motivated by [4]. The
+earlier multidimensional OFDG sensors evaluate vertex jumps, and the sys-
+tem formulation uses characteristic variables. Here we average absolute
+jumps over faces and form separate rates for physical conservative compo-
+nents. KXRCF gating is optional.
+These choices define an implementation variant, not a literal reproduction
+of one paper. The conservation and damping identities below follow from
+projection algebra. Published convergence theorems for different sensors are
+not a proof for this variant, particularly on curved elements with projected
+derivatives.
+3.2.2 Projections and a small example
+For the nested mapped spaces from Eq. (2.2), letΠ r
+K be the physicalL 2
+projection intoV r(K):
+(Πr
+Kw−w,v) K =0 for everyv∈V r(K),(p,q) K =
+Z
+K
+pq dx. (3.2)
+This is the closest approximation in the integral squared-error norm. Be-
+cause constants belong to every space, the projection preserves the element
+integral. In particularΠ 0
+Kw=|K| −1R
+K w dxis the constant cell mean.
+For example, on[−1, 1]write
+w(x) =a 0 +a 1x+a 2(x2 −1/3). (3.3)
+The last two terms have zero mean. Reducing their coefficients changes the
+slope and curvature but leavesa 0 unchanged. This orthogonal example is
+an explanation, not a required storage basis: the code assembles projections
+in MFEM’s existing scalar finite element basis.
+10
+
+PDF PAGE 17
+3.2. Adapted OFDG: damping without changing the cell mean
+Define the remainders and shells
+R(l)
+K =I−Π l−1
+K ,Π −1
+K :=Π 0
+K, (3.4)
+Q(0)
+K =Π 0
+K,Q (j)
+K =Π j
+K −Π j−1
+K , 1≤j≤k. (3.5)
+A shell contains the variation added when increasing the reference-space
+order fromj−1 toj. These shells are mutually orthogonal in the physical
+inner product. On tensor-product or curved elements, “shellj” means this
+nested space difference; it does not mean total physical polynomial degree
+j.
+3.2.3 Which derivatives enter the sensor?
+The derivative notation must reflect the geometry. Define
+DK,jv=Π k
+K(∂xjv). (3.6)
+A multi-indexα= (α 1, . . . ,αd)counts differentiations in each coordinate;|α|
+is their total. SetD 0
+K =Iand formD α
+K by successive applications of Eq. (3.6)
+in the code’s fixed derivative-graph order. For example, a mixed second
+operation isD K,x DK,yv.
+On affine elements whose reference family is closed under differentiation,
+these operators recover the exact polynomial derivatives up to numerical
+precision. On a curved element they approximatesuccessively projectedphys-
+ical derivatives. They are not exact higher derivatives of the mapped func-
+tion, and the projected mixed derivatives need not commute. This qualifica-
+tion applies to every curved sensor formula below.
+For an interior faceF=∂K − ∩∂K +, define
+[ [w] ]F =w −|F −w +|F,J (l)
+F,c = ∑
+|α|=l
+1
+|F|
+Z
+F
+|[ [Dαuh,c] ]F| ds. (3.7)
+Each trace uses its own element’s derivative operator.cidentifies a conserva-
+tive component;l=0 measures solution jumps. Face measure|F|is length
+in 2D or area in 3D; a 1D point face uses the ordinary absolute jump. Tak-
+ing the absolute value before integration prevents cancellation. For constant
+traces 2 and 1.25,J (0)
+F =0.75 regardless of face size.
+3.2.4 Damping rates and physical scales
+Let uc =|Ω| −1R
+Ω uh,c dxand define the ideal component amplitude
+Ac =∥u h,c − uc∥L∞(Ω). (3.8)
+The code approximates this amplitude from volume-quadrature samples
+and an integrated mean; it does not optimize the continuous polynomial
+11
+
+PDF PAGE 18
+3. Methods
+solution and projected
+derivative traces
+face-averaged ab-
+solute jumps
+rates from jumps, am-
+plitude, size, and speed
+local shell attenuation;
+mean unchanged
+Figure 3.1:Adapted OFDG separates face-based sensing from element-local damping. KXRCF,
+when enabled, selects which elements receive the final operation.
+maximum. Adapted OFDG sets its component rates to zero when the sam-
+pled amplitude is at most 10 −14. This absolute cutoff limits exact rescaling
+invariance near vanishing amplitudes.
+The one-sided speedβ K,F is the largest sampled normal radius on faceF
+using the state on sideK. Prescribed advection uses|a·n K|; Euler uses
+|vK ·n K|+c K evaluated from face traces. The other element can have a
+different radius. Normals are evaluated at the same physical face quadrature
+points. Unit speed is a compatibility policy, rather than the state-dependent
+physical-speed policy defined here.
+With the lengthh K = (|K|/| bK|)1/d, the rates are
+δ(l)
+K,c = 2l+1
+2(2k−1)l!
+hl−1
+K
+Ac
+∑
+F⊂∂K
+F∈F i
+h
+βK,F J(l)
+F,c, 0≤l≤k, (3.9)
+where the sum is over interior faces ofKonly. Physical boundary conditions
+belong to the DG flux operator. Face and volume integrals in the implemen-
+tation use quadrature, including geometry-dependent weights on curved
+cells.
+The rate has inverse-time units: the derivative jump contributesu/length l,
+hl−1
+K contributes length l−1, speed contributes length/time, andA c divides
+out the state scale. At fixed geometry and amplitude, larger speeds or jumps
+strengthen attenuation; the factorh l−1
+K sets the length scaling for each deriva-
+tive order. Fork=2,l=0,h K =0.1,A=1,β=2, and one jumpJ=0.3,
+the contribution is(1/6)(0.1 −1)(2)(0.3) =1 per unit time.
+With fixed prescribed speeds and away from the cutoff, the jump/amplitude
+ratio is unchanged underu c 7→λu c +b,λ̸=0. Arbitrary component scaling
+or shifting of Euler or Burgers states can change the physical speeds, so the
+complete nonlinear filtering map does not inherit that statement uncondi-
+tionally.
+12
+
+PDF PAGE 19
+3.3. KXRCF troubled-cell indication
+3.2.5 Conservation, dissipation, and exact frozen decay
+The damping operator is
+DK,cuh,c =
+k
+∑
+l=0
+δ(l)
+K,cR(l)
+K uh,c. (3.10)
+Every remainder has zero integral. For ideal physical projections,
+Z
+K
+DK,cuh,c dx=0, (3.11)
+(DK,cuh,c,u h,c)K =
+k
+∑
+l=0
+δ(l)
+K,c∥R(l)
+K uh,c∥2
+L2(K) ≥0. (3.12)
+Thus subtractingDuremoves nonconstant squared-norm content without
+changing the cell mean. These are damping-step identities, not a positivity
+or entropy-stability proof for the full nonlinear time update. The numerical
+realization preserves its quadrature-weighted physical cell means to round-
+off; agreement with exact integrals also depends on quadrature.
+Freeze the rates at the candidate state and solve∂ sw+Dw=0 for a pseudo-
+time intervalτ. Nested projections give the explicit solution
+w(τ) =Π 0
+Kuh,c +
+k
+∑
+j=1
+exp
+ 
+−τ
+j
+∑
+l=0
+δ(l)
+K,c
+!
+(Πj
+K −Π j−1
+K )uh,c. (3.13)
+The mean is copied and each higher shell is multiplied by a factor between
+zero and one. For order three, ratesl=0 andl=1 affect all noncon-
+stant shells; ratel=2 affects shells two and three; ratel=3 affects shell
+three. “Exact” refers to this frozen damping equation. The rates are recom-
+puted from the evolving solution, and operator splitting remains part of the
+method.
+The public stabilization routine returns coefficients ofDufor a caller that
+wants a semidiscrete term. The default post-step implementation uses the
+exponentialCompDecaymap after a full RK4 step, withτequal to the step
+size. Basis-independent matrix construction is given in Chapter A.
+3.3 KXRCF troubled-cell indication
+A troubled-cell indicator decides where a separate stabilization should act;
+it does not itself change the solution. The KXRCF indicator, named after
+Krivodonova, Xin, Remacle, Chevaugeon, and Flaherty, supplies that deci-
+sion in this implementation. Adapted OFDG then damps the selected ele-
+ments using the operator in Section 3.2.
+13
+
+PDF PAGE 20
+3. Methods
+[ PLACEHOLDER KX-SOURCE — Still needs: ]
+Review and approve the original KXRCF paper, which is not currently in
+the papers folder. The formulas below define the implemented indica-
+tor; historical attribution and comparison with the original analysis still
+require that source. Its bibliographic entry is in suggested-references.
+3.3.1 Inflow jumps and normalization
+LetKhave outward unit normaln K and neighbourN. Define[u h]K,N =
+uh|K −u h|N. The part of the interior boundary on which transport entersK
+is
+∂K− ={x∈∂Kon interior faces :v n(x)<0}. (3.14)
+Herev n is the signed transport velocity viewed fromK. With detector radius
+rK, local solution scaleS K, and reference orderk, define
+IK =
+
+Z
+∂K−
+[uh]K,N ds
+
+r(k+1)/2
+K |∂K −|SK
+,K∈ A ⇐ ⇒I K >τ. (3.15)
+The default threshold isτ=1;I K =0 when there is no inflow measure.
+The radius is denoted byr K here to distinguish it from the OFDG length
+hK. The face measure averages the jump, andS K normalizes the state mag-
+nitude. The absolute value is takenafterintegration, so signed contributions
+can cancel. This differs from the absolute-jump integral used by the OFDG
+sensor.
+For motivation, suppose the averaged signed jump isO(r k+1
+K )in a smooth
+region andS K =O(1). ThenI K =O(r (k+1)/2
+K )tends to zero under re-
+finement. An unresolved discontinuity with a noncancellingO(1)averaged
+jump instead givesI K =O(r −(k+1)/2
+K ). These conditional estimates explain
+the normalization; they are not a convergence theorem or a guarantee that
+every discontinuity is detected. Cancellation and a small local scale can both
+affect the decision.
+In one dimension, with positive velocity and cell width∆x j, the inflow
+boundary is the left endpoint andr K =∆x j/2. The implemented scale is
+SK =| uK|, giving
+Ij =
+|uh(x+
+j−1/2)−u h(x−
+j−1/2)|
+(∆x j/2)(k+1)/2 |uj| , (3.16)
+when the denominator is resolved. In higher dimensions,S K is the maxi-
+mum absolute solution value at the element quadrature points. A relative
+scale floor is used in the numerical realization described below.
+14
+
+PDF PAGE 21
+3.3. KXRCF troubled-cell indication
+3.3.2 Conservative systems and transport direction
+For each conservative componentc, the implementation formsI K,c from
+Eq. (3.15) and pools the decision:
+IK =max
+c
+IK,c,A={K:I K >τ}. (3.17)
+All components are therefore filtered on the same active set. This pooling,
+together with the following transport choices, defines the project-specific
+system extension; it should not be mistaken for characteristic-variable limit-
+ing.
+For prescribed advection,v n is the arithmetic mean of the normal velocities
+on the two sides. For one-dimensional Burgers flow it isv n = 1
+2 (u1 +u 2)n.
+For Euler it is
+vn = 1
+2 (v1 +v 2)·n. (3.18)
+This is a fluid transport direction, not the Euler spectral radius. Charac-
+teristic fields can travel in both directions at a subsonic interface; a single
+signed velocity does not describe them all. OFDG uses the full one-sided
+radii|v i ·n|+c i for damping strength, whereas the sign of Eq. (3.18) con-
+trols KXRCF inflow only.
+3.3.3 Physical geometry and numerical realization
+In higher dimensions,r K is the largest sampled distance from the mapped
+reference centre to mapped vertices and, on curved elements, boundary
+quadrature points. It is a sampled geometric scale rather than an exact cir-
+cumradius for an arbitrary curved cell. Face quadrature supplies the signed
+jump integral and the physical inflow measure. Unit normals and the trans-
+port sign are evaluated at those points. Transport within 128εtimes the local
+speed scale is treated as tangential, whereεis machine precision.
+For componentc, the scale used in the denominator is
+Seff
+K,c =max(S K,c, 10−14Smax
+c ),S max
+c =max
+K
+SK,c. (3.19)
+Globally zero components are skipped. This avoids division by a vanishing
+local scale while preserving the multiplicative scale dependence away from
+numerical roundoff. Physical boundary faces are omitted because the indi-
+cator uses neighbouring DG traces; boundary conditions remain part of the
+DG evolution.
+Element and face evaluation matrices, geometric weights, normals, and the
+factorr (k+1)/2
+K are prepared at construction. Local face transformations are
+retained, but solution values and transport directions are reevaluated on
+every application. At shared MPI faces, neighbour coefficients are imported
+and each rank accumulates only its own element’s contribution. Geometry
+and solution spaces must remain fixed during the lifetime of the indicator.
+15
+
+PDF PAGE 22
+3. Methods
+3.3.4 Coupling to OFDG and limitations
+KXRCF determinesAfrom the candidate DG state. An interior face is
+needed by the OFDG sensor whenever at least one adjacent element is
+active; this ensures that active elements receive all their interface contri-
+butions. The damping map is applied only to active elements. Its mean-
+preservation identity therefore survives gating, and inactive coefficients re-
+main unchanged.
+KXRCF requires no solution derivatives, although the subsequent OFDG
+sensor does. A small active set does not eliminate the cost of cell normal-
+ization, inflow integration, or OFDG derivative preparation. Nor does the
+indicator alone guarantee nonoscillatory or positive solutions. Threshold
+sensitivity, missed fronts, and unnecessary activation in smooth regions re-
+quire empirical assessment in the eventual numerical study.
+3.4 Mathematical construction on curvilinear elements
+The affine implementation relies on two simplifications: the Jacobian is con-
+stant within an element, and differentiation stays inside the represented
+polynomial space. A curved map removes both simplifications. Our ex-
+tension keeps the physical projection idea of OFDG, but assembles its op-
+erators for each curved element and projects each derivative back into the
+solution space. This section derives that construction; Appendix A describes
+its coefficient storage and evaluation.
+3.4.1 Why the affine construction is insufficient
+Letx=T K(ξ)be a smooth, invertible, orientation-preserving element map,
+and write
+JK(ξ) = ∂TK
+∂ξ ,w K(ξ) =detJ K(ξ)>0. (3.20)
+Forv= bv◦T −1
+K , change of variables and the chain rule give
+Z
+K
+v dx=
+Z
+bK
+bv wK dξ, (3.21)
+(∇xv)◦T K =J −T
+K ∇ξbv. (3.22)
+The physical inner product therefore has a nonconstant weight. Even if bv
+andT K are polynomial, the inverse Jacobian generally makes∂xjvfall outside
+the mapped finite element space. Evaluating a single inverse Jacobian at the
+element centre cannot represent this variation.
+A one-dimensional example makes the obstruction explicit. On[0, 1], take
+x=T(ξ) =ξ+εξ(1−ξ), 0<|ε|<1, bv(ξ) =ξ. (3.23)
+16
+
+PDF PAGE 23
+3.4. Mathematical construction on curvilinear elements
+Although the reference state is linear,
+(∂xv)◦T= 1
+1+ε−2εξ ,(∂ 2
+xv)◦T= 2ε
+(1+ε−2εξ) 3 . (3.24)
+Neither expression is generally a finite-degree reference polynomial. The
+issue is already present for an ordinary polynomial geometry map; it does
+not require NURBS.
+3.4.2 Physical mass matrices and nested projections
+Use the mapped spacesV r(K)from Eq. (2.2), all with the same mapT K.
+Let bφi span the order-kreference space and bψ(r)
+a its order-rsubspace. Their
+physical mass and coupling matrices are
+(M K
+k )ij =
+Z
+bK
+bφibφjwK dξ, (3.25)
+(M K
+r )ab =
+Z
+bK
+bψ(r)
+a bψ(r)
+b wK dξ, (3.26)
+(BK
+r )ai =
+Z
+bK
+bψ(r)
+a bφiwK dξ. (3.27)
+IfUrepresentsu h, its physicalL 2 projection intoV r(K)has lower-order
+coefficientsC r determined by
+MK
+r Cr =B K
+r U. (3.28)
+This is the usual finite element projection equation, now with the physical
+Jacobian weight retained. To express the projected function in the original
+order-kbasis, solveM K
+k Ur = (B K
+r )TCr. Thus the matrix representingΠ r
+K in
+that basis is
+PK
+r = (M K
+k )−1(BK
+r )T(M K
+r )−1BK
+r . (3.29)
+The inverse notation denotes the associated linear solves. Nesting makes
+this lifting exact as a function-space operation. With exact integrals,
+PK
+r PK
+s =P K
+min(r,s),(P K
+r )TMK
+k =M K
+k PK
+r . (3.30)
+Consequently the physical orthogonal shells and the frozen exponential at-
+tenuation in Eq. (3.13) remain available. No orthogonal storage basis is re-
+quired.
+Mean preservation follows directly from testing the projection equation with
+one:
+R
+K(Πr
+Kuh −u h)dx=0. In coefficient form, letb i = R
+K φi dx; then
+bTPK
+r =b T. Every nonconstant shell has zerob-weighted integral, so damp-
+ing it leavesb TUunchanged component by component. On affine elements,
+wK is constant and cancels from Eq. (3.29), recovering the reusable reference
+projector. On curved elements it cannot be cancelled.
+17
+
+PDF PAGE 24
+3. Methods
+3.4.3 Projecting a physical derivative
+We seekz h =D K,juh ∈V k(K)satisfying
+(zh,v h)K = (∂ xjuh,v h)K for everyv h ∈V k(K). (3.31)
+This is anL 2 projection, not a new PDE solve or a finite-difference approxi-
+mation. Inserting the basis expansions and Eq. (3.22) gives
+MK
+k Z=G K,jU,D K,j = (M K
+k )−1GK,j, (3.32)
+(GK,j )ab =
+Z
+bK
+bφa
+"
+d
+∑
+s=1
+(J −1
+K )sj ∂ξsbφb
+#
+wK dξ. (3.33)
+The geometry is evaluated inside the integral. Only first reference basis
+derivatives and first derivatives of the map are needed. A constant has zero
+right-hand side, hence zero projected derivative. For affine maps, physical
+differentiation stays in the supported space and this projection recovers the
+existing exact polynomial derivative matrix.
+In the one-dimensional example Eq. (3.24), the projected first derivativez h
+is characterized by
+Z 1
+0
+bzhbφa(1+ε−2εξ)dξ=
+Z 1
+0
+bφa dξ. (3.34)
+The Jacobian cancels on the right, but remains in the mass matrix on the left.
+This illustrates why a physical projection is different from an unweighted
+reference projection.
+3.4.4 Recursive higher derivatives: the precise approximation
+The derivative graph reuses these first-derivative matrices:
+U(0) =U,U (α) =D K,jU(α−e j), (3.35)
+wheree j selects the coordinate direction assigned to that graph edge.
+For instance, the second operation in directionsithenjrepresents
+Πk
+K∂xj (Πk
+K∂xiuh). It generally differs from projecting the exact second
+derivative once. WritingΠ=Π k
+K,
+Π∂xj (Π∂xiuh)−Π∂ xj ∂xiuh =Π∂ xj (Π−I)∂ xiuh. (3.36)
+The right-hand side is the differentiated error from the previous projection.
+It explains both the approximation and why projected mixed derivatives
+need not commute. The implementation fixes an order of application; it does
+not average all orders or claim exact higher chain-rule derivatives. Second-
+and third-derivative convergence must therefore be assessed using manu-
+factured solutions. Projection alone is not a proof of their convergence.
+18
+
+PDF PAGE 25
+3.5. The 2024 OEDG comparator
+3.4.5 Curved faces, normal directions, and length scales
+For a reference face with outward unit normalbn, the physical surface factor
+and outward normal are
+sF =∥w K J−T
+K bn∥,n K = wK J−T
+K bn
+sF
+,ds=s F dbs. (3.37)
+These quantities vary along a curved face. For face quadrature weightsω q,
+use
+|F| Q = ∑
+q
+ωqsF,q, eωq = ωqsF,q
+|F| Q
+, ∑
+q
+eωq =1. (3.38)
+Hence the implemented derivative-jump average is
+J(l)
+F,c ≈ ∑
+|α|=l
+∑
+q
+eωq
+(D α
+K−u−
+h,c)(xq)−(D α
+K+u+
+h,c)(xq)
+ . (3.39)
+Both traces are evaluated at the same physical point, using their respective
+element maps. A constant jump has the same normalized magnitude on a
+straight or curved face. The one-sided wave radii usen K(xq)at these points,
+rather than a single centre normal.
+Volume quadrature gives|K| Q = ∑q ωqwK(ξq)and the OFDG lengthh K =
+(|K| Q/|bK|)1/d. The global mean and amplitude calculation uses the same
+physical volume interpretation. KXRCF uses its separately defined sampled
+radius and restricts its signed face integral to quadrature points with in-
+coming transport. Its denominator uses the corresponding physical inflow
+measure. Thus sensing, normalization, and propagation directions all refer
+to the curved physical geometry.
+The algebra above uses exact integrals. The implementation assembles them
+with positive, overintegrated quadrature. Consistent quadrature on the
+nested spaces gives the analogous discrete projection identities, up to linear-
+solve roundoff; it preserves the quadrature-defined physical means. Agree-
+ment with exact integrals, derivative accuracy, and geometric sampling in-
+variance still require quadrature and refinement checks. This solution-space
+projection does not convert rational NURBS geometry to polynomial ge-
+ometry; that separate, explicit geometry approximation retains the support
+boundary stated in Section 3.7.
+3.5 The 2024 OEDG comparator
+A related method available for comparison is OEDG, published online by
+Peng, Sun, and Wu in 2024 [4] which is independent of the project-specific
+decision to gate OFDG with KXRCF. This section states the implemented
+affine choices explicitly; curved OEDG is not validated here. In particular,
+19
+
+PDF PAGE 26
+3. Methods
+the 2024 method is not a “vertex-only” method: its multidimensional sensor
+is an interface integral of absolute jumps. Vertex evaluation belongs to the
+earlier multidimensional OFDG construction [3, 2].
+3.5.1 Scale-invariant interface sensor
+LetKbe an element,e⊂∂Ka face,kthe DG degree, andm∈ {0, . . . ,k}. For
+componenti, define the global amplitude
+Ai =
+u(i)
+h −avg Ω(u(i)
+h )
+
+L∞(Ω)
+. (3.40)
+The maximum is evaluated at the same volume quadrature nodes used by
+the filter. WhenA i is below a relative machine-scale tolerance, all associated
+sensors are zero. Otherwise the face contribution corresponding to equation
+(3.10) of [4] is
+σm,(i)
+e,K = (2m+1)h m
+e,K
+2(2k−1)m!A i
+∑
+|α|=m
+1
+|e|
+Z
+e
+[ [∂αu(i)
+h ] ]
+ dS, (3.41)
+whereh e,K =sup x∈K dist(x,e). The implementation computes this face
+height geometrically and caches it; on a simplex it is the altitude associ-
+ated withe, not a generic element diameter. In 2D the face average uses
+the endpoint trapezoidal rule employed in the paper. Point faces in 1D re-
+quire no quadrature choice. The present 3D path retains a proper high-order
+face rule because the paper specifies the trapezoidal treatment only for 2D
+computations.
+For a system, the paper avoids characteristic decomposition and pools phys-
+ical components,
+σm
+e,K =max
+i
+σm,(i)
+e,K . (3.42)
+The damping rate combines all adjacent faces,
+δm
+K = ∑
+e⊂∂K
+e∈F i
+h
+βK,e
+he,K
+σm
+e,K, (3.43)
+whereβ K,e is the one-sided local normal spectral radius. Physical boundary
+faces are excluded in this implementation; boundary conditions enter the
+DG residual. Thus advection uses|a·n|, Burgers uses the corresponding
+normal flux derivative, and Euler uses|v·n|+c. Following the paper, state-
+dependent speeds are evaluated from the adjacent element means rather
+than from face traces; spatially varying prescribed velocities and normals
+are still sampled along the face.
+The normalized sensor is unchanged under a nonzero scaling and constant
+shift when the amplitude cutoff is inactive: numerator and denominator
+20
+
+PDF PAGE 27
+3.5. The 2024 OEDG comparator
+scale together. This sensor statement must be separated from the com-
+plete filter, whose state-dependent wave speeds can change. With fixed unit
+speed, the attenuation inherits the same scale/shift equivariance away from
+the cutoff.
+Evolution invariance concerns rescaling the flux speed and physical time,
+not adding a constant state. Multiplying the flux and its speeds bya>0
+while replacing the damping duration byτ/apreserves the product of rate
+and duration. The paper develops these properties under its stated assump-
+tions [4]. No general invariance under arbitrary nonlinear state transforma-
+tions is asserted here.
+3.5.2 Exact attenuation without a prescribed coefficient basis
+LetP m denote the element-localL 2 projection into the nested order-mref-
+erence family mapped to the element, withP −1 =P 0. During the OE
+pseudo-time problem, the coefficients Eq. (3.43) are frozen at the candidate
+RK stage. The published derivation may be written using coefficients of a
+local orthogonal basis, with scaled Legendre polynomials as one convenient
+one-dimensional choice. Such a basis is not mathematically required. In
+basis-independent operator form, the exact attenuation is
+Fτ,Kuh =P 0uh +
+k
+∑
+j=1
+exp
+ 
+−τ
+j
+∑
+m=0
+δm
+K
+!
+Pj −P j−1
+
+uh, (3.44)
+so the constant subspace is unchanged and every order-jshell is scaled by
+its corresponding exponential. The implementation assembles the projec-
+tors in MFEM’s supplied coefficient basis and applies Eq. (3.44) without ever
+forming Legendre coefficients. No pseudo-time discretization error is intro-
+duced, and every quadrature-weighted physical element mean is preserved
+to roundoff.
+The publicOEDG2024type fixes the face quadrature, face-height, per-face
+component pooling, relative constant-state test, mean-state wave speed, nor-
+malization, and exact-decay choices. It reuses the already tested projection,
+derivative, immutable face cache, and MPI halo machinery of the adapted
+OFDG kernel. This sharing removes duplicate geometry code without al-
+lowing the comparator to inherit KXRCF or an experiment-only option acci-
+dentally. It also gives OFDG and OEDG the same basis-agnostic projection
+realization, preventing a change of coefficient basis from becoming an un-
+controlled difference in the numerical comparison.
+3.5.3 Runge–Kutta cadence and comparison contract
+The OEDG algorithm applies its damping map after each Runge–Kutta
+stage. The default adapted OFDG configuration applies one damping map
+21
+
+PDF PAGE 28
+3. Methods
+after a full step. Both cadences are exposed by the implementation for con-
+trolled numerical comparisons. Consequently, a difference between the de-
+fault methods cannot be attributed solely to their sensors. A final experi-
+mental comparison must state the cadence and distinguish it from the pro-
+jection and normalization choices. The present account restricts the OEDG
+comparator to affine elements.
+3.6 Numerical controls
+3.6.1 Euler admissibility
+Oscillation damping does not guarantee positive density and pressure. The
+implementation therefore includes a separate control for Euler states. For
+an element mean uK, it replaces a candidate polynomial by
+ulim
+h = uK +heta K(uh − uK), 0≤θ K ≤1. (3.45)
+A single factor is used for all conservative components. Integration shows
+that the component means are unchanged. The factor is restricted first for
+density, then for pressure by bisection along the segment toward the mean.
+Admissibility is checked at the volume and face points needed by the evo-
+lution and filtering operators; it is not a statement about every point of the
+continuous polynomial.
+A nonphysical mean cannot be repaired by scaling toward itself. In that case
+the candidate step is rejected and retried with a smaller timestep, subject to
+a retry limit. Comparisons between Euler methods must apply the same
+admissibility control and record its interventions so that its influence is not
+attributed to the oscillation filter.
+[ PLACEHOLDER POSITIVITY-SOURCE — Still needs: ]
+Review the proposed positivity-preserving DG reference before adding
+its citation and relating this implementation to the published assump-
+tions. The scaling formula above describes the implemented control and
+does not claim a positivity theorem for the complete scheme.
+3.6.2 Experimental choices still to be fixed
+The formulation distinguishes approximation order, spatial resolution, CFL
+number, filtering cadence, detector threshold, and positivity treatment.
+These must be specified when comparing methods. In particular, compar-
+ing post-step OFDG with stage-wise OEDG changes both the sensor and
+the placement of filtering. Such a comparison cannot isolate the sensor’s
+effect without an additional controlled comparison of cadences.
+22
+
+PDF PAGE 29
+3.7. Implementation assumptions and geometric scope
+The final selection of problems, reference solutions, error measures, and
+resolution studies is deferred to the Results chapter. Existing exploratory
+calculations and their reference-solver workflow remain separate from this
+methodological account.
+3.7 Implementation assumptions and geometric scope
+The implementation separates equation-dependent face physics, geometry-
+dependent operators, and damping. MFEM supplies meshes, finite element
+bases, geometric transformations, and distributed ownership. This organi-
+sation allows the same projection algebra to act on scalar fields and conser-
+vative systems.
+The supported construction assumes full-dimensional elements, a fixed
+mesh, and uniform solution orderk≥1. It covers affine intervals and
+polynomial curved triangles, quadrilaterals, tetrahedra, hexahedra, and
+prisms. Different supported element families may coexist at the same order.
+Moving meshes, variable solution order, pyramids, and embedded surfaces
+are excluded.
+Native NURBS geometry is not supported by the two-sided face path used
+with the project’s pinned MFEM version. A NURBS mesh may instead be
+explicitly approximated by polynomial geometry before the filter is con-
+structed. This changes the geometric representation and is separate from
+the solution-spaceL 2 projection derived above. It does not imply that MFEM
+lacks NURBS support in general. The OEDG implementation is treated here
+as an affine comparator; the curvilinear extension described in this chapter
+concerns adapted OFDG and KXRCF.
+3.7.1 Reference data and physical operators
+Reference basis evaluations and the derivative graph are reusable by finite
+element signature. Physical mass, projection, and derivative matrices belong
+to each curved element. The reference projector is sufficient only when the
+constant affine Jacobian weight cancels. Element and face geometry data
+remain fixed during the lifetime of a filter; a change in mesh geometry,
+topology, or solution space requires reconstruction.
+Curved integration uses quadrature order 2k+2 max(0, OrderW) +8, where
+MFEM’sOrderWestimates the transformation-weight order. Positive tensor
+or Duffy quadrature and symmetric triangular sampling are used to reduce
+orientation-dependent sampling effects. This is an integration policy, not
+a guarantee of exact integration for every mapped function. The physical
+projection identities refer to the resulting quadrature inner product unless
+exact integration is stated explicitly.
+23
+
+PDF PAGE 30
+3. Methods
+The implementation retains derivative coefficient states for every local cell
+and rebuilds them for each new solution. For gated filtering, local faces
+whose two neighbours are inactive are skipped before their geometry is
+constructed. Adjacent damping shells reuse their shared projection. These
+choices eliminate redundant work without changing the operator. The de-
+tailed matrix representation is given in Chapter A.
+3.7.2 Distributed evaluation
+MPI distributes elements across processes, or ranks. An ordinary interior
+face contributes to both adjacent elements. At a shared face, a rank imports
+neighbour coefficients and accumulates only its own element’s contribution;
+the adjacent rank performs the complementary operation. Global solution
+amplitudes require collective reductions. Local and imported elements use
+the same physical operator construction, so an MPI interface has no addi-
+tional physical boundary condition.
+Geometry caches are fixed, but their integration-point state and the working
+arrays are mutable. Concurrent applications of the same filter object are
+therefore unsupported. This ownership convention keeps numerical state
+separate from reusable geometric data.
+3.7.3 Verification principles
+The algebra suggests independent checks: constants and component-wise
+cell means should be preserved; inactive cells should remain unchanged;
+and a change of coefficient basis should represent the same filtered function.
+Curved first derivatives can be compared with an independently assembled
+physical projection. Recursive higher derivatives require manufactured-
+solution refinement studies, since their definition alone supplies no con-
+vergence rate. Quadrature sensitivity, geometric parameterization, and se-
+rial/MPI agreement are separate checks of the geometric realization.
+These checks distinguish consistency of an implementation from the accu-
+racy and robustness of a complete simulation. Their selected numerical
+evidence, along with comparisons between methods, belongs in the Results
+chapter once the experimental programme has been agreed.
+24
+
+PDF PAGE 31
+Chapter 4
+Results
+[ PLACEHOLDER RESULTS — Still needs: ]
+Supervisor-approved experiment selection; final configurations and ref-
+erence solutions; validated figures, tables, and uncertainty or sensitivity
+checks.
+25
+
+PDF PAGE 32
+
+
+PDF PAGE 33
+Chapter 5
+Discussion
+[ PLACEHOLDER DISCUSSION — Still needs: ]
+Interpretation of the agreed results against the research questions; limita-
+tions and alternative explanations; comparison with the cited literature.
+27
+
+PDF PAGE 34
+
+
+PDF PAGE 35
+Chapter 6
+Conclusion
+[ PLACEHOLDER CONCLUSION — Still needs: ]
+Evidence-supported answers to the research questions; final statement
+of contributions and scope; justified directions for future work.
+29
+
+PDF PAGE 36
+
+
+PDF PAGE 37
+Appendix A
+Coefficient-space operators
+A.1 Scope and geometric assumptions
+The implementation is a small compiled MFEM library. It assumes that
+the finite element space is nonempty and discontinuous, thatk≥1, and
+that all elements have the same order and dimension. Geometry and lo-
+cal degree-of- freedom counts may differ. Element maps may be affine or
+static polynomial curvilinear, and the mesh must remain unchanged during
+the lifetime of the OFDG object. The space and cache-lifetime conditions
+are caller responsibilities. Native NURBS geometry is explicitly rejected be-
+fore the unsupported face path is entered. The public header exposes the
+OFDG constructors, stabilization, and decay only. KXRCF is an indepen-
+dent optional method and is included explicitly when the activation mask is
+required.
+Different elements need not have the same Jacobian. They may have dif-
+ferent sizes, reference geometries, and local coefficient counts, and may be
+translated, rotated, or affinely skewed. An immutable repository constructs
+the required projection and derivative operators once per finite-element
+signature. Non-affine elements additionally own physical projection and
+projected-derivative matrices assembled with geometry-dependent quadra-
+ture. Native NURBS geometry is rejected: the pinned MFEM implementa-
+tion does not support the two-sided NURBS face transformations required
+here. Projecting such a mesh to polynomial nodes changes the rational ge-
+ometry approximately and is therefore a distinct supported case.
+More explicitly, MFEM describes a physical element by a map from a stan-
+dard reference element. The affine assumption means that this map has the
+form
+x=T K(ξ) =b K +J Kξ, (A.1)
+whereξis a reference coordinate,b K is a translation, and the matrixJ K is
+31
+
+PDF PAGE 38
+A. Coefficient-space operators
+constant withinK. The matrix may differ from one element to another. Its
+scaling, rotation, and shear describe the size, orientation, and skew of the
+physical element. The affine path therefore uses a constant Jacobian on each
+individual element, not one globally identical Jacobian. For curved maps the
+volume is integrated and the damping length ish K = (|K|/| bK|)1/d, agreeing
+with the existing affine determinant scale.
+A.2 Projection matrices
+The physical change of variables and projection derivation are given in Sec-
+tion 3.4. Here we specify the stored remainder matrices.
+Let{φ i}Nk
+i=1 be the local degree-kbasis and{ψ (r)
+a }Nr
+a=1 the degree-rbasis. The
+code assembles
+(Mk)ij = (φ i,φ j)K,(M r)ab = (ψ (r)
+a ,ψ (r)
+b )K, (A.2)
+(Br)ai = (ψ (r)
+a ,φ i)K. (A.3)
+The matrix representation ofI−Π r
+K in the degree-kcoefficient basis is
+Qr =M k −B T
+r M−1
+r Br,S r =M −1
+k Qr =I−M −1
+k BT
+r M−1
+r Br. (A.4)
+Thus applyingS r to a degree-kcoefficient vector directly returns the coeffi-
+cients of the remainderw−Π r
+Kw. The matricesM k andM r are the degree-k
+and degree-rmass matrices, respectively;B r couples the two bases; andIis
+theN k ×N k identity matrix. The code storesS r for 0≤r≤k.
+Crucially, this construction never converts the solution to Legendre or other
+orthogonal modal coefficients. It represents the same projection operator in
+whatever supported scalar polynomial DG basis the host framework sup-
+plies. Consequently, a nodal basis, a modal basis, or another polynomial co-
+efficient basis produces the same function-space operation up to quadrature
+and roundoff. This basis-agnostic realization is what makes the implemen-
+tation portable: a second framework need not add a special OFDG solution
+basis, provided it can form the corresponding polynomial-space projections.
+On an affine element, all three mass and coupling matrices contain the same
+constant physical Jacobian factor, which cancels inS r. Therefore affine pro-
+jection matrices are reused per finite-element signature. For curved elements
+every mass and coupling matrix includes the physical Jacobian weight at
+each quadrature point. The lower-order spaces are mapped reference poly-
+nomial spaces; their physicalL 2 projectors remain nested.
+A.3 Coefficient-to-coefficient derivatives
+The repeated derivatives required by (3.7) are represented as polynomial
+coefficients rather than only as values at quadrature points. At the finite
+32
+
+PDF PAGE 39
+A.3. Coefficient-to-coefficient derivatives
+element interpolation points{ξ q}Nk
+q=1, define
+Vqi =φ i(ξq),G (r)
+qi = ∂φ i
+∂ξr
+(ξq). (A.5)
+Ifuis a coefficient vector,G (r) ucontains reference-derivative values at the
+interpolation points. The coefficient vector of that derivative is therefore
+uξr =D ξr u,D ξr =V −1G(r). (A.6)
+This Vandermonde construction is kept explicit in the code. For the affine
+mapx=T K(ξ), the physical derivative matrices are
+DK
+xj =
+d
+∑
+r=1
+(J −1
+K )rj Dξr. (A.7)
+The inverse JacobianJ −1
+K is read once at the reference-element centre and
+one set of matrices{D K
+xj }d
+j=1 is stored for every element.
+For non-affine maps, the code instead assembles
+MKDK,j =G K,j,(G K,j )ab =
+Z
+K
+φa ∂xj φb dx. (A.8)
+Repeated application represents successively projected physical derivatives,
+not exact higher derivatives of the mapped function. The derivative graph
+fixes the application order; projected mixed derivatives need not commute.
+Positive, overintegrated quadrature is used for curved elements. Triangular
+face rules include all barycentric permutations to make the sampling invari-
+ant under MPI face orientation.
+Only first reference derivatives of the supplied finite-element basis are re-
+quested from MFEM. Repeated application of the resulting coefficient op-
+erators generates every higher derivative needed by OFDG. In framework
+terms, the construction requires scalar polynomial DG basis values and first
+derivatives, quadrature, nested lower-order polynomial spaces or equivalent
+projection operators, element and face transformations, and local degree-of-
+freedom access. It therefore avoids a modal-basis requirement, but it does
+not claim support for arbitrary nonpolynomial,H(div),H(curl), or mixed
+finite-element spaces.
+All multi-indices with total degree at mostkare organized in a directed
+acyclic graph. Each nonzero multi-index selects one parent of degree one
+less and one physical derivative direction. Walking this graph evaluates
+every required derivative once. The number of stored derivative states per
+element and component is
+k
+∑
+l=0
+l+d−1
+d−1
+
+=
+k+d
+d
+
+. (A.9)
+33
+
+PDF PAGE 40
+A. Coefficient-space operators
+A.4 Face quadrature and cached evaluation
+MFEM remains the sole source of mesh connectivity. The setup loops over
+MFEM face numbers and obtains the two adjacent elements from MFEM’s
+face-transformation data. Boundary faces are skipped. For each interior
+affine face, a quadrature rule of order 2k+1 is selected. Curved faces use an
+overintegrated rule that also depends on the geometry order. The following
+data are cached directly at the MFEM face index:
+(E−
+F )qi =φ i(ξ −
+F,q),(E +
+F )qi =φ i(ξ +
+F,q), bωq = ωq JF(ξq)
+∑p ωp JF(ξ p). (A.10)
+HereJ F is the physical face Jacobian. For affine faces it is constant and
+cancels between the integral and|F|in (3.7); hence the normalized reference
+weights bωq are sufficient. All derivative traces and all components on one
+side of a face are evaluated together in one dense matrix multiplication.
+There is no face-pattern matching or deduplication.
+Ifu −
+α andu +
+α are the coefficient vectors of the same physical derivative on
+the two neighboring elements, the actual quadrature calculation is
+J(l)
+F,c ≈ ∑
+|α|=l
+Nq,F
+∑
+q=1
+bωq
+
+ 
+E−
+F u−
+α
+
+q −
+ 
+E+
+F u+
+α
+
+q
+ . (A.11)
+The implementation therefore performs one subtraction and one absolute
+value for each derivative, component, and quadrature point. No squared-
+jump accumulator or final square root is required.
+A.5 Runtime sequence and storage policy
+For every input state, the implementation performs the following opera-
+tions:
+1. evaluate the global mean and scale (3.8) at volume quadrature points;
+2. rebuild and store all derivative coefficient states on every element;
+3. loop over MFEM interior faces, evaluate the normal wave speeds and
+the mean absolute jump measures (3.7), and accumulate the rates (3.9)
+on both neighboring elements;
+4. apply either the coefficient-space damping operator (3.10) or the exact
+decay map (3.13).
+Affine volume means use a rule of order 2k+1; curved elements use the
+geometry-dependent overintegration described in Section 3.7.1. The extrema
+34
+
+PDF PAGE 41
+A.5. Runtime sequence and storage policy
+used forA c are the minimum and maximum over the same quadrature val-
+ues. In floating point arithmetic, the implementation sets the rates of com-
+ponentcto zero whenA c ≤10 −14.
+There is no bounded or dynamic derivative cache. Every element owns per-
+manent storage for its derivative coefficients, and all of it is rebuilt once for
+the current state. Likewise, each interior face owns its two evaluation ma-
+trices and normalized quadrature weights. Ignoring small container over-
+heads, the principal storage costs are
+O
+ 
+|Th|dN 2
+k
+
+for physical derivative operators, (A.12)
+O
+
+|Th|mN k
+k+d
+d
+
+for derivative coefficient states, (A.13)
+O
+
+ ∑
+F∈F i
+h
+Nq,F (2Nk +1)
+
+ for face evaluation data. (A.14)
+This policy uses more predictable memory than an evicting cache and re-
+moves cache lookups and replacement decisions from the face loop.
+An optional active-element mask can restrict stabilization or decay to se-
+lected elements. A local face is omitted before constructing its geometry
+when neither neighbor is active, so an active element still receives contribu-
+tions from every adjacent interior face. Runtime scratch arrays are owned
+by the OFDG object. Because this scratch state is mutable and reused, con-
+current calls on the same object are unsupported.
+35
+
+PDF PAGE 42
+
+
+PDF PAGE 43
+Bibliography
+[1] Jan S. Hesthaven and Tim Warburton.Nodal Discontinuous Galerkin Meth-
+ods: Algorithms, Analysis, and Applications, volume 54 ofTexts in Applied
+Mathematics. Springer, 2008. Chapters 1–2 supplied in the project papers
+folder.
+[2] Yong Liu, Jianfang Lu, and Chi-Wang Shu. An essentially oscillation-free
+discontinuous Galerkin method for hyperbolic systems.SIAM Journal on
+Scientific Computing, 44(1):A230–A259, 2022.
+[3] Jianfang Lu, Yong Liu, and Chi-Wang Shu. An Oscillation-free Dis-
+continuous Galerkin Method for Scalar Hyperbolic Conservation Laws.
+SIAM Journal on Numerical Analysis, 59(3):1299–1324, January 2021.
+[4] Manting Peng, Zheng Sun, and Kailiang Wu. OEDG: Oscillation-
+eliminating discontinuous Galerkin method for hyperbolic conservation
+laws.Mathematics of Computation, 94(353):1147–1198, 2025. Published
+online in 2024.
+37
+
+PDF PAGE 44
+ 
+Declaration of originality 
+The signed declaration of originality is a component of every written paper or thesis authored during the 
+course of studies. In consultation with the supervisor, one of the following two options must be selected: 
+☐ I hereby declare that I authored the work in question independently, i.e. that no one helped me to 
+author it. Suggestions from the supervisor regarding language and content are excepted. I used no 
+generative artificial intelligence technologies1. 
+☐ I hereby declare that I authored the work in question independently. In doing so I only used the 
+authorised aids, which included suggestions from the supervisor regarding language and content and 
+generative artificial intelligence technologies. The use of the latter and the respective source 
+declarations proceeded in consultation with the supervisor. 
+Title of paper or thesis: 
+ 
+Authored by: 
+If the work was compiled in a group, the names of all authors are required. 
+Last name(s): First name(s): 
+   
+   
+   
+   
+With my signature I confirm the following: 
+− I have adhered to the rules set out in the Citation Guidelines. 
+− I have documented all methods, data and processes truthfully and fully. 
+− I have mentioned all persons who were significant facilitators of the work. 
+I am aware that the work may be screened electronically for originality. 
+Place, date Signature(s) 
+   
+   
+   
+   
+ If the work was compiled in a group, the names of all authors 
+are required. Through their signatures they vouch jointly for the 
+entire content of the written work. 
+ 
+1 For further information please consult the ETH Zurich websites, e.g. https://ethz.ch/en/the-eth-
+zurich/education/ai-in-education.html and https://library.ethz.ch/en/researching-and-publishing/scientific-writing-at-
+eth-zurich.html (subject to change). 

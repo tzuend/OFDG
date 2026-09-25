@@ -1,0 +1,214 @@
+{
+  "source_sha256": {
+    "benchmarks/fe_mapping_high_order.cpp": "28b887d10596d34c5ee31b368ca515be0705e9365c01f7c51890d50e1fce97b3",
+    "benchmarks/fe_mapping_high_order.hpp": "e1f1505710cd845f5e8d9d813ec1bcad30cc92c58c95281392c9a2d4237d91e1",
+    "benchmarks/fe_mapping_jets.hpp": "1ebcd40dd8228ce781bdc3f99f546d20b6831b481b63aff8c574bc4834ee33ad",
+    "scripts/run_fe_mapping_high_order.py": "7fdf3cb1f405c58baff5eab635dfbc5b5f87ec87101e0814ce037e9b77c145d6",
+    "scripts/run_fe_mapping_derivatives.py": "91db22fcf17aa457f9faf92547793e95f08c1451870daa50e92e91abcd7fcdd3",
+    "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066",
+    "build/release/benchmarks/fe_mapping_high_order": "85216609054ced608c96814f34a77cbcc8d1ddb1dd6f30854213862eeb6e222d"
+  },
+  "checks": [
+    {
+      "case": "2-2-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "2",
+        "0",
+        "10"
+      ],
+      "seconds": 0.11808112500148127,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-8-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "8",
+        "0",
+        "10"
+      ],
+      "seconds": 0.1171437920020253,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-32-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "32",
+        "0",
+        "10"
+      ],
+      "seconds": 0.12290966699947603,
+      "peak_mib": 0.671875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-2-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "2",
+        "1",
+        "10"
+      ],
+      "seconds": 0.12140474999978323,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-8-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "8",
+        "1",
+        "10"
+      ],
+      "seconds": 0.11814704200151027,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-32-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "32",
+        "1",
+        "10"
+      ],
+      "seconds": 0.1214114159993187,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-2-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "2",
+        "0",
+        "10"
+      ],
+      "seconds": 0.3555203750001965,
+      "peak_mib": 25.40625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-8-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "8",
+        "0",
+        "10"
+      ],
+      "seconds": 0.36094158299965784,
+      "peak_mib": 25.546875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-32-0-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "32",
+        "0",
+        "10"
+      ],
+      "seconds": 0.3552427499998885,
+      "peak_mib": 27.28125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-2-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "2",
+        "1",
+        "10"
+      ],
+      "seconds": 0.35778045800179825,
+      "peak_mib": 24.046875,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-8-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "8",
+        "1",
+        "10"
+      ],
+      "seconds": 0.36107862499920884,
+      "peak_mib": 26.453125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-32-1-10",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "32",
+        "1",
+        "10"
+      ],
+      "seconds": 0.35858525000003283,
+      "peak_mib": 24.078125,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "2-8-1-5",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "2",
+        "8",
+        "1",
+        "5"
+      ],
+      "seconds": 0.12289950000194949,
+      "peak_mib": 0.5625,
+      "returncode": 0,
+      "failure": null
+    },
+    {
+      "case": "3-8-1-5",
+      "command": [
+        "/Users/timozund/Documents/master_thesis/codex_dev/build/release/benchmarks/fe_mapping_high_order",
+        "3",
+        "8",
+        "1",
+        "5"
+      ],
+      "seconds": 0.2407080830016639,
+      "peak_mib": 20.5,
+      "returncode": 0,
+      "failure": null
+    }
+  ],
+  "compute_seconds": 3.231854416007991,
+  "peak_mib": 27.28125,
+  "logical_processors": 8,
+  "ranks": 1,
+  "threads_per_rank": 1
+}

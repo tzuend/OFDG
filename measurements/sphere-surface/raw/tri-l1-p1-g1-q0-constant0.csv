@@ -1,0 +1,2 @@
+family,levels,p,g,extra,constant,elements,dofs,l2,relative_l2,h1_seminorm,energy_error,sampled_linf,area,relative_area_error,radial_rms,radial_max,mean_balance_defect,relative_residual,iterations,solve_and_measure_seconds
+tri,1,1,1,0,0,32,18,0.32427529507225855,0.39350506378689731,1.2010330060818546,1.244039689355696,0.17867298567357012,10.41775152135785,0.17098167473639261,0.11457230198643654,0.18350341907227408,5.4172480741085428e-15,5.2850508937695608e-14,10,0.00312825

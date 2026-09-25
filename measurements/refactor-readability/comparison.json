@@ -1,0 +1,29 @@
+{
+  "coefficients": 69824,
+  "changed_hex_values": 2211,
+  "max_absolute_difference": 1.1102230246251565e-16,
+  "max_scaled_difference": 1.1102230246251565e-16,
+  "files": [
+    {
+      "name": "mpi-rank0.txt",
+      "byte_identical": false
+    },
+    {
+      "name": "mpi-rank1.txt",
+      "byte_identical": false
+    },
+    {
+      "name": "serial-rank0.txt",
+      "byte_identical": true
+    }
+  ],
+  "worst_absolute_case": {
+    "file": "mpi-rank0.txt",
+    "case": "case 2 3 1 1 0 0",
+    "vector": "residual",
+    "coefficient": 3,
+    "before": 0.481398797140494,
+    "after": 0.4813987971404939
+  },
+  "passed": true
+}

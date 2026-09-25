@@ -146,6 +146,24 @@ void TestActiveMaskLeavesInactiveElementsUntouched()
    }
 }
 
+void TestConstantSpaceRemainsUnchanged()
+{
+   Mesh mesh = Mesh::MakeCartesian1D(4);
+   DG_FECollection collection(0, 1, BasisType::GaussLobatto);
+   FiniteElementSpace space(&mesh, &collection);
+   Vector state(space.GetVSize());
+   for (int i = 0; i < state.Size(); ++i) { state(i) = 1.0 + i; }
+   ofdg::OFDG filter(&space, BasisType::GaussLobatto);
+   Vector residual, decay;
+   filter.ComputeStabilization(state, residual);
+   filter.CompDecay(state, decay, 0.08);
+   Require(residual.Normlinf() < 1e-12,
+           "constant-space stabilization changed cell means");
+   decay -= state;
+   Require(decay.Normlinf() == 0.0,
+           "constant-space decay changed a cell value");
+}
+
 } // namespace
 
 int main()
@@ -153,6 +171,7 @@ int main()
    try
    {
       TestFrozenOneDimensionalFingerprint();
+      TestConstantSpaceRemainsUnchanged();
       TestActiveMaskLeavesInactiveElementsUntouched();
    }
    catch (const std::exception &error)

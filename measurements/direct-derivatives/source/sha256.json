@@ -1,0 +1,8 @@
+{
+  "benchmarks/direct_derivatives.cpp": "aa53ba9eaaa29e4735928aaf99ae0ef75f3b34bcdf62f1d82282ee86ac605b7b",
+  "benchmarks/direct_derivatives_control.cpp": "124949c1832f4b53a1b387c80eb87ed4b758439dc87127111dc63bfc2f6b223c",
+  "scripts/run_direct_derivatives.py": "2f069f57d490ef74aefa8cced8c8aac4f8c1fe3b74fb5e0ccc85da047763bc48",
+  "scripts/analyze_direct_derivatives.py": "4c42542df254f14c7ad7677aac8144bed4f108b3b4ca89494b6b163a174ebcd1",
+  "scripts/direct_derivative_pages.py": "8ef52304e97614b8cc8c763c89033bd5adc0386ccc0dbe23b37cc67c3f968271",
+  "src/curved_geometry.hpp": "fa08c320aafd09dc65fb983edf537242442eac53e9742859ba0df72c55191066"
+}

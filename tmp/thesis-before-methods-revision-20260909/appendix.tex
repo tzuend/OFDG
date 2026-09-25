@@ -1,0 +1,54 @@
+\chapter{Evidence, reproducibility, and missing work}
+\label{app:study-design}
+\section{Rebuilding this report without new simulations}
+From the repository root, run
+\begin{quote}\texttt{make report-draft}\end{quote}
+This regenerates report-specific figures and tables from the retained preview
+results, then compiles the thesis. It does not launch solvers or replace the
+supervisor brief. A Python installation with NumPy and Matplotlib and a LaTeX
+installation with BibTeX are required. The editable report sources live under
+\path{report/}; the compiled document is \path{report/thesis.pdf}.
+
+\begin{center}\small
+\begin{tabular}{@{}p{.36\textwidth}p{.58\textwidth}@{}}\toprule
+Evidence & Repository location\\\midrule
+Approved preview configuration & \path{experiments/preview_manifest.json}\\
+Commands, metrics, provenance & \path{measurements/study/preview/results.json}\\
+Rank-local polynomial/mean data & \path{measurements/study/preview/profiles/}\\
+Independent WENO references & \path{measurements/study/preview/references/}\\
+Full error/refinement values & \path{measurements/study/preview/convergence.csv}\\
+Preview controls and checks & \path{docs/supervisor-preview.md}\\
+Curved validation and reproducer & \path{docs/curved-validation.md}\\
+Report-specific derived assets & \path{report/generated/preview/}\\\bottomrule
+\end{tabular}\end{center}
+
+The retained result metadata records commands, source fingerprints, environment,
+and run outcomes. The report export records input hashes for tracing its tables
+and figures to this dataset. The numerical executable is not rebuilt for an
+editorial revision; the current working tree may contain later documentation
+changes. Reproducing numerical measurements requires the corresponding recorded
+source and configuration, not merely the newest checkout.
+
+The historical full-study manifest remains a draft proposal outside this
+report's completed matrix. Its large cases, repetitions, and scaling rows are
+not an implied checklist required to interpret the preview. The separate final
+publication target remains guarded; unresolved placeholder boxes also stop a
+final-mode LaTeX build.
+
+\section{Prioritized missing-work register}
+\label{app:missing-work}
+These entries identify evidence needed for stronger claims. They are not mock
+results, and their presence does not invalidate the narrower observations
+already reported.
+\begin{center}\small
+\begin{tabular}{@{}p{.16\textwidth}p{.57\textwidth}p{.18\textwidth}@{}}\toprule
+ID & Evidence needed / claim affected & Location\\\midrule
+REF-01 & Resolved Euler reference; shock-error rankings & p.~\pageref{missing:REF-01}\\
+KX-01 & Spatial detection and thresholds; selectivity mechanism & p.~\pageref{missing:KX-01}\\
+TIME-01 & Controlled cadence; sensor-only comparison & p.~\pageref{missing:TIME-01}\\
+GEO-01 & Geometry variation; broader curved robustness & p.~\pageref{missing:GEO-01}\\\bottomrule
+\end{tabular}\end{center}
+REF-01 and KX-01 are the first priorities for interpreting shock and wave
+comparisons. TIME-01 is needed for claims attributing OFDG/OEDG differences
+specifically to their sensors. GEO-01 expands geometric evidence; native
+NURBS implementation is not required for it.

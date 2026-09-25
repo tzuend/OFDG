@@ -232,7 +232,7 @@ $(RELEASE_EXAMPLE_DIR)/euler: examples/euler/euler.cpp examples/euler/euler.hpp 
 
 report: report-draft
 
-report-draft: report-preview-assets
+report-draft:
 	$(MAKE) -C report draft
 	mkdir -p output/pdf
 	cp report/thesis.pdf output/pdf/thesis-revised.pdf
@@ -278,4 +278,64 @@ study-preview: release reference-solver
 	python3 scripts/analyze_preview.py
 
 $(RELEASE_DIR)/benchmarks/filter_performance: benchmarks/filter_performance.cpp examples/euler/euler.hpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+# Isolated operator experiment; does not alter the production derivative graph.
+$(RELEASE_DIR)/benchmarks/derivative_permutations: benchmarks/derivative_permutations.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_TEST_DIR)/test_refactor_outputs: tests/test_refactor_outputs.cpp $(FILTER_CORE_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_TEST_DIR)
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+# Isolated physical derivative accuracy study.
+$(RELEASE_DIR)/benchmarks/derivative_accuracy: benchmarks/derivative_accuracy.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Alternative derivative sensor experiment; production methods stay unchanged.
+$(RELEASE_DIR)/benchmarks/physical_reconstruction: benchmarks/physical_reconstruction.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Isolated exact mapped-derivative experiment.
+$(RELEASE_DIR)/benchmarks/direct_derivatives: benchmarks/direct_derivatives.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/direct_derivatives_control: benchmarks/direct_derivatives_control.cpp benchmarks/direct_derivatives.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Isolated embedded-surface screened Poisson benchmark (MFEM ex7).
+$(RELEASE_DIR)/benchmarks/sphere_surface: benchmarks/sphere_surface.cpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Isolated surface-DG/OFDG rotation prototype.
+$(RELEASE_DIR)/benchmarks/sphere_ofdg: benchmarks/sphere_ofdg.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Isolated 3D volume showcase, linked to unchanged production filters.
+$(RELEASE_DIR)/benchmarks/volume_showcase: benchmarks/volume_showcase.cpp $(FILTER_HEADERS) $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+# Isolated FE-geometry derivative experiments; production algorithms unchanged.
+$(RELEASE_DIR)/benchmarks/fe_mapping_derivatives: benchmarks/fe_mapping_derivatives.cpp benchmarks/fe_mapping_jets.hpp benchmarks/direct_derivatives.cpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/fe_mapping_derivatives_3d: benchmarks/fe_mapping_derivatives_3d.cpp benchmarks/fe_mapping_jets.hpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/fe_mapping_high_order: benchmarks/fe_mapping_high_order.cpp benchmarks/fe_mapping_high_order.hpp benchmarks/fe_mapping_jets.hpp src/curved_geometry.hpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/fe_mapping_controls: benchmarks/fe_mapping_controls.cpp benchmarks/fe_mapping_jets.hpp benchmarks/direct_derivatives.cpp | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(MFEM_LIBS)
+
+# Basis-independent curved derivative reuse experiment; link production assembler.
+$(RELEASE_DIR)/benchmarks/reused_mapping_2d: benchmarks/reused_mapping_2d.cpp benchmarks/reused_derivatives.hpp benchmarks/direct_derivatives.cpp benchmarks/fe_mapping_jets.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/reused_mapping_3d: benchmarks/reused_mapping_3d.cpp benchmarks/reused_derivatives.hpp benchmarks/fe_mapping_jets.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/reused_high_order: benchmarks/reused_high_order.cpp benchmarks/reused_derivatives.hpp benchmarks/fe_mapping_high_order.hpp benchmarks/fe_mapping_jets.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
+	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)
+
+$(RELEASE_DIR)/benchmarks/reused_basis_controls: benchmarks/reused_basis_controls.cpp benchmarks/reused_derivatives.hpp $(RELEASE_FILTER_LIBRARY) | $(RELEASE_DIR)/benchmarks
 	$(MFEM_CXX) $(CPPFLAGS) $(CXXFLAGS_COMMON) $(RELEASE_FLAGS) $< -o $@ $(RELEASE_FILTER_LIBRARY) $(MFEM_LIBS)

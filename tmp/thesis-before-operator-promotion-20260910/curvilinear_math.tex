@@ -1,0 +1,236 @@
+\section{Mathematical construction on curvilinear elements}
+\label{sec:curvilinear-mathematics}
+The affine implementation relies on two simplifications: the Jacobian is
+constant within an element, and differentiation stays inside the represented
+polynomial space. A curved map removes both simplifications. Our extension
+keeps the physical projection idea of OFDG, but assembles its operators for
+each curved element and projects each derivative back into the solution space.
+This section derives that construction; Appendix~\ref{sec:ofdg-implementation}
+describes its coefficient storage and evaluation.
+
+\subsection{Why the affine construction is insufficient}
+Let $\boldsymbol x=T_K(\boldsymbol\xi)$ be a smooth, invertible,
+orientation-preserving element map, and write
+\begin{equation}
+ J_K(\boldsymbol\xi)=\frac{\partial T_K}{\partial\boldsymbol\xi},
+ \qquad w_K(\boldsymbol\xi)=\det J_K(\boldsymbol\xi)>0.
+ \label{eq:curved-jacobian}
+\end{equation}
+For $v=\widehat v\circ T_K^{-1}$, change of variables and the chain rule give
+\begin{align}
+ \int_K v\,dx&=\int_{\widehat K}\widehat v\,w_K\,d\xi,
+ \label{eq:curved-change-variables}\\
+ (\nabla_xv)\circ T_K&=J_K^{-\mathsf T}\nabla_\xi\widehat v.
+ \label{eq:curved-chain-rule}
+\end{align}
+The physical inner product therefore has a nonconstant weight. Even if
+$\widehat v$ and $T_K$ are polynomial, the inverse Jacobian generally makes
+$\partial_{x_j}v$ fall outside the mapped finite element space. Evaluating a
+single inverse Jacobian at the element centre cannot represent this variation.
+
+A one-dimensional example makes the obstruction explicit. On $[0,1]$, take
+\begin{equation}
+ x=T(\xi)=\xi+\varepsilon\xi(1-\xi),\quad
+ 0<|\varepsilon|<1,\qquad \widehat v(\xi)=\xi.
+\end{equation}
+Although the reference state is linear,
+\begin{equation}
+ (\partial_xv)\circ T=\frac{1}{1+\varepsilon-2\varepsilon\xi},\qquad
+ (\partial_x^2v)\circ T=
+ \frac{2\varepsilon}{(1+\varepsilon-2\varepsilon\xi)^3}.
+ \label{eq:curved-derivative-example}
+\end{equation}
+Neither expression is generally a finite-degree reference polynomial. The
+issue is already present for an ordinary polynomial geometry map; it does not
+require NURBS.
+
+\Cref{fig:curved-map} shows the corresponding geometric issue in two dimensions:
+reference coordinate lines are mapped to a curved physical element, and the
+Jacobian weight and face normals vary within that element.
+\input{illustrations/curved-map}
+
+\subsection{Physical mass matrices and nested projections}
+Use the mapped spaces $V^r(K)$ from \cref{eq:ofdg-space}, all with the same
+map $T_K$. Let $\widehat\phi_i$ span the order-$k$ reference space and
+$\widehat\psi_a^{(r)}$ its order-$r$ subspace. Their physical mass and coupling
+matrices are defined below. Let $N_k$ and $N_r$ be the numbers of basis
+functions at orders $k$ and $r$. Then $M_k^K$ is $N_k\times N_k$,
+$M_r^K$ is $N_r\times N_r$, and the coupling matrix $B_r^K$ is
+$N_r\times N_k$. Indices $i,j$ run over the order-$k$ basis and $a,b$
+over the order-$r$ basis:
+\begin{align}
+ (M_k^K)_{ij}&=\int_{\widehat K}\widehat\phi_i\widehat\phi_j w_K\,d\xi,\\
+ (M_r^K)_{ab}&=\int_{\widehat K}
+       \widehat\psi_a^{(r)}\widehat\psi_b^{(r)}w_K\,d\xi,\\
+ (B_r^K)_{ai}&=\int_{\widehat K}
+       \widehat\psi_a^{(r)}\widehat\phi_iw_K\,d\xi.
+ \label{eq:curved-weighted-masses}
+\end{align}
+If $U$ represents $u_h$, its physical $L^2$ projection into $V^r(K)$ has
+lower-order coefficients $C_r$ determined by
+\begin{equation}
+ M_r^K C_r=B_r^K U.
+ \label{eq:curved-projection-solve}
+\end{equation}
+This is the usual finite element projection equation, now with the physical
+Jacobian weight retained. To express the projected function in the original
+order-$k$ basis, solve $M_k^K U_r=(B_r^K)^{\mathsf T}C_r$. Thus the matrix
+representing $\Pi_K^r$ in that basis is
+\begin{equation}
+ P_r^K=(M_k^K)^{-1}(B_r^K)^{\mathsf T}(M_r^K)^{-1}B_r^K.
+ \label{eq:curved-projector-matrix}
+\end{equation}
+The inverse notation denotes the associated linear solves. Nesting makes
+this lifting exact as a function-space operation. With exact integrals,
+\begin{equation}
+ P_r^KP_s^K=P_{\min(r,s)}^K,\qquad
+ (P_r^K)^{\mathsf T}M_k^K=M_k^KP_r^K.
+ \label{eq:curved-projector-identities}
+\end{equation}
+Consequently the physical orthogonal shells and the frozen exponential
+attenuation in \cref{eq:ofdg-exact-decay} remain available. No orthogonal
+storage basis is required.
+
+Mean preservation follows directly from testing the projection equation with
+one: $\int_K(\Pi_K^r u_h-u_h)\,dx=0$. In coefficient form, let
+$b_i=\int_K\phi_i\,dx$; then $b^{\mathsf T}P_r^K=b^{\mathsf T}$. Every
+nonconstant shell has zero $b$-weighted integral, so damping it leaves
+$b^{\mathsf T}U$ unchanged component by component. On affine elements,
+$w_K$ is constant and cancels from \cref{eq:curved-projector-matrix}, recovering
+the reusable reference projector. On curved elements it cannot be cancelled.
+
+\subsection{Projecting a physical derivative}
+We seek $z_h=\mathscr D_{K,j}u_h\in V^k(K)$ satisfying
+\begin{equation}
+ (z_h,v_h)_K=(\partial_{x_j}u_h,v_h)_K
+ \quad\text{for every }v_h\in V^k(K).
+ \label{eq:curved-derivative-weak}
+\end{equation}
+This is an $L^2$ projection, not a new PDE solve or a finite-difference
+approximation. Inserting the basis expansions and
+\cref{eq:curved-chain-rule} gives
+\begin{align}
+ M_k^K Z&=G_{K,j}U,\qquad D_{K,j}=(M_k^K)^{-1}G_{K,j},\\
+ (G_{K,j})_{ab}&=\int_{\widehat K}\widehat\phi_a
+  \left[\sum_{s=1}^d(J_K^{-1})_{sj}
+                   \partial_{\xi_s}\widehat\phi_b\right]w_K\,d\xi.
+ \label{eq:curved-derivative-assembly}
+\end{align}
+The geometry is evaluated inside the integral. Only first reference
+basis derivatives and first derivatives of the map are needed. A constant
+has zero right-hand side, hence zero projected derivative. For affine maps,
+physical differentiation stays in the supported space and this projection
+recovers the existing exact polynomial derivative matrix.
+
+In the one-dimensional example \cref{eq:curved-derivative-example}, the
+projected first derivative $z_h$ is characterized by
+\begin{equation}
+ \int_0^1\widehat z_h\widehat\phi_a
+       (1+\varepsilon-2\varepsilon\xi)\,d\xi
+ =\int_0^1\widehat\phi_a\,d\xi.
+\end{equation}
+The Jacobian cancels on the right, but remains in the mass matrix on the left.
+This illustrates why a physical projection is different from an unweighted
+reference projection.
+
+\subsection{Recursive higher derivatives: the precise approximation}
+\label{sec:curved-recursive-derivatives}
+The derivative graph reuses these first-derivative matrices:
+\begin{equation}
+ U^{(0)}=U,\qquad U^{(\alpha)}=D_{K,j}U^{(\alpha-e_j)},
+ \label{eq:curved-recursion}
+\end{equation}
+For $\alpha\ne0$, the code chooses $j=\max\{s:\alpha_s>0\}$.
+The coordinate unit multi-index $e_j$ has a one in position $j$ and zeros
+elsewhere, so $\alpha-e_j$ denotes the already computed parent state with
+one fewer derivative. $U^{(\alpha)}$ is the coefficient vector of
+$\mathscr D_K^\alpha u_h$, not a power of $U$. For $(1,1)$, for example,
+the parent is $(1,0)$ and the last operation is $D_{K,y}$; for $(2,1)$,
+the chain is $(0,0)\to(1,0)\to(2,0)\to(2,1)$. This gives exactly the
+ordering in \cref{eq:projected-multi-index-order}.
+For instance, the second operation in directions $i$ then $j$ represents
+$\Pi_K^k\partial_{x_j}(\Pi_K^k\partial_{x_i}u_h)$. It generally differs
+from projecting the exact second derivative once. Writing $\Pi=\Pi_K^k$,
+\begin{equation}
+ \Pi\partial_{x_j}(\Pi\partial_{x_i}u_h)
+ -\Pi\partial_{x_j}\partial_{x_i}u_h
+ =\Pi\partial_{x_j}(\Pi-I)\partial_{x_i}u_h.
+ \label{eq:curved-recursion-defect}
+\end{equation}
+The right-hand side is the differentiated error from the previous projection.
+It explains the difference between successive projection and a single
+projection of the exact derivative. To isolate the ordering issue, subtract
+the same identity with $i$ and $j$ interchanged. Exact mixed partials cancel:
+\begin{align}
+ (\mathscr D_{K,j}\mathscr D_{K,i}
+   -\mathscr D_{K,i}\mathscr D_{K,j})u_h
+ &=\Pi\partial_{x_j}(\Pi-I)\partial_{x_i}u_h\notag\\
+ &\quad-\Pi\partial_{x_i}(\Pi-I)\partial_{x_j}u_h.
+ \label{eq:curved-commutator}
+\end{align}
+Thus any failure to commute comes from the intermediate projection errors,
+not from a failure of the physical chain rule on curved geometry. The two
+terms vanish when the first derivatives are represented exactly in the
+space. On curved elements they need not vanish, although particular states
+or maps can still give commuting results.
+
+The derivative graph stores one state per multi-index. On the affine path,
+any valid parent gives the same exact derivative; the curved extension
+retains one fixed parent as a definition of the approximation. It neither
+computes every ordering nor verifies that alternative parents agree.
+A multi-index remains a valid storage label with this convention, but it is
+not evidence of order independence. Averaging derivative permutations or
+projecting exact higher derivatives would define different sensor operators
+and would require separate implementation and validation. Second- and
+third-derivative convergence must therefore be assessed using
+manufactured solutions. Projection alone is not a proof of their convergence.
+
+The two routes are contrasted in \cref{fig:projected-derivative-route}.
+\input{illustrations/projected-derivatives}
+
+\subsection{Curved faces, normal directions, and length scales}
+For a reference face with outward unit normal $\widehat{\boldsymbol n}$, the
+physical surface factor and outward normal are
+\begin{equation}
+ s_F=\|w_KJ_K^{-\mathsf T}\widehat{\boldsymbol n}\|,
+ \qquad \boldsymbol n_K=
+ \frac{w_KJ_K^{-\mathsf T}\widehat{\boldsymbol n}}{s_F},
+ \qquad ds=s_F\,d\widehat s.
+ \label{eq:curved-face-metric}
+\end{equation}
+These quantities vary along a curved face. For face quadrature weights
+$\omega_q$, use
+\begin{equation}
+ |F|_Q=\sum_q\omega_qs_{F,q},\qquad
+ \widetilde\omega_q=\frac{\omega_qs_{F,q}}{|F|_Q},\qquad
+ \sum_q\widetilde\omega_q=1.
+ \label{eq:curved-face-normalization}
+\end{equation}
+Hence the implemented derivative-jump average is
+\begin{equation}
+ J_{F,c}^{(l)}\approx\sum_{|\alpha|=l}\sum_q\widetilde\omega_q
+ \left| (\mathscr D_{K^-}^{\alpha}u_{h,c}^-)(x_q)
+       -(\mathscr D_{K^+}^{\alpha}u_{h,c}^+)(x_q)\right|.
+\end{equation}
+Both traces are evaluated at the same physical point, using their respective
+element maps. A constant jump has the same normalized magnitude on a straight
+or curved face. The one-sided wave radii use $\boldsymbol n_K(x_q)$ at these
+points, rather than a single centre normal.
+
+Volume quadrature gives $|K|_Q=\sum_q\omega_qw_K(\xi_q)$ and the OFDG length
+$h_K=(|K|_Q/|\widehat K|)^{1/d}$. The global mean and amplitude calculation
+uses the same physical volume interpretation. KXRCF uses its separately defined
+sampled radius and restricts its signed face integral to quadrature points
+with incoming transport. Its denominator uses the corresponding physical
+inflow measure. Thus sensing, normalization, and propagation directions all
+refer to the curved physical geometry.
+
+The algebra above uses exact integrals. The implementation assembles them
+with positive, overintegrated quadrature. Consistent quadrature on the nested
+spaces gives the analogous discrete projection identities, up to linear-solve
+roundoff; it preserves the quadrature-defined physical means. Agreement with
+exact integrals, derivative accuracy, and geometric sampling invariance still
+require quadrature and refinement checks. This solution-space
+projection does not convert rational NURBS geometry to polynomial geometry;
+that separate, explicit geometry approximation retains the support boundary
+stated in \cref{sec:support-boundary}.

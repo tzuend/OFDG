@@ -1,13 +1,13 @@
 \section{The 2024 OEDG comparator}
 \label{chap:oedg}
 
-The numerical comparison requires an implementation of the method published by
-Peng, Sun, and Wu in 2024~\cite{PengEtAl2024} which is independent of the
-project-specific decision to gate OFDG with KXRCF.  This section states the
-implemented affine choices explicitly; curved OEDG is not validated here.  In particular, the 2024 method is not a
-``vertex-only'' method: its multidimensional sensor is an interface integral of
-absolute jumps.  Vertex evaluation belongs to the earlier multidimensional
-OFDG construction~\cite{LuEtAl2021,LiuEtAl2022}.
+OEDG is a related projection-based damping method, published online by Peng,
+Sun, and Wu in 2024~\cite{PengEtAl2024}. This section describes the affine
+implementation available for comparison with adapted OFDG. Its sensor,
+component pooling, and time integration define the differences between the
+methods. Whereas earlier multidimensional OFDG sensors evaluate vertex
+jumps~\cite{LuEtAl2021,LiuEtAl2022}, OEDG uses an interface integral of absolute
+jumps. A paper-faithful curvilinear OEDG extension is not established here.
 
 \subsection{Scale-invariant interface sensor}
 
@@ -20,7 +20,13 @@ $m\in\{0,\ldots,k\}$.  For component $i$, define the global amplitude
 \end{equation}
 The maximum is evaluated at the same volume quadrature nodes used by the
 filter.  When $A_i$ is below a relative machine-scale tolerance, all associated
-sensors are zero.  Otherwise the face contribution corresponding to equation
+sensors are zero. The remaining geometric ingredient is the face height
+$h_{e,K}=\sup_{x\in K}\operatorname{dist}(x,e)$, the greatest distance
+from the element to face $e$. Here $|e|$ is the physical face measure,
+$\partial^\alpha$ is the exact derivative from
+\cref{eq:derivative-multi-index}, and $m$ denotes total derivative order in
+this section, rather than the number of system components.
+With these ingredients, the face contribution corresponding to equation
 (3.10) of~\cite{PengEtAl2024} is
 \begin{equation}
  \sigma^{m,(i)}_{e,K} =
@@ -29,7 +35,7 @@ sensors are zero.  Otherwise the face contribution corresponding to equation
  \int_e \left|[\![\partial^\alpha u_h^{(i)}]\!]\right|\,\mathrm dS,
  \label{eq:oedg-face-sensor}
 \end{equation}
-where $h_{e,K}=\sup_{x\in K}\operatorname{dist}(x,e)$.  The implementation
+The implementation
 computes this face height geometrically and caches it; on a simplex it is the
 altitude associated with $e$, not a generic element diameter.  In 2D the face
 average uses the endpoint trapezoidal rule employed in the paper.  Point faces
@@ -52,8 +58,7 @@ The damping rate combines all adjacent faces,
 where $\beta_{K,e}$ is the one-sided local normal spectral radius. Physical boundary faces are excluded in this implementation; boundary conditions enter the DG residual.  Thus advection uses
 $|\boldsymbol a\cdot\boldsymbol n|$, Burgers uses the corresponding normal
 flux derivative, and Euler uses
-$|\boldsymbol v\cdot\boldsymbol n|+c$.  This is the material correction to the
-historical unit-speed assumption.  Following the paper, state-dependent speeds
+$|\boldsymbol v\cdot\boldsymbol n|+c$.  Following the paper, state-dependent speeds
 are evaluated from the adjacent element means rather than from face traces;
 spatially varying prescribed velocities and normals are still sampled along
 the face.
@@ -61,15 +66,15 @@ the face.
 The normalized sensor is unchanged under a nonzero scaling and constant
 shift when the amplitude cutoff is inactive: numerator and denominator scale
 together. This sensor statement must be separated from the complete filter,
-whose state-dependent wave speeds can change. The unit-speed regression checks
-scale/shift equivariance of attenuation in that fixed-speed setting.
+whose state-dependent wave speeds can change. With fixed unit speed, the attenuation inherits the same
+scale/shift equivariance away from the cutoff.
 
 Evolution invariance concerns rescaling the flux speed and physical time,
 not adding a constant state. Multiplying the flux and its speeds by $a>0$
 while replacing the damping duration by $\tau/a$ preserves the product of
 rate and duration. The paper develops these properties under its stated
-assumptions~\cite{PengEtAl2024}. The preview supplies no new general invariance
-claim for arbitrary nonlinear state transformations.
+assumptions~\cite{PengEtAl2024}. No general invariance under arbitrary nonlinear state transformations
+is asserted here.
 
 \subsection{Exact attenuation without a prescribed coefficient basis}
 
@@ -105,14 +110,12 @@ experiment-only option accidentally.  It also gives OFDG and OEDG the same
 basis-agnostic projection realization, preventing a change of coefficient basis
 from becoming an uncontrolled difference in the numerical comparison.
 
-\subsection{Runge--Kutta cadence and comparison contract}
+\subsection{Runge--Kutta time integration}
 
-The published OEDG algorithm applies the OE map after every Runge--Kutta stage.
-Consequently, \texttt{-method oedg -cadence auto} selects the small stage driver.
-For the project OFDG method, \texttt{auto} uses an MFEM solver and one filter
-application after a complete step.  The explicit \texttt{stage} and
-\texttt{step} choices are retained for cadence ablations.  The preview primarily compares DG, all-cell adapted OFDG, and
-adapted OFDG--KXRCF. OEDG is included on selected affine shock cases. These
-are fixed configurations, so observed differences include cadence as well as
-sensor choices. Curved OEDG is not a validated paper-faithful extension and is
-excluded from the curved comparison.
+The OEDG algorithm applies its damping map after each Runge--Kutta stage.
+The default adapted OFDG configuration applies one damping map after a full
+step. Both cadences are exposed by the implementation for controlled numerical
+comparisons. Consequently, a difference between the default methods cannot
+be attributed solely to their sensors. A final experimental comparison must
+state the cadence and distinguish it from the projection and normalization
+choices. The present account restricts the OEDG comparator to affine elements.

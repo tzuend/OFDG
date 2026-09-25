@@ -1,25 +1,23 @@
 \begin{abstract}
-This work studies an adapted oscillation-free discontinuous Galerkin (OFDG)
-implementation in MFEM for hyperbolic conservation laws. The method damps
-nonconstant element content through nested physical $L^2$ projections and can
-be restricted by a KXRCF troubled-cell indicator. Its realization operates in
-the host coefficient basis and supports static polynomial curvilinear geometry.
-Curved derivative sensors use successively projected physical derivatives;
-they are not exact higher derivatives of the mapped solution. The verified
-support boundary and the MFEM limitation for native NURBS faces are explicit.
+\MissingWork{ABSTRACT}{Principal findings and the final conclusion, after the
+numerical experiments have been agreed and evaluated. The text below is a
+provisional account of the problem and approach.}
 
-A small preliminary study compares DG, all-cell adapted OFDG, and gated OFDG,
-with OEDG on selected affine problems. It includes smooth transport, Burgers
-flow, Lax and Shu--Osher problems, straight/curved advection, and a small
-2D Euler Riemann problem. The 103 solver runs and four independent reference
-solves completed in 7.35 minutes on the laptop. Filtering suppresses the large
-sampled DG excursions in the scalar shock tests. At the finest P2 transport
-grids, gated OFDG has errors close to the unfiltered DG baseline. Wave-detail
-and positivity diagnostics expose differences that whole-domain profiles hide.
+High-order discontinuous Galerkin methods provide local approximations of
+solutions to hyperbolic conservation laws, but unresolved discontinuities can
+produce spurious oscillations. This thesis investigates projection-based
+oscillation damping and its implementation on static curvilinear meshes.
+The approach combines an adapted oscillation-free discontinuous Galerkin
+(OFDG) filter with optional KXRCF troubled-cell indication, separating the
+strength of damping from the decision of where to apply it.
 
-These observations characterize the tested configurations rather than establish
-universal superiority or new convergence theory. Visible placeholders identify
-missing detector, reference-accuracy, and cadence evidence needed for stronger
-claims. Large-scale performance and broad Euler robustness remain outside the
-current empirical conclusions.
+The formulation acts on finite element functions independently of their
+coefficient basis. Physical $L^2$ projections separate nonconstant components
+for damping while retaining cell averages. On curved elements, first physical
+derivatives are projected into the solution space and applied recursively to
+construct the derivative sensor. These operations represent successively
+projected derivatives rather than exact higher physical derivatives.
+The methodological account distinguishes published formulations from the
+adaptations used here and specifies the geometric and numerical assumptions
+needed for their realization in MFEM.
 \end{abstract}

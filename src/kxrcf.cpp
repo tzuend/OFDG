@@ -20,11 +20,11 @@ namespace ofdg
  *           / (h_K^((k+1)/2) |Gamma_K^-| ||u_K,c||).
  *
  * The component maximum activates the element. Physical boundaries are
- * ignored. Inputs are preconditioned to be static, affine, full-dimensional
- * VALUE-mapped scalar DG elements, repeated over the vector dimension. A
- * uniform order is required; affine element signatures may be mixed.
+ * ignored. Inputs must be static, full-dimensional, VALUE-mapped scalar DG
+ * elements, repeated over the vector dimension. Polynomial curved geometry
+ * and mixed element signatures are supported; uniform order is required.
  */
-class KXRCFCore
+class KXRCFIndicator::Implementation
 {
 private:
    mfem::FiniteElementSpace *fes;
@@ -41,12 +41,21 @@ private:
       mfem::DenseMatrix evaluation;
       mfem::Vector physical_weights;
       mfem::real_t volume = 0.0;
-      mfem::real_t radius = 0.0;
+      mfem::real_t radius_scale = 0.0;
    };
    std::vector<ElementCache> element_cache;
+   // MFEM's default face transformation is shared scratch storage and is
+   // rebuilt on every lookup. Own a stable copy for each static local face.
+   // Only integration-point scratch changes during Compute; geometry does not.
+   struct FaceGeometry
+   {
+      mfem::IsoparametricTransformation element1;
+      mfem::IsoparametricTransformation element2;
+      mfem::FaceElementTransformations transformations;
+   };
    struct LocalFaceCache
    {
-      int face = -1;
+      std::unique_ptr<FaceGeometry> geometry;
       int element1 = -1;
       int element2 = -1;
       mfem::Array<int> vdofs1;
@@ -115,19 +124,7 @@ private:
                            mfem::DenseMatrix *component_values) const;
 
 public:
-   KXRCFCore(mfem::FiniteElementSpace *fes_,
-                  mfem::VectorCoefficient *velocity_,
-                  mfem::real_t threshold_ = 1.0,
-                  mfem::real_t relative_scale_floor_ = 1e-14)
-      : KXRCFCore(
-           fes_,
-           std::make_shared<AdvectionFacePhysics>(velocity_),
-           threshold_,
-           relative_scale_floor_)
-   {
-   }
-
-   KXRCFCore(mfem::FiniteElementSpace *fes_,
+   Implementation(mfem::FiniteElementSpace *fes_,
                   std::shared_ptr<const FacePhysics> face_physics_,
                   mfem::real_t threshold_ = 1.0,
                   mfem::real_t relative_scale_floor_ = 1e-14)
@@ -154,7 +151,7 @@ public:
 
 // Local state evaluation
 
-void KXRCFCore::EvaluateElementState(
+void KXRCFIndicator::Implementation::EvaluateElementState(
    const mfem::Vector &local_state,
    const mfem::Vector &shape,
    mfem::Vector &value) const
@@ -179,7 +176,7 @@ void KXRCFCore::EvaluateElementState(
 
 // Element solution scales
 
-void KXRCFCore::ComputeElementScales(
+void KXRCFIndicator::Implementation::ComputeElementScales(
    const mfem::Vector &x,
    mfem::DenseMatrix &scales) const
 {
@@ -229,7 +226,7 @@ void KXRCFCore::ComputeElementScales(
    }
 }
 
-void KXRCFCore::BuildElementCache()
+void KXRCFIndicator::Implementation::BuildElementCache()
 {
    mfem::Mesh *mesh = fes->GetMesh();
    element_cache.resize(fes->GetNE());
@@ -261,11 +258,13 @@ void KXRCFCore::BuildElementCache()
          cache.physical_weights(q) = ip.weight * transformation->Weight();
          cache.volume += cache.physical_weights(q);
       }
-      cache.radius = ComputeElementRadius(e);
+      // Static h_K^((p+1)/2), reused by every indicator evaluation.
+      cache.radius_scale = std::pow(ComputeElementRadius(e),
+                                   0.5 * (fe->GetOrder() + 1));
    }
 }
 
-void KXRCFCore::BuildLocalFaceCache()
+void KXRCFIndicator::Implementation::BuildLocalFaceCache()
 {
    mfem::Mesh *mesh = fes->GetMesh();
    local_face_cache.clear();
@@ -283,7 +282,11 @@ void KXRCFCore::BuildLocalFaceCache()
 
       local_face_cache.emplace_back();
       LocalFaceCache &cache = local_face_cache.back();
-      cache.face = f;
+      cache.geometry = std::make_unique<FaceGeometry>();
+      FaceGeometry &geometry = *cache.geometry;
+      mesh->GetFaceElementTransformations(
+         f, geometry.transformations, geometry.element1, geometry.element2);
+      transformations = &geometry.transformations;
       cache.element1 = transformations->Elem1No;
       cache.element2 = transformations->Elem2No;
       fes->GetElementVDofs(cache.element1, cache.vdofs1);
@@ -342,7 +345,7 @@ void KXRCFCore::BuildLocalFaceCache()
    }
 }
 
-void KXRCFCore::AccumulateCachedFace(
+void KXRCFIndicator::Implementation::AccumulateCachedFace(
    const LocalFaceCache &cache,
    mfem::FaceElementTransformations &transformations,
    const mfem::Vector &local_state1,
@@ -408,7 +411,7 @@ void KXRCFCore::AccumulateCachedFace(
 
 // Generalized element radius
 
-mfem::real_t KXRCFCore::ComputeElementRadius(
+mfem::real_t KXRCFIndicator::Implementation::ComputeElementRadius(
    int e) const
 {
    mfem::Mesh *mesh = fes->GetMesh();
@@ -486,7 +489,7 @@ mfem::real_t KXRCFCore::ComputeElementRadius(
    return radius;
 }
 
-void KXRCFCore::AccumulateFace(
+void KXRCFIndicator::Implementation::AccumulateFace(
    mfem::FaceElementTransformations &transformations,
    const mfem::FiniteElement &element1,
    const mfem::FiniteElement &element2,
@@ -568,7 +571,7 @@ void KXRCFCore::AccumulateFace(
 
 // Main KXRCF computation
 
-bool KXRCFCore::ComputeScales(
+bool KXRCFIndicator::Implementation::ComputeScales(
    const mfem::Vector &state,
    mfem::DenseMatrix &solution_scales,
    mfem::Vector &global_scales,
@@ -607,7 +610,7 @@ bool KXRCFCore::ComputeScales(
    return nonzero;
 }
 
-void KXRCFCore::AccumulateFaces(
+void KXRCFIndicator::Implementation::AccumulateFaces(
    const mfem::Vector &state,
    mfem::DenseMatrix &jump_integrals,
    mfem::Vector &inflow_measures) const
@@ -619,11 +622,10 @@ void KXRCFCore::AccumulateFaces(
 
    mfem::Vector local_state1;
    mfem::Vector local_state2;
-   mfem::Mesh *mesh = fes->GetMesh();
    for (const LocalFaceCache &cache : local_face_cache)
    {
       mfem::FaceElementTransformations *transformations =
-         mesh->GetFaceElementTransformations(cache.face);
+         &cache.geometry->transformations;
       local_state1.SetSize(cache.vdofs1.Size());
       local_state2.SetSize(cache.vdofs2.Size());
       state.GetSubVector(cache.vdofs1, local_state1);
@@ -670,7 +672,7 @@ void KXRCFCore::AccumulateFaces(
 #endif
 }
 
-void KXRCFCore::FinalizeIndicators(
+void KXRCFIndicator::Implementation::FinalizeIndicators(
    const mfem::DenseMatrix &solution_scales,
    const mfem::Vector &global_scales,
    const mfem::Vector &scale_floors,
@@ -684,10 +686,7 @@ void KXRCFCore::FinalizeIndicators(
    {
       if (inflow_measures(e) == 0.0) { continue; }
 
-      const int order = fes->GetFE(e)->GetOrder();
-      const mfem::real_t h_factor =
-         std::pow(element_cache[e].radius,
-                  0.5 * static_cast<mfem::real_t>(order + 1));
+      const mfem::real_t h_factor = element_cache[e].radius_scale;
       mfem::real_t pooled = 0.0;
 
       for (int c = 0; c < ncomp; ++c)
@@ -715,7 +714,7 @@ void KXRCFCore::FinalizeIndicators(
    }
 }
 
-void KXRCFCore::Compute(
+void KXRCFIndicator::Implementation::Compute(
    const mfem::Vector &state,
    mfem::Array<bool> &active,
    mfem::Vector *indicator_values,
@@ -752,21 +751,6 @@ void KXRCFCore::Compute(
                       indicator_values, component_values);
 }
 
-class KXRCFIndicator::Implementation
-{
-public:
-   KXRCFCore indicator;
-
-   Implementation(mfem::FiniteElementSpace *fes,
-                  std::shared_ptr<const FacePhysics> face_physics,
-                  mfem::real_t threshold,
-                  mfem::real_t relative_scale_floor)
-      : indicator(fes, std::move(face_physics), threshold,
-                  relative_scale_floor)
-   {
-   }
-};
-
 KXRCFIndicator::KXRCFIndicator(
    mfem::FiniteElementSpace *fes, mfem::VectorCoefficient *velocity,
    mfem::real_t threshold, mfem::real_t relative_scale_floor)
@@ -793,7 +777,7 @@ void KXRCFIndicator::Compute(
    mfem::Vector *indicator_values,
    mfem::DenseMatrix *component_indicator_values) const
 {
-   implementation->indicator.Compute(state, active, indicator_values,
+   implementation->Compute(state, active, indicator_values,
                                      component_indicator_values);
 }
 
